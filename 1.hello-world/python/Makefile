@@ -1,3 +1,2 @@
-check:
-
-	EXE="python $(shell pwd)/main.py" cram ../test/test.t
+include ../../base.mk
+exe = python $(shell pwd)/main.py

@@ -1,3 +1,2 @@
-check:
-
-	EXE="sh $(shell pwd)/main.sh" cram ../test/test.t
+include ../../base.mk
+exe = sh $(shell pwd)/main.sh

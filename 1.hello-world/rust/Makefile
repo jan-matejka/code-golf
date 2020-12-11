@@ -1,15 +1,6 @@
-.PHONY: all
-all: clean main check
+include ../../base.mk
+exe = $(shell pwd)/main
 
 main:
 
 	rustc main.rs
-
-clean:
-
-	$(RM) main
-
-.PHONY: check
-check:
-
-	EXE=$(shell pwd)/main cram ../test/test.t
