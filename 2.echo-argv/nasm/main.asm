@@ -14,49 +14,40 @@ section .text
 _start:
     ; when a process starts, its argc and argv is initialized on the stack.
     ; pop argc off the stack, not interesting
-    pop     rax
+    pop     rsi
     ; pop argv[0] off the stack, not interesting
     pop     rsi
 
-; print argv[1]
-print_argv_1:
-    ; pop argv[1] into rsi
-    pop     rsi
-    cmp     QWORD rsi, 0 ; exit if argv[1] is null
-    je      print_argv_end
+squash_argv_1:
+    pop     r8 ; remember argv[1]
+    push    r8
+    mov     r9, 0 ; argv[1..] length
 
-    ; print argv[1]
-    call    strlen
-    call    write
-
-; print argv[n] for n > 1. Implying argv[1] exists and has already been printed.
-print_argv_n:
-    ; pop argv[n] into rsi
+; squash argv[1..] c strings into a single string by replacing the null terminators with spaces
+squash_argv_n:
+    ; pop argv[n]
     pop     rsi
     cmp     QWORD rsi, 0 ; exit if argv[n] is null
-    je      print_argv_end
+    je      print_argv
 
-    ; push argv[n] back onto stack
-    push    rsi
-
-    ; print space
-    mov     rsi, SPACE
-    mov     rdx, 1
-    call    write
-
-    ; pop argv[n] back into rsi and print it
-    pop     rsi
+    ; find argv[n] length and add it to our r9 counter
     call    strlen
+    add     r9, rdx
+    ; and increase by 1 because the length increased by the null terminator changing to space
+    inc     r9
+    ; replace NULL with SPACE
+    mov     [rsi+rdx], BYTE 32
+
+    ; repeat for argv[n+1]
+    jmp     squash_argv_n
+
+print_argv:
+    ; reset rsi to argv[1]
+    mov     rsi, r8
+    mov     rdx, r9
+    ; replace the last SPACE with NL
+    mov     [rsi+rdx-1], BYTE 0x0a
     call    write
-
-    ; print argv[n+1]
-    jmp print_argv_n
-
-print_argv_end:
-    ; print newline after last argv
-    mov     rsi, NL
-    mov     rdx, 1
-    call write
 
 exit_ok:
     ; set exit code to 0
