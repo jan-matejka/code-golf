@@ -1,0 +1,6 @@
+$EXE &
+echo $!
+
+sleep 1
+ps -p $p >/dev/null 2>&1 || exit 2
+trap "kill $p" EXIT
