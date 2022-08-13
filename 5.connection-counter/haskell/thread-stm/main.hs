@@ -1,5 +1,7 @@
 import Text.Printf
 import Network.Socket
+import Network.Socket.ByteString (send, recv)
+import Data.ByteString.Char8 (pack)
 import Control.Applicative
 import Control.Exception (try, catch, SomeException)
 import Control.Monad.State
@@ -49,7 +51,7 @@ handler ss c = evalStateT (handle c >> close' c) ss
         -- To demonstrate the server is indeed forking, print a hello
         -- and wait for a line of input.
         -- liftIO . send c . printf "Hello: %s\n" $ show addr
-        _ <- liftIO $ recvFrom c 5
+        _ <- liftIO $ recv c 5
 
         -- get the TVar holding our server's state
         ts <- get
@@ -63,7 +65,7 @@ handler ss c = evalStateT (handle c >> close' c) ss
             return x
 
         -- Write the state to the client.
-        void . liftIO . send c $ printf "You are: %d.\n" connNo
+        void . liftIO . send c $ pack $ printf "You are: %d.\n" connNo
 
     close' (c , _) = liftIO
         $ socketToHandle c ReadWriteMode
