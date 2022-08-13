@@ -1,0 +1,19 @@
+FROM ghcr.io/linuxcontainers/debian-slim:11
+
+RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
+ADD ./deps.sh /
+RUN sh /deps.sh update install-build install-sources install-runtime cleanup
+
+FROM ghcr.io/linuxcontainers/debian-slim:11
+
+RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
+ADD ./deps.sh /
+RUN sh /deps.sh update install-runtime cleanup
+COPY --from=0 \
+  /usr/local/bin/fake \
+  /usr/local/bin/dram \
+  /usr/local/bin/dram.bin \
+  /usr/local/bin/basexy \
+  /usr/local/bin
+
+COPY --from=0 /deps.sh /
