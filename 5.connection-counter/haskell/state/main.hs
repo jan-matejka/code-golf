@@ -1,11 +1,12 @@
 import System.Environment
 import Text.Printf
 import Network.Socket
+import Network.Socket.ByteString (send)
 import Control.Applicative
 import Control.Exception (try, catch, SomeException)
 import Control.Monad.State
 import System.IO
-import Control.Concurrent.Thread.Delay
+import Data.ByteString.Char8 (pack)
 
 -- | State of our stateful monad - Handler
 data ServerState = ServerState
@@ -60,7 +61,7 @@ handler ss (c, _) = snd <$> runStateT (handle c >> close' c) ss
         -- Write the state to the client.
         -- As the send functions is IO () and not Handler a, it needs to
         -- be lifted into the inner IO monad
-        liftIO $ send c $ printf "You are: %d.\n" connNo
+        liftIO $ send c $ (pack $ printf "You are: %d.\n" connNo)
 
         -- Write the new state
         put $ ss { connections = succ connNo }
