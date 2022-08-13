@@ -1,0 +1,27 @@
+FROM sh-toolchain
+
+ARG NAME
+ARG PROB
+ARG ROOT
+
+ADD $NAME/GNUmakefile $NAME/main.c /work/$NAME
+ADD $PROB/test /work/$PROB/test
+ADD $PROB/GNUmakefile /work/$PROB
+ADD base.mk /work/
+
+RUN sh /deps.sh update && apt-get install -y gcc libc6-dev
+RUN cd /work/$NAME && make build
+
+FROM sh-toolchain
+
+ARG NAME
+ARG PROB
+ARG ROOT
+
+ADD $NAME/GNUmakefile $NAME/main.c /work/$NAME
+ADD $PROB/test /work/$PROB/test
+ADD $PROB/GNUmakefile /work/$PROB
+ADD base.mk /work/
+
+COPY --from=0 /work/$NAME/main /work/$NAME/main
+WORKDIR /work/$NAME
