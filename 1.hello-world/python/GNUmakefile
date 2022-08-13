@@ -1,7 +1,7 @@
 ROOT = ../..
 PROB = ..
 include ../../base.mk
-exe = python3 $(shell pwd)/main
+exe = python3 $$PWD/main
 
 main:
 

@@ -1,7 +1,7 @@
 ROOT = ../..
 PROB = ..
 include ../../base.mk
-exe = $(shell pwd)/main
+exe = $$PWD/main
 clean_files = main main.o
 
 main:

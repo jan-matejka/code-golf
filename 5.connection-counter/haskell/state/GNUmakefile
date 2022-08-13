@@ -2,7 +2,7 @@ ROOT = ../../..
 PROB = ../..
 
 include $(ROOT)/base.mk
-exe = $(shell pwd)/main
+exe = $$PWD/main
 clean_files = main
 
 main:

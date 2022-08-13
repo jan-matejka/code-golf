@@ -1,7 +1,7 @@
 ROOT = ../..
 PROB = ..
 include ../../base.mk
-exe = sh $(shell pwd)/main
+exe = sh $$PWD/main
 
 main:
 
