@@ -1,4 +1,4 @@
-include ../../base.mk
+include ../../../base.mk
 exe = $(shell pwd)/main
 clean_files = main
 
