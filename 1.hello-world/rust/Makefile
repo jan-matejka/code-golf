@@ -1,3 +1,5 @@
+ROOT = ../..
+PROB = ..
 include ../../base.mk
 exe = $(shell pwd)/main
 
