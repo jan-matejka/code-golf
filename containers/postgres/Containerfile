@@ -1,0 +1,7 @@
+FROM postgres:latest
+
+USER root
+RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
+RUN apt-get update
+RUN apt-get install -y procps iproute2
+RUN rm -rf /var/cache/apt/* /var/lib/apt/*
