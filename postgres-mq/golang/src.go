@@ -58,7 +58,7 @@ func spawn_workers(workers int, wg *sync.WaitGroup, pool *pgxpool.Pool) float64 
 		go worker(i, quit_channels[i], wg, pool, end_channels[i])
 	}
 
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 3)
 
 	for i := range quit_channels {
 		quit_channels[i] <- true
