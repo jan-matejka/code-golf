@@ -15,6 +15,7 @@ insert conn i = do
 worker :: Int -> MVar Bool -> MVar Int -> IO ()
 worker id quit result = do
   conn <- connectPostgreSQL "postgres://mq@localhost/mq"
+  -- this is where the magic happens. Refactor later.
   let checkQuitAndInsert x = do
         q <- tryTakeMVar quit
         case q of
