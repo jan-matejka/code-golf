@@ -83,7 +83,7 @@ func spawn_workers(workers int, wg *sync.WaitGroup, pool *pgxpool.Pool) float64 
 }
 
 func main() {
-	pool, err := pgxpool.Connect(context.Background(), "postgres://mq@localhost/mq")
+	pool, err := pgxpool.Connect(context.Background(), "postgres://mq@localhost/mq?pool_max_conns=2048")
 	if err != nil {
 		die("Unable to connect to database: %v\n", err)
 	}
