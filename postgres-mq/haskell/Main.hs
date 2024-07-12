@@ -30,8 +30,8 @@ worker id quit result = do
     x_or_zero (Just x) = x
 
 
-worker' :: Int -> IO (MVar Bool, MVar Int)
-worker' id = do
+forkWorker :: Int -> IO (MVar Bool, MVar Int)
+forkWorker id = do
   quit <- newEmptyMVar
   result <- newEmptyMVar
   forkIO $ worker id quit result
@@ -40,7 +40,7 @@ worker' id = do
 n_workers :: Int -> IO ([MVar Bool], [MVar Int])
 n_workers n = do
   printf "Starting %d workers\n" n
-  mvars <- mapM worker' [0..n]
+  mvars <- mapM forkWorker [0..n]
   return $ unzip mvars
 
 sample :: IO ([MVar Bool], [MVar Int]) -> IO ()
