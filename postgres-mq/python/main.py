@@ -46,51 +46,60 @@ def gen():
             sys.stdout.flush()
             i += 1
 
+class ChildPool:
+    def __init__(self, loop):
+        self.loop = loop
+        self.total = {}
+        self.exits = {}
+        self.ts = []
+
+    async def spawn(self, jobs=1):
+        # start subprocesses
+        for _ in range(1, jobs+1):
+            i = len(self.total)
+            self.total[i] = 0
+            self.exits[i] = asyncio.Future(loop=self.loop)
+            t, _ = await self.loop.subprocess_exec(
+                lambda: Protocol(i, self.total, self.exits[i]),
+                __file__, stdout=PIPE, stderr=sys.stderr, env={"CHILD": str(i)}
+            )
+            self.ts.append(t)
+
+    async def close(self):
+        # terminate children
+        for t in self.ts:
+            t.close()
+
+        # wait for the termination
+        for d in self.exits.values():
+            await d
+
+
 def main():
     """
     Start 2 children processes that continuously print dots.
     Terminate after 1 second of runtime and print how many dots each
     child printed and total dots printed.
     """
-
-    jobs = int(os.environ.get('JOBS', 2))
-    runtime = int(os.environ.get('RUNTIME', 1))
     async def fx():
-        total = {}
-        exits = {}
-        ts = []
+        loop = asyncio.get_running_loop()
+        pool = ChildPool(loop)
+        jobs = int(os.environ.get('JOBS', 2))
+        runtime = int(os.environ.get('RUNTIME', 1))
+
         start = time.time_ns()
-
-        # start subprocesses
-        for i in range(1, jobs+1):
-            total[i] = 0
-            loop = asyncio.get_running_loop()
-            exits[i] = asyncio.Future(loop=loop)
-            t, _ = await loop.subprocess_exec(
-                lambda: Protocol(i, total, exits[i]),
-                __file__, stdout=PIPE, stderr=sys.stderr, env={"CHILD": str(i)}
-            )
-            ts.append(t)
-
-        # let them run for about a second
+        await pool.spawn(jobs)
         await asyncio.sleep(runtime)
-
-        # terminate children
-        for t in ts:
-            t.close()
-
-        # wait for the termination
-        for d in exits.values():
-            await d
+        await pool.close()
 
         end = time.time_ns()
         ran = end - start
 
         # print results
-        for k, v in total.items():
+        for k, v in pool.total.items():
             print(f"{k}: {v}")
-        print(f"total: {sum(total.values())}")
-        print(f"total i/s: {sum(total.values())/(ran * 10**-9):.3f}")
+        print(f"total: {sum(pool.total.values())}")
+        print(f"total i/s: {sum(pool.total.values())/(ran * 10**-9):.3f}")
 
     asyncio.run(fx())
 
