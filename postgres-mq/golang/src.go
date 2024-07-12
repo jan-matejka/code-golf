@@ -29,12 +29,13 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(id int, quit chan bool, wg *sync.WaitGroup, pool *pgxpool.Pool) {
+func worker(id int, quit chan bool, wg *sync.WaitGroup, pool *pgxpool.Pool, end chan int) {
 	defer wg.Done()
 	var i int
 	for {
 		select {
 		case <-quit:
+			end <- i
 			return
 		default:
 			insert(pool, i)
@@ -51,11 +52,13 @@ func main() {
 	defer pool.Close()
 	var wg sync.WaitGroup
 	var quit_channels [4]chan bool
+	var end_channels [4]chan int
 
 	for i := range quit_channels {
 		wg.Add(1)
 		quit_channels[i] = make(chan bool)
-		go worker(i, quit_channels[i], &wg, pool)
+		end_channels[i] = make(chan int)
+		go worker(i, quit_channels[i], &wg, pool, end_channels[i])
 	}
 
 	time.Sleep(time.Second)
@@ -64,7 +67,17 @@ func main() {
 		quit_channels[i] <- true
 	}
 
-	print("waiting")
+	var n, total int
+	for i := range end_channels {
+		n = <-end_channels[i]
+		fmt.Println(n)
+		total += n
+	}
+
+	// do I need the wait group since I am already waiting for the end results?
 	wg.Wait()
+
+	fmt.Printf("total: %d\n", total)
+	fmt.Printf("total ips: %f\n", float32(total))
 	os.Exit(0)
 }
