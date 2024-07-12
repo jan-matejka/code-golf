@@ -52,13 +52,17 @@ def main():
     Terminate after 1 second of runtime and print how many dots each
     child printed and total dots printed.
     """
+
+    jobs = int(os.environ.get('JOBS', 2))
+    runtime = int(os.environ.get('RUNTIME', 1))
     async def fx():
         total = {}
         exits = {}
         ts = []
+        start = time.time_ns()
 
         # start subprocesses
-        for i in range(1, 3):
+        for i in range(1, jobs+1):
             total[i] = 0
             loop = asyncio.get_running_loop()
             exits[i] = asyncio.Future(loop=loop)
@@ -69,7 +73,7 @@ def main():
             ts.append(t)
 
         # let them run for about a second
-        await asyncio.sleep(1)
+        await asyncio.sleep(runtime)
 
         # terminate children
         for t in ts:
@@ -79,10 +83,14 @@ def main():
         for d in exits.values():
             await d
 
+        end = time.time_ns()
+        ran = end - start
+
         # print results
         for k, v in total.items():
             print(f"{k}: {v}")
         print(f"total: {sum(total.values())}")
+        print(f"total i/s: {sum(total.values())/(ran * 10**-9):.3f}")
 
     asyncio.run(fx())
 
