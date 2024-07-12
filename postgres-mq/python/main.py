@@ -183,9 +183,10 @@ class AutoTuneSampler:
         pool = self.pool
 
         prev_sample = None
-
-        for i in itertools.count(1):
-            workers = 2**i
+        q = [(2, True)]
+        i = 1
+        while True:
+            workers, powering = q.pop()
             await pool.spawn(workers)
             if pool.closing:
                 # this works really weird, must be something fundamentally different between how
@@ -200,12 +201,22 @@ class AutoTuneSampler:
 
             sample = sum(samples)/len(samples) # avg
             if prev_sample and prev_sample >= sample:
-                print('terminating, last ips lower than previous one')
-                break
+                if powering:
+                    print('step: taking a step back')
+                    q.append((2**(i-1)+1, False))
+                else:
+                    print('step: terminating, last ips lower than previous one')
+                    break
             else:
                 pool.print_stats()
-
-            prev_sample = sample
+                if powering:
+                    print('step: double')
+                    i += 1
+                    q.append((2**i, True))
+                else:
+                    print('step: +1')
+                    q.append((workers + 1, False))
+                prev_sample = sample
 
         await pool.close()
         pool.print_stats()
