@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
-import os, sys, time, asyncio
+import os, sys, time, asyncio, ast, itertools
 import psycopg # current debian stable = 3.1.7
 from subprocess import Popen, PIPE, DEVNULL
+from functools import partial
+from dataclasses import dataclass
+
+def print_error(x):
+    print(x, file=sys.stderr)
 
 class Protocol(asyncio.SubprocessProtocol):
-    def __init__(self, i, total, exit_future):
-        self.i = i
-        self.total = total
-        self.exit = exit_future
+    def __init__(self, child: "Child"):
+        self.child = child
         self.exited = False
         self.pipe_closed = False
 
@@ -22,20 +25,24 @@ class Protocol(asyncio.SubprocessProtocol):
 
     def check_for_exit(self):
         if self.exited and self.pipe_closed:
-            self.exit.set_result(True)
+            if not self.child.exit_future.done():
+                self.child.exit_future.set_result(True)
 
     def print_error(self, x):
-        print(f"{self.i}: {x}", file=sys.stderr)
+        # print_error(f"{self.child.i}: {x}")
+        pass
 
     def pipe_data_received(self, fd, data):
         if fd == 2:
             self.print_error(f"stderr: {data!r}")
         elif fd == 1:
-            self.total[self.i] += len(data)
+            self.child.total += len(data)
         else:
             self.print_error(f"{fd}: {data!r}")
 
-def gen():
+def gen(worker_id):
+    #if worker_id > 4:
+    #    raise RuntimeError("whatever")
     with psycopg.connect("dbname=mq user=mq host=localhost") as conn:
         i = 0
         while True:
@@ -46,34 +53,162 @@ def gen():
             sys.stdout.flush()
             i += 1
 
+@dataclass
+class Child:
+    pool: "ChildPool"
+    loop: asyncio.AbstractEventLoop
+    i: int
+    total: int = 0
+    exit_future: asyncio.Future = None
+    transport: asyncio.SubprocessTransport = None
+
+    def __post_init__(self):
+        self.exit_future = asyncio.Future(loop=self.loop)
+
 class ChildPool:
     def __init__(self, loop):
         self.loop = loop
-        self.total = {}
-        self.exits = {}
-        self.ts = []
+        self.children = []
+        self.closing: asyncio.Future = None
+        self._closing_one = set()
 
-    async def spawn(self, jobs=1):
-        # start subprocesses
-        for _ in range(1, jobs+1):
-            i = len(self.total)
-            self.total[i] = 0
-            self.exits[i] = asyncio.Future(loop=self.loop)
+    @property
+    def inserts(self):
+        return sum(x.total for x in self.children)
+
+    @property
+    def ips(self):
+        return self.inserts / ((time.time_ns() - self._start) * 10**-9)
+
+    async def spawn(self, max_workers=1):
+        # maybe I should've just close the pool and start new one
+        await self._adjust(max_workers)
+
+        # reset metrics
+        self._start = time.time_ns()
+        for c in self.children:
+            c.total = 0
+
+    async def _adjust(self, max_workers):
+        # start workers
+        new = max_workers - self.n
+        if new == 0:
+            return
+
+        print(f"adjusting workers {self.n} -> {max_workers}")
+        if new < 0:
+            for _ in range(new * -1):
+                i = self.n
+                self._closing_one.add(i)
+                child = self.children.pop()
+                child.transport.close()
+            return
+
+        for _ in range(new):
+            i = self.n + 1
+            child = Child(self, self.loop, i)
+            child.exit_future.add_done_callback(partial(self._exited, i))
             t, _ = await self.loop.subprocess_exec(
-                lambda: Protocol(i, self.total, self.exits[i]),
-                __file__, stdout=PIPE, stderr=sys.stderr, env={"CHILD": str(i)}
+                lambda: Protocol(child),
+                __file__, stdout=PIPE, stderr=PIPE, env={"CHILD": str(i)}
             )
-            self.ts.append(t)
+            child.transport = t
+            self.children.append(child)
 
-    async def close(self):
+    @property
+    def n(self):
+        """
+        number of workers
+        """
+        return len(self.children)
+
+    def _exited(self, i, future):
+        # child i terminated
+        if self.closing:
+            return
+
+        if i in self._closing_one:
+            self._closing_one.remove(i)
+            return
+
+        if not self.closing:
+            try:
+                print_error(f"{i} exited unexpectedly, terminating")
+            except Exception as e:
+                pass
+                # wtf
+            self.close()
+
+    def close(self):
+        if not self.closing:
+            self.closing = self._close()
+        return self.closing
+
+    async def _close(self):
         # terminate children
-        for t in self.ts:
-            t.close()
+        for c in self.children:
+            c.transport.close()
 
         # wait for the termination
-        for d in self.exits.values():
-            await d
+        for c in self.children:
+            await c.exit_future
 
+    def print_stats(self):
+        # print results
+        for c in self.children:
+            print(f"{c.i}: {c.total}")
+        print(f"total: {self.inserts}")
+        print(f"total ips: {self.ips:.3f}")
+
+
+class FixedSampler:
+    def __init__(self, pool, jobs, runtime):
+        self.pool = pool
+        self.jobs = jobs
+        self.runtime = runtime
+
+    async def run(self):
+        await self.pool.spawn(self.jobs)
+        await asyncio.sleep(self.runtime)
+        await self.pool.close()
+        self.pool.print_stats()
+
+
+class AutoTuneSampler:
+    def __init__(self, pool, n_samples):
+        self.pool = pool
+        self.n_samples = n_samples
+
+    async def run(self):
+        pool = self.pool
+
+        prev_sample = None
+
+        for i in itertools.count(1):
+            workers = 2**i
+            await pool.spawn(workers)
+            if pool.closing:
+                # this works really weird, must be something fundamentally different between how
+                # a Future works and how I expect it to work like twisted Deferred.
+                # But at least it terminates now when the children start failing.
+                break
+
+            samples = []
+            while len(samples) < self.n_samples:
+                await asyncio.sleep(1)
+                samples.append(pool.ips)
+
+            sample = sum(samples)/len(samples) # avg
+            if prev_sample and prev_sample >= sample:
+                print('terminating, last ips lower than previous one')
+                break
+            else:
+                pool.print_stats()
+
+            prev_sample = sample
+
+        await pool.close()
+        pool.print_stats()
 
 def main():
     """
@@ -84,27 +219,28 @@ def main():
     async def fx():
         loop = asyncio.get_running_loop()
         pool = ChildPool(loop)
-        jobs = int(os.environ.get('JOBS', 2))
-        runtime = int(os.environ.get('RUNTIME', 1))
+        autotune = os.environ.get('AUTOTUNE')
 
-        start = time.time_ns()
-        await pool.spawn(jobs)
-        await asyncio.sleep(runtime)
-        await pool.close()
+        if autotune:
+            try:
+                autotune = ast.literal_eval(autotune)
+            except Exception as e:
+                print_error(f"Invalid AUTOTUNE env: {e}")
 
-        end = time.time_ns()
-        ran = end - start
+        if autotune:
+            n_samples = int(os.environ.get('SAMPLES', 2))
+            s = AutoTuneSampler(pool, n_samples)
+        else:
+            jobs = int(os.environ.get('JOBS', 2))
+            runtime = int(os.environ.get('RUNTIME', 1))
+            s = FixedSampler(pool, jobs, runtime)
 
-        # print results
-        for k, v in pool.total.items():
-            print(f"{k}: {v}")
-        print(f"total: {sum(pool.total.values())}")
-        print(f"total i/s: {sum(pool.total.values())/(ran * 10**-9):.3f}")
+        await s.run()
 
     asyncio.run(fx())
 
 child = os.environ.get('CHILD')
 if child:
-    gen()
+    gen(int(child))
 else:
     main()
