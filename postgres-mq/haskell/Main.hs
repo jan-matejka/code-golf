@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
 
+import GHC.Num.Integer
 import Control.Concurrent
 import Control.Concurrent.MVar
 import Control.Monad.Loops
 import Data.Maybe
 import Database.PostgreSQL.Simple
 import Text.Printf
+import System.Clock
 
 insert :: Connection -> Int -> IO Int
 insert conn i = do
@@ -45,12 +47,22 @@ n_workers n = do
 
 sample :: IO ([MVar Bool], [MVar Int]) -> IO ()
 sample workers = do
+  start <- getTime Monotonic
   (quits, results) <- workers
   threadDelay (10^6*3::Int)
   stop quits
   xs <- read_results results
+  end <- getTime Monotonic
   mapM_ (putStrLn.show) xs
+  let total = fromIntegral $ sum xs :: Double
+  let nanosecs = fromIntegral $ toNanoSecs $ diffTimeSpec end start :: Double
+  let secs = nanosecs * 10 ^^ (-9) :: Double
+  -- printf "total: %.3f\n" total
+  -- printf "ns: %.3f\n" nanosecs
+  -- printf "s: %.3f\n" secs
+  let ips = total / secs
   printf "Total: %d\n" $ sum xs
+  printf "ips: %.3f\n" ips
 
 stop :: [MVar Bool] -> IO ()
 stop = mapM_ (\mvar -> putMVar mvar True)
