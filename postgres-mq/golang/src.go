@@ -3,7 +3,6 @@ package main
 import "fmt"
 import "math"
 import "os"
-import "sync"
 import "context"
 import "time"
 import "github.com/jackc/pgx/v4/pgxpool"
@@ -30,8 +29,7 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(id int, quit chan bool, wg *sync.WaitGroup, pool *pgxpool.Pool, end chan int) {
-	defer wg.Done()
+func worker(id int, quit chan bool, pool *pgxpool.Pool, end chan int) {
 	var i int
 	for {
 		select {
@@ -45,17 +43,16 @@ func worker(id int, quit chan bool, wg *sync.WaitGroup, pool *pgxpool.Pool, end 
 	}
 }
 
-func spawn_workers(workers int, wg *sync.WaitGroup, pool *pgxpool.Pool) float64 {
+func spawn_workers(workers int, pool *pgxpool.Pool) float64 {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
 	end_channels := make([]chan int, workers, workers)
 
 	var start = time.Now()
 	for i := range quit_channels {
-		wg.Add(1)
 		quit_channels[i] = make(chan bool)
 		end_channels[i] = make(chan int)
-		go worker(i, quit_channels[i], wg, pool, end_channels[i])
+		go worker(i, quit_channels[i], pool, end_channels[i])
 	}
 
 	time.Sleep(time.Second * 3)
@@ -71,9 +68,6 @@ func spawn_workers(workers int, wg *sync.WaitGroup, pool *pgxpool.Pool) float64 
 		total += n
 	}
 
-	// do I need the wait group since I am already waiting for the end results?
-	wg.Wait()
-
 	elapsed := time.Since(start)
 
 	fmt.Printf("total: %d\n", total)
@@ -88,14 +82,13 @@ func main() {
 		die("Unable to connect to database: %v\n", err)
 	}
 	defer pool.Close()
-	var wg sync.WaitGroup
 
 	var workers int
 	var last_ips float64
 	var i int
 	for ; ; i++ {
 		workers = 1 << i
-		ips := spawn_workers(workers, &wg, pool)
+		ips := spawn_workers(workers, pool)
 		if last_ips != 0 && last_ips >= ips {
 			i--
 			break
@@ -105,7 +98,7 @@ func main() {
 	}
 
 	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
-		ips := spawn_workers(workers, &wg, pool)
+		ips := spawn_workers(workers, pool)
 		if last_ips != 0 && last_ips >= ips {
 			fmt.Println("Done")
 			break
