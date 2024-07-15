@@ -87,5 +87,8 @@ main = do
         True -> putMVar maxMVar new >> return False
         _ -> putMVar maxMVar max >> return True
 
-  firstM checkQuitAndSample $ map (2^) [0..]
+  maybeMax <- firstM checkQuitAndSample $ map (2^) [0..]
+  case maybeMax of
+    Nothing -> putStrLn "Done"
+    Just n_workers -> firstM checkQuitAndSample [n_workers+1..] >> return ()
   putStrLn "Done"
