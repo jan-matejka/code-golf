@@ -3,7 +3,9 @@
 import GHC.Num.Integer
 import Control.Concurrent
 import Control.Concurrent.MVar
+import Control.Monad
 import Control.Monad.Loops
+-- import Data.Foldable
 import Data.Maybe
 import Database.PostgreSQL.Simple
 import Text.Printf
@@ -39,13 +41,13 @@ forkWorker id = do
   forkIO $ worker id quit result
   return (quit, result)
 
-n_workers :: Int -> IO ([MVar Bool], [MVar Int])
-n_workers n = do
+forkNWorkers :: Int -> IO ([MVar Bool], [MVar Int])
+forkNWorkers n = do
   printf "Starting %d workers\n" n
   mvars <- mapM forkWorker [0..n]
   return $ unzip mvars
 
-sample :: IO ([MVar Bool], [MVar Int]) -> IO ()
+sample :: IO ([MVar Bool], [MVar Int]) -> IO Double
 sample workers = do
   start <- getTime Monotonic
   (quits, results) <- workers
@@ -63,6 +65,11 @@ sample workers = do
   let ips = total / secs
   printf "Total: %d\n" $ sum xs
   printf "ips: %.3f\n" ips
+  -- emulate slowdown with more than 2 workers for testing
+  -- case length xs > 2 of
+  -- True -> return 1
+  -- _ -> return ips
+  return ips
 
 stop :: [MVar Bool] -> IO ()
 stop = mapM_ (\mvar -> putMVar mvar True)
@@ -71,5 +78,14 @@ read_results :: [MVar Int] -> IO [Int]
 read_results = mapM (\result -> takeMVar result)
 
 main = do
-  mapM_ (\x -> sample (n_workers x)) $ map (2^) [0..]
+  maxMVar <- newEmptyMVar
+  putMVar maxMVar 0
+  let checkQuitAndSample n_workers = do
+      max <- takeMVar maxMVar
+      new <- sample $ forkNWorkers n_workers
+      case new > max of
+        True -> putMVar maxMVar new >> return False
+        _ -> putMVar maxMVar max >> return True
+
+  firstM checkQuitAndSample $ map (2^) [0..]
   putStrLn "Done"
