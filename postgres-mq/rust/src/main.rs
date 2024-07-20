@@ -74,7 +74,7 @@ fn sample_workers(n: u64) -> (u64, f64) {
 
     let barrier = Arc::new(Barrier::new(n as usize));
 
-    for _ in 1..n {
+    for _ in 0..n {
         let (tx, rx) = channel();
         quit_sig_senders.push(tx);
         let h = worker_thread(rx, Arc::clone(&barrier));
