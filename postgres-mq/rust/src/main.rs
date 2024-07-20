@@ -1,5 +1,7 @@
 use postgres as pg;
 use std::process::exit;
+use std::sync::Arc;
+use std::sync::Barrier;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::channel;
@@ -23,14 +25,17 @@ impl fmt::Display for Error {
 }
 
 fn insert(c: &mut pg::Client, i: u64) -> Result<(),Box<dyn error::Error>> {
-
     let i_sql = i.to_string();
     c.execute("insert into queue (data) values ($1)", &[&i_sql])?;
     return Ok(())
 }
 
-fn worker(rx: Receiver<bool>) -> Result<u64, Box<dyn error::Error>> {
+fn worker(rx: Receiver<bool>, pg_barrier: Arc<Barrier>) -> Result<u64, Box<dyn error::Error>> {
     let mut client = pg::Client::connect("postgres://mq@localhost/mq", pg::NoTls)?;
+    client.execute("select 1", &[])?;
+
+    pg_barrier.wait();
+
     let i: u64 = 0;
     for i in 1.. {
         let r = rx.try_recv();
@@ -47,10 +52,10 @@ fn worker(rx: Receiver<bool>) -> Result<u64, Box<dyn error::Error>> {
     return Ok(i);
 }
 
-fn worker_thread(rx: Receiver<bool>) -> thread::JoinHandle<u64> {
+fn worker_thread(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<u64> {
     // Note: can not return boxed dyn error. Print error to stderr and terminate.
     let h = thread::spawn(move || {
-        let r = worker(rx);
+        let r = worker(rx, barrier);
         if r.is_err() {
             eprintln!("worker error: {}", r.unwrap_err().to_string());
             return 0;
@@ -64,19 +69,22 @@ fn worker_thread(rx: Receiver<bool>) -> thread::JoinHandle<u64> {
 fn sample_workers(n: u64) -> (u64, f64) {
     let now = Instant::now();
 
-    let mut handles = Vec::new();
-    let mut senders = Vec::new();
+    let mut workers = Vec::new();
+    let mut quit_sig_senders = Vec::new();
+
+    let barrier = Arc::new(Barrier::new(n as usize));
 
     for _ in 1..n {
         let (tx, rx) = channel();
-        senders.push(tx);
-        let h = worker_thread(rx);
-        handles.push(h);
+        quit_sig_senders.push(tx);
+        let h = worker_thread(rx, Arc::clone(&barrier));
+        workers.push(h);
     }
+
 
     thread::sleep(Duration::from_secs(3));
 
-    for s in senders {
+    for s in quit_sig_senders {
         let r = s.send(true);
         if r.is_err() {
             eprintln!("send error: {}", r.unwrap_err().to_string());
@@ -84,7 +92,7 @@ fn sample_workers(n: u64) -> (u64, f64) {
     }
 
     let mut total = 0;
-    for v in handles {
+    for v in workers {
         let n = v.join().unwrap();
         println!("{}", n);
         total += n
