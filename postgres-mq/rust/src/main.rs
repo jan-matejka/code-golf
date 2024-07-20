@@ -1,10 +1,12 @@
 use postgres as pg;
+use std::process::exit;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::channel;
 use std::thread;
 use std::error;
 use std::time::Duration;
+use std::time::Instant;
 use std::fmt;
 
 #[derive(Debug)]
@@ -59,11 +61,13 @@ fn worker_thread(rx: Receiver<bool>) -> thread::JoinHandle<u64> {
     return h
 }
 
-fn main() {
+fn sample_workers(n: u64) -> (u64, f64) {
+    let now = Instant::now();
+
     let mut handles = Vec::new();
     let mut senders = Vec::new();
 
-    for _ in 1..10 {
+    for _ in 1..n {
         let (tx, rx) = channel();
         senders.push(tx);
         let h = worker_thread(rx);
@@ -81,8 +85,32 @@ fn main() {
 
     let mut total = 0;
     for v in handles {
-        total += v.join().unwrap();
+        let n = v.join().unwrap();
+        println!("{}", n);
+        total += n
     }
 
-    println!("Total: {}", total);
+    let elapsed = now.elapsed();
+    let ips = total as f64 / elapsed.as_secs() as f64;
+
+    return (total, ips);
+}
+
+fn main() {
+    let mut last = 0 as f64;
+    for i in 1.. {
+        let base = 2 as u64;
+        let pow = base.checked_pow(i);
+        if pow.is_none() {
+            eprintln!("Ran out of u64 powers");
+            exit(1);
+        }
+        let (total, ips) = sample_workers(pow.unwrap());
+        println!("Total: {}\nips: {}\n", total, ips);
+        if last >= ips {
+            break;
+        } else {
+            last = ips;
+        }
+    }
 }
