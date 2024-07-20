@@ -22,15 +22,15 @@ impl fmt::Display for Error {
     }
 }
 
-fn insert(i: u64) -> Result<(),Box<dyn error::Error>> {
-    let mut client = pg::Client::connect("postgres://mq@localhost/mq", pg::NoTls)?;
+fn insert(c: &mut pg::Client, i: u64) -> Result<(),Box<dyn error::Error>> {
 
     let i_sql = i.to_string();
-    client.execute("insert into queue (data) values ($1)", &[&i_sql])?;
+    c.execute("insert into queue (data) values ($1)", &[&i_sql])?;
     return Ok(())
 }
 
 fn worker(rx: Receiver<bool>) -> Result<u64, Box<dyn error::Error>> {
+    let mut client = pg::Client::connect("postgres://mq@localhost/mq", pg::NoTls)?;
     let i: u64 = 0;
     for i in 1.. {
         let r = rx.try_recv();
@@ -42,7 +42,7 @@ fn worker(rx: Receiver<bool>) -> Result<u64, Box<dyn error::Error>> {
         }else{
             return Ok(i);
         }
-        insert(i)?;
+        insert(&mut client, i)?;
     }
     return Ok(i);
 }
