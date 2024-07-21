@@ -85,10 +85,8 @@ fn sample_workers(n: u64) -> (u64, f64) {
     thread::sleep(Duration::from_secs(3));
 
     for s in quit_sig_senders {
-        let r = s.send(true);
-        if r.is_err() {
-            eprintln!("send error: {}", r.unwrap_err().to_string());
-        }
+        let _ = s.send(true);
+        // if we get an error, it means client disconnected; ignore.
     }
 
     let mut total = 0;
