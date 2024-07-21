@@ -13,7 +13,8 @@ use std::fmt;
 
 #[derive(Debug)]
 enum Error {
-    WorkerRxDisconnect
+    WorkerRxDisconnect,
+    WorkerFailed
 }
 
 impl error::Error for Error {}
@@ -52,21 +53,21 @@ fn worker(rx: Receiver<bool>, pg_barrier: Arc<Barrier>) -> Result<u64, Box<dyn e
     return Ok(i);
 }
 
-fn worker_thread(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<u64> {
+fn worker_thread(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<(bool, u64)> {
     // Note: can not return boxed dyn error. Print error to stderr and terminate.
     let h = thread::spawn(move || {
         let r = worker(rx, barrier);
         if r.is_err() {
             eprintln!("worker error: {}", r.unwrap_err().to_string());
-            return 0;
+            return (true, 0);
         }
 
-        return r.unwrap();
+        return (false, r.unwrap());
     });
     return h
 }
 
-fn sample_workers(n: u64) -> (u64, f64) {
+fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
     let now = Instant::now();
 
     let mut workers = Vec::new();
@@ -91,7 +92,10 @@ fn sample_workers(n: u64) -> (u64, f64) {
 
     let mut total = 0;
     for v in workers {
-        let n = v.join().unwrap();
+        let (is_error, n) = v.join().unwrap();
+        if is_error {
+            return Err(Error::WorkerFailed);
+        }
         println!("{}", n);
         total += n
     }
@@ -99,10 +103,10 @@ fn sample_workers(n: u64) -> (u64, f64) {
     let elapsed = now.elapsed();
     let ips = total as f64 / elapsed.as_secs() as f64;
 
-    return (total, ips);
+    return Ok((total, ips));
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     let mut last = 0 as f64;
     for i in 1.. {
         let base = 2 as u64;
@@ -111,7 +115,7 @@ fn main() {
             eprintln!("Ran out of u64 powers");
             exit(1);
         }
-        let (total, ips) = sample_workers(pow.unwrap());
+        let (total, ips) = sample_workers(pow.unwrap())?;
         println!("Total: {}\nips: {}\n", total, ips);
         if last >= ips {
             break;
@@ -119,4 +123,5 @@ fn main() {
             last = ips;
         }
     }
+    return Ok(())
 }
