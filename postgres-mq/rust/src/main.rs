@@ -73,7 +73,7 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
 
-    let barrier = Arc::new(Barrier::new(n as usize));
+    let barrier = Arc::new(Barrier::new(n as usize + 1));
 
     for _ in 0..n {
         let (tx, rx) = channel();
@@ -82,6 +82,8 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
         workers.push(h);
     }
 
+    let b = Arc::clone(&barrier);
+    b.wait();
 
     thread::sleep(Duration::from_secs(3));
 
