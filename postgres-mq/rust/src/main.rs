@@ -128,14 +128,29 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
 
 fn main() -> Result<(), Error> {
     let mut last = 0 as f64;
+    let mut i = 0;
+    let base = 2 as u64;
     for i in 1.. {
-        let base = 2 as u64;
         let pow = base.checked_pow(i);
         if pow.is_none() {
             eprintln!("Ran out of u64 powers");
             exit(1);
         }
         let (total, ips) = sample_workers(pow.unwrap())?;
+        println!("Total: {}\nips: {}\n", total, ips);
+        if last >= ips {
+            break;
+        } else {
+            last = ips;
+        }
+    }
+
+    let max = base.pow(i) as u32;
+    i -= 1;
+    last = 0 as f64;
+
+    for i in i..max {
+        let (total, ips) = sample_workers(i as u64)?;
         println!("Total: {}\nips: {}\n", total, ips);
         if last >= ips {
             break;
