@@ -68,8 +68,6 @@ fn worker_thread(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandl
 }
 
 fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
-    let now = Instant::now();
-
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
 
@@ -84,6 +82,7 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
 
     let b = Arc::clone(&barrier);
     b.wait();
+    let now = Instant::now();
 
     thread::sleep(Duration::from_secs(3));
 
@@ -91,6 +90,8 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
         let _ = s.send(true);
         // if we get an error, it means client disconnected; ignore.
     }
+
+    let elapsed = now.elapsed();
 
     let mut total = 0;
     for v in workers {
@@ -102,7 +103,6 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
         total += n
     }
 
-    let elapsed = now.elapsed();
     let ips = total as f64 / elapsed.as_secs() as f64;
 
     return Ok((total, ips));
