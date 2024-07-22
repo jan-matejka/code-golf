@@ -1,3 +1,3 @@
 build:
 
-	g++ src/main.cpp -lpqxx -o main
+	g++ src/main.cpp -std=c++23 -lpqxx -o main
