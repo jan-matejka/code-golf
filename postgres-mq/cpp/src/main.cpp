@@ -1,9 +1,26 @@
+#include <cmath>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <thread>
 #include <chrono>
 #include <queue>
 #include <ranges>
+#include <syncstream>
+#include <functional>
+#include <memory>
+
+#if O_VERBOSE == 1
+#define VERBOSE(x) osyncstream(cout) << x << endl
+#else
+#define VERBOSE(x)
+#endif
+
+#define INFO(x) osyncstream(cout) << x << endl
+#define ERR(x) osyncstream(cerr) << x << endl
+#define WVERBOSE(id, x) VERBOSE("Worker " << id << ": " << x)
+#define WERR(id, x) ERR("Worker " << id << ": " << x)
+
+#define igetenv(x, def) getenv(x) ? stoi(getenv(x)) : def
 
 using namespace std;
 using namespace pqxx;
@@ -14,51 +31,97 @@ void insert(connection &C, int i) {
   W.commit();
 }
 
-void worker(shared_ptr<queue<bool>> &q) {
+void worker(
+int worker_id,
+shared_ptr<queue<bool>>& exit,
+shared_ptr<queue<int>>& result
+) {
+  WVERBOSE(worker_id, "starting");
+  WVERBOSE(worker_id, "got result q " << result.get());
   try {
     connection C("postgres://mq@localhost/mq");
     if (!C.is_open()) {
-      cerr << "Can't open database" << endl;
+      WERR(worker_id, "Can't open database");
       return;
     }
 
-    int i;
-    for (i=0;q->empty();i++) {
-      insert(C, i);
+    int i=0;
+    while(exit->empty()) {
+      insert(C, i++);
     }
 
-    cout << i << "\n";
-
+    WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
+    result->push(1);
     C.disconnect();
   } catch (const std::exception &e) {
     cerr << e.what() << std::endl;
   }
 }
 
-void sample_workers(int n) {
-  std::vector<shared_ptr<queue<bool>>> queues;
+int sample_workers(int n) {
+  INFO("Starting " << n << " workers");
+  std::vector<shared_ptr<queue<bool>>> exit_qs;
+  std::vector<shared_ptr<queue<int>>> result_qs;
   std::vector<shared_ptr<jthread>> threads;
 
-  // for (auto _ : ranges::views::iota(0)) {
-  for(int i=0; i<n; i++)  {
-    auto q = make_shared<queue<bool>>();
-    queues.push_back(q);
-    shared_ptr<jthread> w = make_shared<jthread>(worker, ref(q));
+  for (int worker_id : ranges::views::iota(1, n+1)) {
+    auto exit = make_shared<queue<bool>>();
+    auto result = make_shared<queue<int>>();
+    exit_qs.push_back(exit);
+    result_qs.push_back(result);
+
+    shared_ptr<jthread> w = make_shared<jthread>(
+      bind(worker, worker_id, exit, result)
+    );
     threads.push_back(w);
   }
 
-  for(auto i : ranges::views::iota(0, 3)) {
+  int dur = igetenv("WORK_DURATION", 3);
+  VERBOSE("Duration: " << dur << "s");
+  INFO("Waiting");
+  for(auto i : ranges::views::iota(0, dur)) {
+    i=i; // ALE thinks the `i` is unused, lol
+    INFO((dur-i) << "s");
     this_thread::sleep_for(chrono::seconds(1));
-    cout << i << "\n";
   }
 
-  for(auto& q : queues) {
+  VERBOSE("pushing exit messages");
+  for(auto& q : exit_qs) {
     q->push(true);
   }
+
+  VERBOSE("joining threads");
+  for(auto& t : threads) {
+    t->join();
+  }
+
+  VERBOSE("collecting results");
+  int total=0;
+  for(shared_ptr<queue<int>> q : result_qs) {
+    while(q->empty()) {
+      VERBOSE("empty queue " << q.get());
+      this_thread::sleep_for(chrono::seconds(1));
+    }
+    n = q->front();
+    total += n;
+    INFO(n);
+  }
+
+  INFO("Total: " << total);
+  cout << endl;
+  return total;
 }
 
 int main(void) {
-  sample_workers(2);
+  int last=0;
+  auto start = igetenv("START_POWER", 0);
+  for(auto i : ranges::views::iota(start)) {
+    auto r = sample_workers(pow(2, i));
+    if (r <= last)
+      break;
+
+    last = r;
+  }
 
   return 0;
 }
