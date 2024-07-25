@@ -8,6 +8,7 @@
 #include <syncstream>
 #include <functional>
 #include <memory>
+#include <optional>
 
 #if O_VERBOSE == 1
 #define VERBOSE(x) osyncstream(cout) << x << endl
@@ -34,7 +35,7 @@ void insert(connection &C, int i) {
 void worker(
 int worker_id,
 bool& exit,
-shared_ptr<queue<int>>& result
+shared_ptr<queue<optional<int>>>& result
 ) {
   WVERBOSE(worker_id, "starting");
   WVERBOSE(worker_id, "got result q " << result.get());
@@ -52,16 +53,21 @@ shared_ptr<queue<int>>& result
 
     WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
     result->push(i);
-    C.disconnect();
+    try {
+      C.disconnect();
+    } catch (const std::exception &e) {
+    }
   } catch (const std::exception &e) {
     cerr << e.what() << std::endl;
+    result->push(nullopt);
+    return;
   }
 }
 
-int sample_workers(int n) {
+optional<int> sample_workers(int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
-  auto results = make_shared<queue<int>>();
+  auto results = make_shared<queue<optional<int>>>();
   std::vector<shared_ptr<jthread>> threads;
 
   for (int worker_id : ranges::views::iota(1, n+1)) {
@@ -95,10 +101,14 @@ int sample_workers(int n) {
       VERBOSE("awaiting results from " << results.get() << ": " << n-i << " left");
       this_thread::sleep_for(chrono::milliseconds(1));
     }
-    int txs = results->front();
-    total += txs;
-    results->pop();
-    INFO(txs);
+    auto r = results->front();
+    if (r.has_value()) {
+      total += r.value();
+      results->pop();
+      INFO(r.value());
+    }else{
+      return nullopt;
+    }
   }
 
   INFO("Total: " << total);
@@ -111,10 +121,15 @@ int main(void) {
   auto start = igetenv("START_POWER", 0);
   for(auto i : ranges::views::iota(start)) {
     auto r = sample_workers(pow(2, i));
-    if (r <= last)
-      break;
+    if (r.has_value()) {
+      if (r <= last)
+        break;
 
-    last = r;
+      last = r.value();
+    }else{
+      ERR("failed to sample 2^" << i << " workers");
+      return 1;
+    }
   }
 
   return 0;
