@@ -78,7 +78,6 @@ int sample_workers(int n) {
   VERBOSE("Duration: " << dur << "s");
   INFO("Waiting");
   for(auto i : ranges::views::iota(0, dur)) {
-    i=i; // ALE thinks the `i` is unused, lol
     INFO((dur-i) << "s");
     this_thread::sleep_for(chrono::seconds(1));
   }
