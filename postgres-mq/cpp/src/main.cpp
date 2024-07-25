@@ -98,9 +98,9 @@ int sample_workers(int n) {
       VERBOSE("empty queue " << q.get());
       this_thread::sleep_for(chrono::seconds(1));
     }
-    n = q->front();
-    total += n;
-    INFO(n);
+    int txs = q->front();
+    total += txs;
+    INFO(txs);
   }
 
   INFO("Total: " << total);
