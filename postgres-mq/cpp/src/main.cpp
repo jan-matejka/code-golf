@@ -61,15 +61,12 @@ shared_ptr<queue<int>>& result
 int sample_workers(int n) {
   INFO("Starting " << n << " workers");
   auto exit = make_shared<queue<bool>>();
-  std::vector<shared_ptr<queue<int>>> result_qs;
+  auto results = make_shared<queue<int>>();
   std::vector<shared_ptr<jthread>> threads;
 
   for (int worker_id : ranges::views::iota(1, n+1)) {
-    auto result = make_shared<queue<int>>();
-    result_qs.push_back(result);
-
     shared_ptr<jthread> w = make_shared<jthread>(
-      bind(worker, worker_id, ref(exit), result)
+      bind(worker, worker_id, ref(exit), ref(results))
     );
     threads.push_back(w);
   }
@@ -92,13 +89,15 @@ int sample_workers(int n) {
 
   VERBOSE("collecting results");
   int total=0;
-  for(shared_ptr<queue<int>> q : result_qs) {
-    while(q->empty()) {
-      VERBOSE("empty queue " << q.get());
-      this_thread::sleep_for(chrono::seconds(1));
+  for(int i : ranges::views::iota(0, n)) {
+    i=i; // i is unused unless VERBOSE=1
+    while(results->empty()) {
+      VERBOSE("awaiting results from " << results.get() << ": " << n-i << " left");
+      this_thread::sleep_for(chrono::milliseconds(1));
     }
-    int txs = q->front();
+    int txs = results->front();
     total += txs;
+    results->pop();
     INFO(txs);
   }
 
