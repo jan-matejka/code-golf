@@ -86,6 +86,7 @@ optional<int> sample_workers(int n) {
   VERBOSE("Duration: " << dur << "s");
 
   b.arrive_and_wait();
+  auto start = chrono::steady_clock::now();
 
   INFO("Waiting");
   for(auto i : ranges::views::iota(0, dur)) {
@@ -95,6 +96,7 @@ optional<int> sample_workers(int n) {
 
   VERBOSE("stopping workers");
   exit = true;
+  auto end = chrono::steady_clock::now();
 
   VERBOSE("joining threads");
   for(auto& t : threads) {
@@ -120,6 +122,10 @@ optional<int> sample_workers(int n) {
   }
 
   INFO("Total: " << total);
+  double secs = chrono::duration<double>(end-start).count();
+  float txps = total / secs;
+  INFO(secs);
+  INFO("Total txs: " << txps);
   cout << endl;
   return total;
 }
