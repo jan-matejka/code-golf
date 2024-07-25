@@ -33,7 +33,7 @@ void insert(connection &C, int i) {
 
 void worker(
 int worker_id,
-shared_ptr<queue<bool>>& exit,
+bool& exit,
 shared_ptr<queue<int>>& result
 ) {
   WVERBOSE(worker_id, "starting");
@@ -46,7 +46,7 @@ shared_ptr<queue<int>>& result
     }
 
     int i=0;
-    while(exit->empty()) {
+    while(!exit) {
       insert(C, i++);
     }
 
@@ -60,7 +60,7 @@ shared_ptr<queue<int>>& result
 
 int sample_workers(int n) {
   INFO("Starting " << n << " workers");
-  auto exit = make_shared<queue<bool>>();
+  bool exit = false;
   auto results = make_shared<queue<int>>();
   std::vector<shared_ptr<jthread>> threads;
 
@@ -79,8 +79,8 @@ int sample_workers(int n) {
     this_thread::sleep_for(chrono::seconds(1));
   }
 
-  VERBOSE("pushing exit messages");
-  exit->push(true);
+  VERBOSE("stopping workers");
+  exit = true;
 
   VERBOSE("joining threads");
   for(auto& t : threads) {
