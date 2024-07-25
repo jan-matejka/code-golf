@@ -10,12 +10,7 @@
 #include <memory>
 #include <optional>
 
-#if O_VERBOSE == 1
-#define VERBOSE(x) osyncstream(cout) << x << endl
-#else
-#define VERBOSE(x)
-#endif
-
+#define VERBOSE(x) if(igetenv("VERBOSE", 0)) osyncstream(cout) << x << endl
 #define INFO(x) osyncstream(cout) << x << endl
 #define ERR(x) osyncstream(cerr) << x << endl
 #define WVERBOSE(id, x) VERBOSE("Worker " << id << ": " << x)
@@ -96,7 +91,6 @@ optional<int> sample_workers(int n) {
   VERBOSE("collecting results");
   int total=0;
   for(int i : ranges::views::iota(0, n)) {
-    i=i; // i is unused unless VERBOSE=1
     while(results->empty()) {
       VERBOSE("awaiting results from " << results.get() << ": " << n-i << " left");
       this_thread::sleep_for(chrono::milliseconds(1));
