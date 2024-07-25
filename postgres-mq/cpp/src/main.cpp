@@ -1,3 +1,4 @@
+#include <barrier>
 #include <cmath>
 #include <iostream>
 #include <pqxx/pqxx>
@@ -30,16 +31,22 @@ void insert(connection &C, int i) {
 void worker(
 int worker_id,
 bool& exit,
-shared_ptr<queue<optional<int>>>& result
+shared_ptr<queue<optional<int>>>& result,
+barrier<>& b
 ) {
   WVERBOSE(worker_id, "starting");
   WVERBOSE(worker_id, "got result q " << result.get());
+  int barrier_passed = false;
   try {
     connection C("postgres://mq@localhost/mq");
     if (!C.is_open()) {
       WERR(worker_id, "Can't open database");
       return;
     }
+
+    WVERBOSE(worker_id, "ready for work");
+    b.arrive_and_wait();
+    barrier_passed = true;
 
     int i=0;
     while(!exit) {
@@ -55,6 +62,8 @@ shared_ptr<queue<optional<int>>>& result
   } catch (const std::exception &e) {
     cerr << e.what() << std::endl;
     result->push(nullopt);
+    if(!barrier_passed)
+      b.arrive_and_wait();
     return;
   }
 }
@@ -64,16 +73,20 @@ optional<int> sample_workers(int n) {
   bool exit = false;
   auto results = make_shared<queue<optional<int>>>();
   std::vector<shared_ptr<jthread>> threads;
+  barrier b(n+1);
 
   for (int worker_id : ranges::views::iota(1, n+1)) {
     shared_ptr<jthread> w = make_shared<jthread>(
-      bind(worker, worker_id, ref(exit), ref(results))
+      bind(worker, worker_id, ref(exit), ref(results), ref(b))
     );
     threads.push_back(w);
   }
 
   int dur = igetenv("WORK_DURATION", 3);
   VERBOSE("Duration: " << dur << "s");
+
+  b.arrive_and_wait();
+
   INFO("Waiting");
   for(auto i : ranges::views::iota(0, dur)) {
     INFO((dur-i) << "s");
@@ -91,8 +104,9 @@ optional<int> sample_workers(int n) {
   VERBOSE("collecting results");
   int total=0;
   for(int i : ranges::views::iota(0, n)) {
-    while(results->empty()) {
-      VERBOSE("awaiting results from " << results.get() << ": " << n-i << " left");
+    for(int j = 0; results->empty(); j++) {
+      if (j % 1000 == 0)
+        INFO("awaiting results from " << results.get() << ": " << n-i << " left");
       this_thread::sleep_for(chrono::milliseconds(1));
     }
     auto r = results->front();
