@@ -36,35 +36,45 @@ barrier<>& b
 ) {
   WVERBOSE(worker_id, "starting");
   WVERBOSE(worker_id, "got result q " << result.get());
-  int barrier_passed = false;
+  int barrier_passed = 0;
   try {
-    connection C("postgres://mq@localhost/mq");
-    if (!C.is_open()) {
-      WERR(worker_id, "Can't open database");
-      return;
-    }
-
-    WVERBOSE(worker_id, "ready for work");
-    b.arrive_and_wait();
-    barrier_passed = true;
-
-    int i=0;
-    while(!exit) {
-      insert(C, i++);
-    }
-
-    WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
-    result->push(i);
     try {
-      C.disconnect();
-    } catch (const std::exception &e) {
-    }
-  } catch (const std::exception &e) {
-    cerr << e.what() << std::endl;
-    result->push(nullopt);
-    if(!barrier_passed)
+      connection C("postgres://mq@localhost/mq");
+      if (!C.is_open()) {
+        stringstream ss;
+        ss << "Worker " << worker_id << " can't open database";
+        throw new runtime_error(ss.str());
+      }
+
+      WVERBOSE(worker_id, "ready for work");
       b.arrive_and_wait();
-    return;
+      barrier_passed = 1;
+
+      int i=0;
+      while(!exit) {
+        insert(C, i++);
+      }
+
+      WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
+      result->push(i);
+      b.arrive_and_wait();
+      barrier_passed = 2;
+      try {
+        C.disconnect();
+      } catch (...) {
+      }
+    } catch (const std::exception &e) {
+      WERR(worker_id, e.what());
+      throw;
+    }
+  } catch (...) {
+    WVERBOSE(worker_id, "pushing nullopt");
+    result->push(nullopt);
+    for(int i=2-barrier_passed;i>0;i--)
+    {
+      WVERBOSE(worker_id, "awaiting barrier " << i);
+      b.arrive_and_wait();
+    }
   }
 }
 
@@ -85,6 +95,7 @@ optional<int> sample_workers(int n) {
   int dur = igetenv("WORK_DURATION", 3);
   VERBOSE("Duration: " << dur << "s");
 
+  // this barrier syncs all threads on ready to send out messages
   b.arrive_and_wait();
   auto start = chrono::steady_clock::now();
 
@@ -98,6 +109,8 @@ optional<int> sample_workers(int n) {
   exit = true;
   auto end = chrono::steady_clock::now();
 
+  // this barrier syncs all threads on after they pushed their results
+  b.arrive_and_wait();
   VERBOSE("joining threads");
   for(auto& t : threads) {
     t->join();
