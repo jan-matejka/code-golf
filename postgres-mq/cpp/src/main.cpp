@@ -127,15 +127,31 @@ optional<int> sample_workers(int n) {
 int main(void) {
   int last=0;
   auto start = igetenv("START_POWER", 0);
-  for(auto i : ranges::views::iota(start)) {
-    auto r = sample_workers(pow(2, i));
+  int i;
+  for(i=start;;i++) {
+    int n = pow(2, i);
+    auto r = sample_workers(n);
     if (r.has_value()) {
       if (r <= last)
         break;
 
       last = r.value();
     }else{
-      ERR("failed to sample 2^" << i << " workers");
+      ERR("failed to sample " << n << " workers");
+      return 1;
+    }
+  }
+
+  i = pow(2, i-1) + 1;
+  for(auto n : ranges::views::iota(i)) {
+    auto r = sample_workers(i);
+    if (r.has_value()) {
+      if (r <= last)
+        break;
+
+      last = r.value();
+    }else{
+      ERR("failed to sample 2^" << n << " workers");
       return 1;
     }
   }
