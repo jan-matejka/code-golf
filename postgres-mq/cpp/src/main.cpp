@@ -51,7 +51,7 @@ shared_ptr<queue<int>>& result
     }
 
     WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
-    result->push(1);
+    result->push(i);
     C.disconnect();
   } catch (const std::exception &e) {
     cerr << e.what() << std::endl;
@@ -60,18 +60,16 @@ shared_ptr<queue<int>>& result
 
 int sample_workers(int n) {
   INFO("Starting " << n << " workers");
-  std::vector<shared_ptr<queue<bool>>> exit_qs;
+  auto exit = make_shared<queue<bool>>();
   std::vector<shared_ptr<queue<int>>> result_qs;
   std::vector<shared_ptr<jthread>> threads;
 
   for (int worker_id : ranges::views::iota(1, n+1)) {
-    auto exit = make_shared<queue<bool>>();
     auto result = make_shared<queue<int>>();
-    exit_qs.push_back(exit);
     result_qs.push_back(result);
 
     shared_ptr<jthread> w = make_shared<jthread>(
-      bind(worker, worker_id, exit, result)
+      bind(worker, worker_id, ref(exit), result)
     );
     threads.push_back(w);
   }
@@ -86,9 +84,7 @@ int sample_workers(int n) {
   }
 
   VERBOSE("pushing exit messages");
-  for(auto& q : exit_qs) {
-    q->push(true);
-  }
+  exit->push(true);
 
   VERBOSE("joining threads");
   for(auto& t : threads) {
