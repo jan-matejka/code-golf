@@ -29,7 +29,7 @@ class Worker {
   bool& exit;
   shared_ptr<queue<optional<int>>>& result;
   barrier<>& barr;
-  int barrier_passed = 0;
+  bool barriers_passed = false;
   connection conn;
 
   void insert(int i) {
@@ -43,8 +43,8 @@ class Worker {
     WVERBOSE(worker_id, "got result q " << result.get());
     WVERBOSE(worker_id, "ready for work");
 
+    barriers_passed = true;
     barr.arrive_and_wait();
-    barrier_passed++;
 
     int i=0;
     while(!exit) {
@@ -79,11 +79,8 @@ public:
       conn.disconnect();
     }catch(...) {}
 
-    for(int i=1-barrier_passed;i>0;i--)
-    {
-      WVERBOSE(worker_id, "awaiting barrier " << i);
-      barr.arrive_and_wait();
-    }
+    if (!barriers_passed)
+      barr.arrive_and_drop();
   }
 
   void operator()() {
