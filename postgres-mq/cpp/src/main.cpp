@@ -27,7 +27,7 @@ class Worker {
   int worker_id;
   bool& exit;
   shared_ptr<queue<optional<int>>>& result;
-  barrier<>& b;
+  barrier<>& barr;
   int barrier_passed = 0;
   connection conn;
 
@@ -42,7 +42,7 @@ class Worker {
     WVERBOSE(worker_id, "got result q " << result.get());
     WVERBOSE(worker_id, "ready for work");
 
-    b.arrive_and_wait();
+    barr.arrive_and_wait();
     barrier_passed++;
 
     int i=0;
@@ -58,8 +58,14 @@ public:
     int worker_id,
     bool& exit,
     shared_ptr<queue<optional<int>>>& result,
-    barrier<>& b
-  ) : worker_id(worker_id), exit(exit), result(result), b(b), conn(connection("postgres://mq@localhost/mq")) {
+    barrier<>& barr
+  ) :
+    worker_id(worker_id),
+    exit(exit),
+    result(result),
+    barr(barr),
+    conn(connection("postgres://mq@localhost/mq")
+  ) {
     if (!conn.is_open()) {
       stringstream ss;
       ss << "Worker " << worker_id << " can't open database";
@@ -75,7 +81,7 @@ public:
     for(int i=2-barrier_passed;i>0;i--)
     {
       WVERBOSE(worker_id, "awaiting barrier " << i);
-      b.arrive_and_wait();
+      barr.arrive_and_wait();
     }
   }
 
@@ -85,7 +91,7 @@ public:
         int i = sample();
         WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
         result->push(i);
-        b.arrive_and_wait();
+        barr.arrive_and_wait();
         barrier_passed++;
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
