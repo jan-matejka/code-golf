@@ -22,73 +22,94 @@
 using namespace std;
 using namespace pqxx;
 
-void insert(connection &C, int i) {
-  work W(C);
-  W.exec("insert into queue (data) values (" + W.quote(i) + ")");
-  W.commit();
-}
 
-void worker(
-int worker_id,
-bool& exit,
-shared_ptr<queue<optional<int>>>& result,
-barrier<>& b
-) {
-  WVERBOSE(worker_id, "starting");
-  WVERBOSE(worker_id, "got result q " << result.get());
+class Worker {
+  int worker_id;
+  bool& exit;
+  shared_ptr<queue<optional<int>>>& result;
+  barrier<>& b;
   int barrier_passed = 0;
-  try {
-    try {
-      connection C("postgres://mq@localhost/mq");
-      if (!C.is_open()) {
-        stringstream ss;
-        ss << "Worker " << worker_id << " can't open database";
-        throw new runtime_error(ss.str());
-      }
+  connection conn;
 
-      WVERBOSE(worker_id, "ready for work");
-      b.arrive_and_wait();
-      barrier_passed = 1;
+  void insert(int i) {
+    work tx(conn);
+    tx.exec("insert into queue (data) values (" + tx.quote(i) + ")");
+    tx.commit();
+  }
 
-      int i=0;
-      while(!exit) {
-        insert(C, i++);
-      }
+  int sample() {
+    WVERBOSE(worker_id, "starting");
+    WVERBOSE(worker_id, "got result q " << result.get());
+    WVERBOSE(worker_id, "ready for work");
 
-      WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
-      result->push(i);
-      b.arrive_and_wait();
-      barrier_passed = 2;
-      try {
-        C.disconnect();
-      } catch (...) {
-      }
-    } catch (const std::exception &e) {
-      WERR(worker_id, e.what());
-      throw;
+    b.arrive_and_wait();
+    barrier_passed++;
+
+    int i=0;
+    while(!exit) {
+      insert(i++);
     }
-  } catch (...) {
-    WVERBOSE(worker_id, "pushing nullopt");
-    result->push(nullopt);
+
+    return i;
+  }
+
+public:
+  Worker(
+    int worker_id,
+    bool& exit,
+    shared_ptr<queue<optional<int>>>& result,
+    barrier<>& b
+  ) : worker_id(worker_id), exit(exit), result(result), b(b), conn(connection("postgres://mq@localhost/mq")) {
+    if (!conn.is_open()) {
+      stringstream ss;
+      ss << "Worker " << worker_id << " can't open database";
+      throw new runtime_error(ss.str());
+    }
+  }
+
+  ~Worker() {
+    try {
+      conn.disconnect();
+    }catch(...) {}
+
     for(int i=2-barrier_passed;i>0;i--)
     {
       WVERBOSE(worker_id, "awaiting barrier " << i);
       b.arrive_and_wait();
     }
   }
-}
+
+  void operator()() {
+    try {
+      try {
+        int i = sample();
+        WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
+        result->push(i);
+        b.arrive_and_wait();
+        barrier_passed++;
+      } catch (const std::exception &e) {
+        WERR(worker_id, e.what());
+        throw;
+      }
+    } catch (...) {
+      WVERBOSE(worker_id, "pushing nullopt");
+      result->push(nullopt);
+    }
+  }
+};
 
 optional<int> sample_workers(int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
   auto results = make_shared<queue<optional<int>>>();
   std::vector<shared_ptr<jthread>> threads;
+  vector<shared_ptr<Worker>> workers;
   barrier b(n+1);
 
   for (int worker_id : ranges::views::iota(1, n+1)) {
-    shared_ptr<jthread> w = make_shared<jthread>(
-      bind(worker, worker_id, ref(exit), ref(results), ref(b))
-    );
+    auto worker = make_shared<Worker>(worker_id, ref(exit), ref(results), ref(b));
+    workers.push_back(worker);
+    shared_ptr<jthread> w = make_shared<jthread>(&Worker::operator(), worker);
     threads.push_back(w);
   }
 
@@ -143,7 +164,7 @@ optional<int> sample_workers(int n) {
   return total;
 }
 
-int main(void) {
+int _main(void) {
   int last=0;
   auto start = igetenv("START_POWER", 0);
   int i;
@@ -176,4 +197,16 @@ int main(void) {
   }
 
   return 0;
+}
+
+int main(void) {
+  try {
+    _main();
+  }catch (const exception& e) {
+    ERR(e.what());
+    return 1;
+  }catch(...) {
+    ERR("unknown exception");
+    return 1;
+  }
 }
