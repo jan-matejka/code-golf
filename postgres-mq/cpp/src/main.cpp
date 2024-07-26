@@ -60,18 +60,21 @@ public:
     bool& exit,
     shared_ptr<queue<optional<int>>>& result,
     barrier<>& barr
-  ) :
+  ) try :
     worker_id(worker_id),
     exit(exit),
     result(result),
     barr(barr),
-    conn(connection("postgres://mq@localhost/mq")
-  ) {
+    conn(connection("postgres://mq@localhost/mq"))
+  {
     if (!conn.is_open()) {
       stringstream ss;
       ss << "Worker " << worker_id << " can't open database";
       throw new runtime_error(ss.str());
     }
+  }catch(...) {
+    barr.arrive_and_drop();
+    throw;
   }
 
   ~Worker() {
