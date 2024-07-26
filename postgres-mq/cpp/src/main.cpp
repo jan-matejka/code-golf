@@ -102,57 +102,54 @@ optional<int> sample_workers(int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
   auto results = make_shared<queue<optional<int>>>();
-  std::vector<shared_ptr<jthread>> threads;
   vector<shared_ptr<Worker>> workers;
   barrier b(n+1);
+  chrono::time_point<chrono::steady_clock> start, end;
 
-  for (int worker_id : ranges::views::iota(1, n+1)) {
-    shared_ptr<Worker> worker;
-    try {
-      worker = make_shared<Worker>(worker_id, ref(exit), ref(results), ref(b));
-    }catch(...) {
-      exit = true;
-      // discard the arrival token, we are unblocking all the threads
-      // This is somewhat complicated. Note:
-      // - The Worker unblocks its own barrier.
-      // - We index from 1 to n.
-      // - And we also have the main thread.
-      // Therefore, we arrive for::
-      //   n - worker_id ; basic calculation
-      //   -1 ; standard for zero based index
-      //   +1 ; but we index from 1
-      //   -1 : for the failed worker
-      //   +1 : the Worker already arrived in its constructor exception handler
-      //   +1 : for the main thread
-      //  which reduces to the calculation below.
-      auto _ = b.arrive(n-worker_id+1);
-      throw;
+  {
+    std::vector<shared_ptr<jthread>> threads;
+    for (int worker_id : ranges::views::iota(1, n+1)) {
+      shared_ptr<Worker> worker;
+      try {
+        worker = make_shared<Worker>(worker_id, ref(exit), ref(results), ref(b));
+      }catch(...) {
+        exit = true;
+        // discard the arrival token, we are unblocking all the threads
+        // This is somewhat complicated. Note:
+        // - The Worker unblocks its own barrier.
+        // - We index from 1 to n.
+        // - And we also have the main thread.
+        // Therefore, we arrive for::
+        //   n - worker_id ; basic calculation
+        //   -1 ; standard for zero based index
+        //   +1 ; but we index from 1
+        //   -1 : for the failed worker
+        //   +1 : the Worker already arrived in its constructor exception handler
+        //   +1 : for the main thread
+        //  which reduces to the calculation below.
+        auto _ = b.arrive(n-worker_id+1);
+        throw;
+      }
+      workers.push_back(worker);
+      shared_ptr<jthread> w = make_shared<jthread>(&Worker::operator(), worker);
+      threads.push_back(w);
     }
-    workers.push_back(worker);
-    shared_ptr<jthread> w = make_shared<jthread>(&Worker::operator(), worker);
-    threads.push_back(w);
-  }
 
-  int dur = igetenv("WORK_DURATION", 3);
-  VERBOSE("Duration: " << dur << "s");
+    int dur = igetenv("WORK_DURATION", 3);
+    VERBOSE("Duration: " << dur << "s");
 
-  // this barrier syncs all threads on ready to send out messages
-  b.arrive_and_wait();
-  auto start = chrono::steady_clock::now();
+    // this barrier syncs all threads on ready to send out messages
+    b.arrive_and_wait();
+    start = chrono::steady_clock::now();
 
-  INFO("Waiting");
-  for(auto i : ranges::views::iota(0, dur)) {
-    INFO((dur-i) << "s");
-    this_thread::sleep_for(chrono::seconds(1));
-  }
+    INFO("Waiting");
+    for(auto i : ranges::views::iota(0, dur)) {
+      INFO((dur-i) << "s");
+      this_thread::sleep_for(chrono::seconds(1));
+    }
 
-  VERBOSE("stopping workers");
-  exit = true;
-  auto end = chrono::steady_clock::now();
-
-  VERBOSE("joining threads");
-  for(auto& t : threads) {
-    t->join();
+    exit = true;
+    end = chrono::steady_clock::now();
   }
 
   VERBOSE("collecting results");
