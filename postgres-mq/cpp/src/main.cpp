@@ -3,6 +3,7 @@
 #include <iostream>
 #include <pqxx/pqxx>
 #include <thread>
+#include <mutex>
 #include <chrono>
 #include <queue>
 #include <ranges>
@@ -30,6 +31,7 @@ class Worker {
   shared_ptr<queue<optional<int>>>& result;
   barrier<>& barr;
   bool barriers_passed = false;
+  mutex &mut;
   connection conn;
 
   void insert(int i) {
@@ -59,12 +61,14 @@ public:
     int worker_id,
     bool& exit,
     shared_ptr<queue<optional<int>>>& result,
-    barrier<>& barr
+    barrier<>& barr,
+    mutex& mut
   ) try :
     worker_id(worker_id),
     exit(exit),
     result(result),
     barr(barr),
+    mut(mut),
     conn(connection("postgres://mq@localhost/mq"))
   {
   }catch(...) {
@@ -86,7 +90,7 @@ public:
       try {
         int i = sample();
         WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
-        result->push(i);
+        push(i);
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
         throw;
@@ -95,7 +99,19 @@ public:
         throw;
       }
     } catch (...) {
-      result->push(nullopt);
+      push(nullopt);
+    }
+  }
+
+  void push(optional<int> i) {
+    try{
+      WVERBOSE(worker_id, "awaiting lock");
+      mut.lock();
+      result->push(i);
+      mut.unlock();
+    }catch(...) {
+      mut.unlock();
+      throw;
     }
   }
 };
@@ -109,11 +125,14 @@ optional<int> sample_workers(int n) {
   chrono::time_point<chrono::steady_clock> start, end;
 
   {
+    mutex mut;
     std::vector<shared_ptr<jthread>> threads;
     for (int worker_id : ranges::views::iota(1, n+1)) {
       shared_ptr<Worker> worker;
       try {
-        worker = make_shared<Worker>(worker_id, ref(exit), ref(results), ref(b));
+        worker = make_shared<Worker>(
+          worker_id, ref(exit), ref(results), ref(b), ref(mut)
+        );
       }catch(...) {
         exit = true;
         // discard the arrival token, we are unblocking all the threads
