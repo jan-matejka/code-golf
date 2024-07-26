@@ -16,6 +16,7 @@
 #define ERR(x) osyncstream(cerr) << x << endl
 #define WVERBOSE(id, x) VERBOSE("Worker " << id << ": " << x)
 #define WERR(id, x) ERR("Worker " << id << ": " << x)
+#define THROW(x) { stringstream ss; ss << x; throw runtime_error(ss.str()); }
 
 #define igetenv(x, def) getenv(x) ? stoi(getenv(x)) : def
 
@@ -179,8 +180,7 @@ int _main(void) {
 
       last = r.value();
     }else{
-      ERR("failed to sample " << n << " workers");
-      return 1;
+      THROW("failed to sample " << n << " workers");
     }
   }
 
@@ -193,8 +193,7 @@ int _main(void) {
 
       last = r.value();
     }else{
-      ERR("failed to sample 2^" << n << " workers");
-      return 1;
+      THROW("failed to sample " << n << " workers");
     }
   }
 
