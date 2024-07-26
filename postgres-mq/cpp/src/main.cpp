@@ -78,7 +78,7 @@ public:
       conn.disconnect();
     }catch(...) {}
 
-    for(int i=2-barrier_passed;i>0;i--)
+    for(int i=1-barrier_passed;i>0;i--)
     {
       WVERBOSE(worker_id, "awaiting barrier " << i);
       barr.arrive_and_wait();
@@ -91,8 +91,6 @@ public:
         int i = sample();
         WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
         result->push(i);
-        barr.arrive_and_wait();
-        barrier_passed++;
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
         throw;
@@ -136,8 +134,6 @@ optional<int> sample_workers(int n) {
   exit = true;
   auto end = chrono::steady_clock::now();
 
-  // this barrier syncs all threads on after they pushed their results
-  b.arrive_and_wait();
   VERBOSE("joining threads");
   for(auto& t : threads) {
     t->join();
