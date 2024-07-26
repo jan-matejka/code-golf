@@ -90,9 +90,11 @@ public:
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
         throw;
+      } catch (...) {
+        WERR(worker_id, "Unknown exception");
+        throw;
       }
     } catch (...) {
-      WVERBOSE(worker_id, "pushing nullopt");
       result->push(nullopt);
     }
   }
