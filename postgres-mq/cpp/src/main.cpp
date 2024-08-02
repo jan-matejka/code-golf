@@ -219,7 +219,7 @@ optional<int> sample_workers(int n) {
   double secs = chrono::duration<double>(end-start).count();
   float txps = total / secs;
   INFO(secs);
-  INFO("Total txs: " << txps);
+  INFO("Total txps: " << txps);
   cout << endl;
   return total;
 }
