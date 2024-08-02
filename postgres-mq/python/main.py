@@ -10,7 +10,7 @@ def print_error(x):
     print(x, file=sys.stderr)
 
 class Protocol(asyncio.SubprocessProtocol):
-    def __init__(self, child: "Child"):
+    def __init__(self, child: "Process"):
         self.child = child
         self.exited = False
         self.pipe_closed = False
@@ -54,8 +54,8 @@ def gen(worker_id):
             i += 1
 
 @dataclass
-class Child:
-    pool: "ChildPool"
+class Process:
+    pool: "ProcessPool"
     loop: asyncio.AbstractEventLoop
     i: int
     total: int = 0
@@ -65,7 +65,7 @@ class Child:
     def __post_init__(self):
         self.exit_future = asyncio.Future(loop=self.loop)
 
-class ChildPool:
+class ProcessPool:
     def __init__(self, loop):
         self.loop = loop
         self.children = []
@@ -106,7 +106,7 @@ class ChildPool:
 
         for _ in range(new):
             i = self.n + 1
-            child = Child(self, self.loop, i)
+            child = Process(self, self.loop, i)
             child.exit_future.add_done_callback(partial(self._exited, i))
             t, _ = await self.loop.subprocess_exec(
                 lambda: Protocol(child),
@@ -216,7 +216,7 @@ def main():
     """
     async def fx():
         loop = asyncio.get_running_loop()
-        pool = ChildPool(loop)
+        pool = ProcessPool(loop)
         n_samples = int(os.environ.get('SAMPLES', 2))
         s = AutoTuneSampler(pool, n_samples)
         await s.run()
