@@ -66,8 +66,9 @@ class Process:
         self.exit_future = asyncio.Future(loop=self.loop)
 
 class ProcessPool:
-    def __init__(self, loop):
+    def __init__(self, loop, n):
         self.loop = loop
+        self.n = n
         self.children = []
         self.closing: asyncio.Future = None
         self._closing_one = set()
@@ -80,32 +81,10 @@ class ProcessPool:
     def ips(self):
         return self.inserts / ((time.time_ns() - self._start) * 10**-9)
 
-    async def spawn(self, max_workers=1):
-        # maybe I should've just close the pool and start new one
-        await self._adjust(max_workers)
-
-        # reset metrics
+    async def spawn(self):
         self._start = time.time_ns()
-        for c in self.children:
-            c.total = 0
 
-    async def _adjust(self, max_workers):
-        # start workers
-        new = max_workers - self.n
-        if new == 0:
-            return
-
-        print(f"adjusting workers {self.n} -> {max_workers}")
-        if new < 0:
-            for _ in range(new * -1):
-                i = self.n
-                self._closing_one.add(i)
-                child = self.children.pop()
-                child.transport.close()
-            return
-
-        for _ in range(new):
-            i = self.n + 1
+        for i in range(1, self.n + 1):
             child = Process(self, self.loop, i)
             child.exit_future.add_done_callback(partial(self._exited, i))
             t, _ = await self.loop.subprocess_exec(
@@ -114,13 +93,6 @@ class ProcessPool:
             )
             child.transport = t
             self.children.append(child)
-
-    @property
-    def n(self):
-        """
-        number of workers
-        """
-        return len(self.children)
 
     def _exited(self, i, future):
         # child i terminated
@@ -172,8 +144,8 @@ class AutoTuneSampler:
         i = 1
         while True:
             workers, powering = q.pop()
-            pool = ProcessPool(loop)
-            await pool.spawn(workers)
+            pool = ProcessPool(loop, workers)
+            await pool.spawn()
             if pool.closing:
                 # this works really weird, must be something fundamentally different between how
                 # a Future works and how I expect it to work like twisted Deferred.
@@ -204,8 +176,8 @@ class AutoTuneSampler:
                     q.append((workers + 1, False))
                 prev_sample = sample
 
-        await pool.close()
-        pool.print_stats()
+            await pool.close()
+            pool.print_stats()
 
 def main():
     """
