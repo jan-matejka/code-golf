@@ -161,19 +161,6 @@ class ChildPool:
         print(f"total ips: {self.ips:.3f}")
 
 
-class FixedSampler:
-    def __init__(self, pool, jobs, runtime):
-        self.pool = pool
-        self.jobs = jobs
-        self.runtime = runtime
-
-    async def run(self):
-        await self.pool.spawn(self.jobs)
-        await asyncio.sleep(self.runtime)
-        await self.pool.close()
-        self.pool.print_stats()
-
-
 class AutoTuneSampler:
     def __init__(self, pool, n_samples):
         self.pool = pool
@@ -230,22 +217,8 @@ def main():
     async def fx():
         loop = asyncio.get_running_loop()
         pool = ChildPool(loop)
-        autotune = os.environ.get('AUTOTUNE')
-
-        if autotune:
-            try:
-                autotune = ast.literal_eval(autotune)
-            except Exception as e:
-                print_error(f"Invalid AUTOTUNE env: {e}")
-
-        if autotune:
-            n_samples = int(os.environ.get('SAMPLES', 2))
-            s = AutoTuneSampler(pool, n_samples)
-        else:
-            jobs = int(os.environ.get('JOBS', 2))
-            runtime = int(os.environ.get('RUNTIME', 1))
-            s = FixedSampler(pool, jobs, runtime)
-
+        n_samples = int(os.environ.get('SAMPLES', 2))
+        s = AutoTuneSampler(pool, n_samples)
         await s.run()
 
     asyncio.run(fx())
