@@ -214,7 +214,7 @@ def main():
     child printed and total dots printed.
     """
     async def fx():
-        n_samples = int(os.environ.get('SAMPLES', 2))
+        n_samples = int(os.environ.get('WORK_DURATION', 3))
         s = AutoTuneSampler(n_samples)
         await s.run()
 
