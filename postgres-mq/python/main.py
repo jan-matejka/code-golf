@@ -1,192 +1,108 @@
 #!/usr/bin/env python3
 
-import os, sys, time, asyncio, ast, itertools
+import os, time, itertools
 import psycopg # current debian stable = 3.1.7
-from subprocess import Popen, PIPE, DEVNULL
-from functools import partial
-from dataclasses import dataclass
+import traceback as tb
+from multiprocessing import Process, Queue, Event, Barrier
 
-def print_error(x):
-    print(x, file=sys.stderr)
-
-class Protocol(asyncio.SubprocessProtocol):
-    def __init__(self, child: "Process"):
-        self.child = child
-        self.exited = False
-        self.pipe_closed = False
-
-    def process_exited(self):
-        self.exited = True
-        self.check_for_exit()
-
-    def pipe_connection_lost(self, fd, exc):
-        self.pipe_closed = True
-        self.check_for_exit()
-
-    def check_for_exit(self):
-        if self.exited and self.pipe_closed:
-            if not self.child.exit_future.done():
-                self.child.exit_future.set_result(True)
-
-    def print_error(self, x):
-        # print_error(f"{self.child.i}: {x}")
-        pass
-
-    def pipe_data_received(self, fd, data):
-        if fd == 2:
-            self.print_error(f"stderr: {data!r}")
-        elif fd == 1:
-            self.child.total += len(data)
-        else:
-            self.print_error(f"{fd}: {data!r}")
-
-def gen(worker_id):
-    #if worker_id > 4:
-    #    raise RuntimeError("whatever")
-    with psycopg.connect("dbname=mq user=mq host=localhost") as conn:
+def worker(worker_id: int, q: Queue, exit_flag: Event, error: Event, b: Barrier):
+    try:
+        #if worker_id > 4:
+        #    raise RuntimeError("whatever")
+        conn = psycopg.connect("dbname=mq user=mq host=localhost")
         i = 0
-        while True:
-            with conn.cursor() as c:
-                c.execute('insert into public.queue (data) values (%s)', (i,))
-                conn.commit()
-            sys.stdout.write(".")
-            sys.stdout.flush()
-            i += 1
+        conn.execute("select 1")
+    except:
+        tb.print_exc()
+        error.set()
+        b.wait()
+    else:
+        b.wait()
 
-@dataclass
-class Process:
-    pool: "ProcessPool"
-    loop: asyncio.AbstractEventLoop
-    i: int
-    total: int = 0
-    exit_future: asyncio.Future = None
-    transport: asyncio.SubprocessTransport = None
+    while not exit_flag.is_set():
+        with conn.cursor() as c:
+            c.execute('insert into public.queue (data) values (%s)', (i,))
+            conn.commit()
+        i += 1
 
-    def __post_init__(self):
-        self.exit_future = asyncio.Future(loop=self.loop)
+    q.put((worker_id, i))
 
-class ProcessPool:
-    def __init__(self, loop, n):
-        self.loop = loop
-        self.n = n
-        self.children = []
-        self.closing: asyncio.Future = None
-        self._closing_one = set()
 
-    @property
-    def inserts(self):
-        return sum(x.total for x in self.children)
+def check(error):
+    if error.is_set():
+        raise RuntimeError('Worker error')
 
-    @property
-    def ips(self):
-        return self.inserts / ((time.time_ns() - self._start) * 10**-9)
-
-    async def spawn(self):
-        self._start = time.time_ns()
-
-        for i in range(1, self.n + 1):
-            child = Process(self, self.loop, i)
-            child.exit_future.add_done_callback(partial(self._exited, i))
-            t, _ = await self.loop.subprocess_exec(
-                lambda: Protocol(child),
-                __file__, stdout=PIPE, stderr=PIPE, env={"CHILD": str(i)}
-            )
-            child.transport = t
-            self.children.append(child)
-
-    def _exited(self, i, future):
-        # child i terminated
-        if self.closing:
-            return
-
-        if i in self._closing_one:
-            self._closing_one.remove(i)
-            return
-
-        if not self.closing:
+def sample_workers(n: int):
+    print(f"Starting {n} workers")
+    q = Queue()
+    exit_flag = Event()
+    error = Event()
+    b = Barrier(n+1)
+    ps = []
+    try:
+        for i in range(1, n+1):
+            check(error)
+            p = Process(target=worker, args=(i, q, exit_flag, error, b))
+            ps.append(p)
             try:
-                print_error(f"{i} exited unexpectedly, terminating")
-            except Exception as e:
-                pass
-                # wtf
-            self.close()
+                p.start()
+            except:
+                error.set()
+                check(error)
 
-    def close(self):
-        if not self.closing:
-            self.closing = self._close()
-        return self.closing
+        b.wait()
+        start = time.time_ns()
 
-    async def _close(self):
-        # terminate children
-        for c in self.children:
-            c.transport.close()
+        work_dur = int(os.environ.get('WORK_DURATION', 3))
+        print("Waiting")
+        for i in range(work_dur, 0, -1):
+            check(error)
+            print(i)
+            time.sleep(1)
 
-        # wait for the termination
-        for c in self.children:
-            await c.exit_future
+        exit_flag.set()
+        for p in ps:
+            p.join()
 
-    def print_stats(self):
-        # print results
-        for c in self.children:
-            print(f"{c.i}: {c.total}")
-        print(f"total: {self.inserts}")
-        print(f"total ips: {self.ips:.3f}")
+        end = time.time_ns()
 
+        check(error)
+        print("collecting results")
+        xs = {}
+        for _ in range(0, n):
+            worker_id, txs = q.get()
+            xs[worker_id] = txs
 
-async def sample(n):
-    loop = asyncio.get_running_loop()
-    prev_sample = None
-    q = [(2, True)]
-    i = 1
-    while True:
-        workers, powering = q.pop()
-        pool = ProcessPool(loop, workers)
-        await pool.spawn()
-        if pool.closing:
-            # this works really weird, must be something fundamentally different between how
-            # a Future works and how I expect it to work like twisted Deferred.
-            # But at least it terminates now when the children start failing.
-            break
+        total = sum(xs.values())
+        txps = total / ((end - start) * 10**-9)
+        return (total, txps, xs)
+    except:
+        for p in ps:
+            p.kill()
+        raise
 
-        samples = []
-        while len(samples) < n:
-            await asyncio.sleep(1)
-            samples.append(pool.ips)
-
-        sample = sum(samples)/len(samples) # avg
-        if prev_sample and prev_sample >= sample:
-            if powering:
-                print('step: taking a step back')
-                q.append((2**(i-1)+1, False))
-            else:
-                print('step: terminating, last ips lower than previous one')
-                break
-        else:
-            pool.print_stats()
-            if powering:
-                print('step: double')
-                i += 1
-                q.append((2**i, True))
-            else:
-                print('step: +1')
-                q.append((workers + 1, False))
-            prev_sample = sample
-
-        await pool.close()
-        pool.print_stats()
+def print_sample(total: int, txps: float, worker_txs: dict):
+    # print results
+    for i, txs in worker_txs.items():
+        print(f"{i}: {txs}")
+    print(f"Total: {total}")
+    print(f"Total txps: {txps:.3f}\n")
 
 
 def main():
-    """
-    Start 2 children processes that continuously print dots.
-    Terminate after 1 second of runtime and print how many dots each
-    child printed and total dots printed.
-    """
-    work_dur = int(os.environ.get('WORK_DURATION', 3))
-    asyncio.run(sample(work_dur))
+    start = int(os.environ.get('START_POWER', '0'))
+    prev = None
+    for i in (2**x for x in itertools.count(start)):
+        total, txps, worker_txs = sample_workers(i)
+        print_sample(total, txps, worker_txs)
+        if prev and prev >= total:
+            break
 
-child = os.environ.get('CHILD')
-if child:
-    gen(int(child))
-else:
+    for j in range(2**(i-1)+1, 2**(i)):
+        total, txps, worker_txs = sample_workers(j)
+        print_sample(total, txps, worker_txs)
+        if prev and prev >= total:
+            break
+
+if __name__ == "__main__":
     main()
