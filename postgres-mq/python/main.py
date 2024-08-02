@@ -133,51 +133,48 @@ class ProcessPool:
         print(f"total ips: {self.ips:.3f}")
 
 
-class AutoTuneSampler:
-    def __init__(self, n_samples):
-        self.n_samples = n_samples
+async def sample(n):
+    loop = asyncio.get_running_loop()
+    prev_sample = None
+    q = [(2, True)]
+    i = 1
+    while True:
+        workers, powering = q.pop()
+        pool = ProcessPool(loop, workers)
+        await pool.spawn()
+        if pool.closing:
+            # this works really weird, must be something fundamentally different between how
+            # a Future works and how I expect it to work like twisted Deferred.
+            # But at least it terminates now when the children start failing.
+            break
 
-    async def run(self):
-        loop = asyncio.get_running_loop()
-        prev_sample = None
-        q = [(2, True)]
-        i = 1
-        while True:
-            workers, powering = q.pop()
-            pool = ProcessPool(loop, workers)
-            await pool.spawn()
-            if pool.closing:
-                # this works really weird, must be something fundamentally different between how
-                # a Future works and how I expect it to work like twisted Deferred.
-                # But at least it terminates now when the children start failing.
-                break
+        samples = []
+        while len(samples) < n:
+            await asyncio.sleep(1)
+            samples.append(pool.ips)
 
-            samples = []
-            while len(samples) < self.n_samples:
-                await asyncio.sleep(1)
-                samples.append(pool.ips)
-
-            sample = sum(samples)/len(samples) # avg
-            if prev_sample and prev_sample >= sample:
-                if powering:
-                    print('step: taking a step back')
-                    q.append((2**(i-1)+1, False))
-                else:
-                    print('step: terminating, last ips lower than previous one')
-                    break
+        sample = sum(samples)/len(samples) # avg
+        if prev_sample and prev_sample >= sample:
+            if powering:
+                print('step: taking a step back')
+                q.append((2**(i-1)+1, False))
             else:
-                pool.print_stats()
-                if powering:
-                    print('step: double')
-                    i += 1
-                    q.append((2**i, True))
-                else:
-                    print('step: +1')
-                    q.append((workers + 1, False))
-                prev_sample = sample
-
-            await pool.close()
+                print('step: terminating, last ips lower than previous one')
+                break
+        else:
             pool.print_stats()
+            if powering:
+                print('step: double')
+                i += 1
+                q.append((2**i, True))
+            else:
+                print('step: +1')
+                q.append((workers + 1, False))
+            prev_sample = sample
+
+        await pool.close()
+        pool.print_stats()
+
 
 def main():
     """
@@ -185,12 +182,8 @@ def main():
     Terminate after 1 second of runtime and print how many dots each
     child printed and total dots printed.
     """
-    async def fx():
-        n_samples = int(os.environ.get('WORK_DURATION', 3))
-        s = AutoTuneSampler(n_samples)
-        await s.run()
-
-    asyncio.run(fx())
+    work_dur = int(os.environ.get('WORK_DURATION', 3))
+    asyncio.run(sample(work_dur))
 
 child = os.environ.get('CHILD')
 if child:
