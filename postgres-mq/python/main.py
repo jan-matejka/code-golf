@@ -162,18 +162,17 @@ class ProcessPool:
 
 
 class AutoTuneSampler:
-    def __init__(self, pool, n_samples):
-        self.pool = pool
+    def __init__(self, n_samples):
         self.n_samples = n_samples
 
     async def run(self):
-        pool = self.pool
-
+        loop = asyncio.get_running_loop()
         prev_sample = None
         q = [(2, True)]
         i = 1
         while True:
             workers, powering = q.pop()
+            pool = ProcessPool(loop)
             await pool.spawn(workers)
             if pool.closing:
                 # this works really weird, must be something fundamentally different between how
@@ -215,10 +214,8 @@ def main():
     child printed and total dots printed.
     """
     async def fx():
-        loop = asyncio.get_running_loop()
-        pool = ProcessPool(loop)
         n_samples = int(os.environ.get('SAMPLES', 2))
-        s = AutoTuneSampler(pool, n_samples)
+        s = AutoTuneSampler(n_samples)
         await s.run()
 
     asyncio.run(fx())
