@@ -6,6 +6,7 @@ import "os"
 import "context"
 import "time"
 import "github.com/jackc/pgx/v4/pgxpool"
+import "sync"
 
 func die(message string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, message, args...)
@@ -29,7 +30,9 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(id int, quit chan bool, pool *pgxpool.Pool, end chan int) {
+func worker(wg *sync.WaitGroup, id int, quit chan bool, pool *pgxpool.Pool, end chan int) {
+	wg.Done()
+	wg.Wait()
 	var i int
 	for {
 		select {
@@ -48,13 +51,17 @@ func spawn_workers(workers int, pool *pgxpool.Pool) float64 {
 	quit_channels := make([]chan bool, workers, workers)
 	end_channels := make([]chan int, workers, workers)
 
-	var start = time.Now()
+	var wg sync.WaitGroup
+	wg.Add(workers + 1)
 	for i := range quit_channels {
 		quit_channels[i] = make(chan bool)
 		end_channels[i] = make(chan int)
-		go worker(i, quit_channels[i], pool, end_channels[i])
+		go worker(&wg, i, quit_channels[i], pool, end_channels[i])
 	}
 
+	wg.Done()
+	wg.Wait()
+	var start = time.Now()
 	time.Sleep(time.Second * 3)
 
 	for i := range quit_channels {
