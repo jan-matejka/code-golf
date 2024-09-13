@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := image
 
+.PHONY: build
+build: image
+
 .PHONY: image
 image: ## Build the mq/postgres image
 
