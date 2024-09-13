@@ -22,6 +22,11 @@ run:
 
 	podman run --name mq-postgres -p 5432:5432 mq/postgres
 
+.PHONY: rm ## delete container
+rm:
+
+	podman rm mq-postgres
+
 .PHONY: help
 help: ## Print help
 
