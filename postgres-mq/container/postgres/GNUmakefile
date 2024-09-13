@@ -14,12 +14,6 @@ pull: ## Pull the postgres base image
 	# PULL latest image
 	podman pull docker.io/library/postgres
 
-.PHONY: schema
-schema: ## Load roles and schema into postgres
-
-	psql -U postgres -h localhost -f role.sql
-	psql -U mq -h localhost -f schema.sql
-
 .PHONY: run ## Run the container for local development
 run:
 
