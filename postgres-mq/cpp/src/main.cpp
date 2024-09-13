@@ -49,6 +49,23 @@ inline int igetenv(const char* x, int def) {
   }
 }
 
+class Config {
+public:
+  int duration = 3;
+  int power = 0;
+
+  Config() {
+    duration = igetenv("DURATION", 3);
+    power = igetenv("POWER", 0);
+  }
+
+  string str() {
+    stringstream s;
+    s << "duration=" << duration << " power=" << power;
+    return s.str();
+  }
+};
+
 class Worker {
   int worker_id;
   bool& exit;
@@ -140,7 +157,7 @@ public:
   }
 };
 
-optional<int> sample_workers(int n) {
+optional<int> sample_workers(Config c, int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
   auto results = make_shared<queue<optional<int>>>();
@@ -180,16 +197,13 @@ optional<int> sample_workers(int n) {
       threads.push_back(w);
     }
 
-    int dur = igetenv("WORK_DURATION", 3);
-    VERBOSE("Duration: " << dur << "s");
-
     // this barrier syncs all threads on ready to send out messages
     b.arrive_and_wait();
     start = chrono::steady_clock::now();
 
     INFO("Waiting");
-    for(auto i : ranges::views::iota(0, dur)) {
-      INFO((dur-i) << "s");
+    for(auto i : ranges::views::iota(0, c.duration)) {
+      INFO((c.duration-i) << "s");
       this_thread::sleep_for(chrono::seconds(1));
     }
 
@@ -225,12 +239,13 @@ optional<int> sample_workers(int n) {
 }
 
 int _main(void) {
+  auto c = Config();
+  INFO("Config: " << c.str());
   int last=0;
-  auto start = igetenv("START_POWER", 0);
-  int i;
-  for(i=start;;i++) {
+  int i = c.power;
+  for(;;i++) {
     int n = pow(2, i);
-    auto r = sample_workers(n);
+    auto r = sample_workers(c, n);
     if (r.has_value()) {
       if (r <= last)
         break;
@@ -243,7 +258,7 @@ int _main(void) {
 
   i = pow(2, i-1) + 1;
   for(auto n : ranges::views::iota(i)) {
-    auto r = sample_workers(i);
+    auto r = sample_workers(c, i);
     if (r.has_value()) {
       if (r <= last)
         break;
