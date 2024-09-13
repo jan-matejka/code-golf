@@ -1,0 +1,15 @@
+FROM postgres:latest
+
+LABEL name mq/postgres
+
+USER root
+ENV POSTGRES_HOST_AUTH_METHOD trust
+
+RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
+RUN apt-get update
+RUN apt-get install -y procps iproute2 make
+RUN rm -rf /var/cache/apt/* /var/lib/apt/*
+
+RUN mkdir /root/local
+
+COPY init/ /docker-entrypoint-initdb.d/
