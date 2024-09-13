@@ -1,9 +1,32 @@
 #!/usr/bin/env python3
 
+from dataclasses import dataclass, asdict
 import os, time, itertools
+import sys
 import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
+import logging
+
+log = logging.getLogger(__name__)
+
+@dataclass
+class Config:
+    _opts = (
+        ('DURATION', int, 3),
+        ('POWER', int, 0),
+    )
+    DURATION: int = None
+    POWER: int = None
+
+    def __post_init__(self):
+        for name, reader, default in self._opts:
+            x = os.environ.get(name, None)
+            if x is None:
+                x = default
+            else:
+                x = reader(x)
+            setattr(self, name, x)
 
 def worker(worker_id: int, q: Queue, exit_flag: Event, error: Event, b: Barrier):
     try:
@@ -32,7 +55,7 @@ def check(error):
     if error.is_set():
         raise RuntimeError('Worker error')
 
-def sample_workers(n: int):
+def sample_workers(c: Config, n: int):
     print(f"Starting {n} workers")
     q = Queue()
     exit_flag = Event()
@@ -53,9 +76,8 @@ def sample_workers(n: int):
         b.wait()
         start = time.time_ns()
 
-        work_dur = int(os.environ.get('WORK_DURATION', 3))
         print("Waiting")
-        for i in range(work_dur, 0, -1):
+        for i in range(c.DURATION, 0, -1):
             check(error)
             print(i)
             time.sleep(1)
@@ -90,19 +112,25 @@ def print_sample(total: int, txps: float, worker_txs: dict):
 
 
 def main():
-    start = int(os.environ.get('START_POWER', '0'))
+    c = Config()
+    log.info(f"Config: {asdict(c)}")
     prev = None
-    for i in (2**x for x in itertools.count(start)):
-        total, txps, worker_txs = sample_workers(i)
+    for i in (2**x for x in itertools.count(c.POWER)):
+        total, txps, worker_txs = sample_workers(c, i)
         print_sample(total, txps, worker_txs)
         if prev and prev >= total:
             break
 
     for j in range(2**(i-1)+1, 2**(i)):
-        total, txps, worker_txs = sample_workers(j)
+        total, txps, worker_txs = sample_workers(c, j)
         print_sample(total, txps, worker_txs)
         if prev and prev >= total:
             break
 
 if __name__ == "__main__":
-    main()
+    try:
+        logging.basicConfig(level=logging.INFO)
+        main()
+    except Exception as e:
+        log.exception(e)
+        sys.exit(1)
