@@ -17,7 +17,7 @@ pull: ## Pull the postgres base image
 .PHONY: run ## Run the container for local development
 run:
 
-	podman run --name mq-postgres -p 5432:5432 mq/postgres
+	podman run --name mq-postgres -p 127.0.0.1:5432:5432 mq/postgres
 
 .PHONY: rm ## delete container
 rm:
