@@ -5,6 +5,12 @@ image: ## Build the mq/postgres image
 
 	podman build -t localhost/mq/postgres ./
 
+.PHONY: pull
+pull: ## Pull the postgres base image
+
+	# PULL latest image
+	podman pull docker.io/library/postgres
+
 .PHONY: schema
 schema: ## Load roles and schema into postgres
 
