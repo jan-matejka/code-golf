@@ -25,6 +25,11 @@ rm: ## Delete container
 
 	podman rm $(NAME)
 
+.PHONY: logs
+logs: ## Show container logs
+
+	podman logs -f $(NAME)
+
 .PHONY: help
 help: ## Print help
 
