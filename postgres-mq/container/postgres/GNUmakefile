@@ -1,3 +1,10 @@
+.DEFAULT_GOAL := image
+
+.PHONY: image
+image:
+
+	podman build -t localhost/mq/postgres ./
+
 .PHONY: schema
 schema:
 
