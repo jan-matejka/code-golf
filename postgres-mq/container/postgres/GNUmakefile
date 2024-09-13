@@ -17,6 +17,11 @@ schema: ## Load roles and schema into postgres
 	psql -U postgres -h localhost -f role.sql
 	psql -U mq -h localhost -f schema.sql
 
+.PHONY: run ## Run the container for local development
+run:
+
+	podman run --name mq-postgres -p 5432:5432 mq/postgres
+
 .PHONY: help
 help: ## Print help
 
