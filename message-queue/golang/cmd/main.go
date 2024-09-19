@@ -1,7 +1,6 @@
 package main
 
 import "fmt"
-import "math"
 import "os"
 import "context"
 import "time"
@@ -69,7 +68,7 @@ func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) float
 
 	wg.Done()
 	wg.Wait()
-	var start = time.Now()
+
 	fmt.Printf("Waiting\n")
 	for i := app.Config.Duration; i > 0; i-- {
 		fmt.Printf("%d\n", i)
@@ -80,19 +79,16 @@ func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) float
 		quit_channels[i] <- true
 	}
 
-	var total int
+  rs := golang.NewResults();
 	for i := range end_channels {
 		r := <-end_channels[i]
 		fmt.Printf("%d: %d\n", r.WorkerId, r.MessagesTotal)
-		total += r.MessagesTotal
+    rs.Add(r)
 	}
 
-	elapsed := time.Since(start)
-
-	fmt.Printf("total: %d\n", total)
-	ips := float64(float64(total) / (float64(elapsed) * math.Pow10(-9)))
-	fmt.Printf("total ips: %f\n", ips)
-	return ips
+	fmt.Printf("Total: %d\n", rs.MessagesTotal)
+	fmt.Printf("Total mps: %f\n\n", rs.MessagesPerSecond)
+	return rs.MessagesPerSecond
 }
 
 func main() {
