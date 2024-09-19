@@ -33,14 +33,19 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(wg *sync.WaitGroup, id int, quit chan bool, pool *pgxpool.Pool, end chan int) {
+func worker(wg *sync.WaitGroup, id int, quit chan bool, pool *pgxpool.Pool, end chan *golang.WorkerResult) {
 	wg.Done()
 	wg.Wait()
+
+	start := time.Now()
+
 	var i int
 	for {
 		select {
 		case <-quit:
-			end <- i
+			duration := time.Since(start)
+			r := golang.NewWorkerResult(id, i, duration)
+			end <- r
 			return
 		default:
 			insert(pool, i)
@@ -52,13 +57,13 @@ func worker(wg *sync.WaitGroup, id int, quit chan bool, pool *pgxpool.Pool, end 
 func sample_workers(workers int, pool *pgxpool.Pool) float64 {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
-	end_channels := make([]chan int, workers, workers)
+	end_channels := make([]chan *golang.WorkerResult, workers, workers)
 
 	var wg sync.WaitGroup
 	wg.Add(workers + 1)
 	for i := range quit_channels {
 		quit_channels[i] = make(chan bool)
-		end_channels[i] = make(chan int)
+		end_channels[i] = make(chan *golang.WorkerResult)
 		go worker(&wg, i, quit_channels[i], pool, end_channels[i])
 	}
 
@@ -71,11 +76,11 @@ func sample_workers(workers int, pool *pgxpool.Pool) float64 {
 		quit_channels[i] <- true
 	}
 
-	var n, total int
+	var total int
 	for i := range end_channels {
-		n = <-end_channels[i]
-		fmt.Printf("%d: %d\n", i, n)
-		total += n
+		r := <-end_channels[i]
+		fmt.Printf("%d: %d\n", r.WorkerId, r.MessagesTotal)
+		total += r.MessagesTotal
 	}
 
 	elapsed := time.Since(start)
