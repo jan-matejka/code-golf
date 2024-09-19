@@ -54,7 +54,7 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 	}
 }
 
-func sample_workers(workers int, pool *pgxpool.Pool) float64 {
+func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) float64 {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
 	end_channels := make([]chan *golang.WorkerResult, workers, workers)
@@ -71,7 +71,7 @@ func sample_workers(workers int, pool *pgxpool.Pool) float64 {
 	wg.Wait()
 	var start = time.Now()
 	fmt.Printf("Waiting\n")
-	for i := 3; i > 0; i-- {
+	for i := app.Config.Duration; i > 0; i-- {
 		fmt.Printf("%d\n", i)
 		time.Sleep(time.Second)
 	}
@@ -120,7 +120,7 @@ func main() {
 	var i int
 	for ; ; i++ {
 		workers = 1 << i
-		ips := sample_workers(workers, pool)
+		ips := sample_workers(app, workers, pool)
 		if last_ips != 0 && last_ips >= ips {
 			i--
 			break
@@ -130,7 +130,7 @@ func main() {
 	}
 
 	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
-		ips := sample_workers(workers, pool)
+		ips := sample_workers(app, workers, pool)
 		if last_ips != 0 && last_ips >= ips {
 			fmt.Println("Done")
 			break
