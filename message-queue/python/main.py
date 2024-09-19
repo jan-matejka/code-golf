@@ -8,7 +8,7 @@ import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
 from prometheus import Pusher, test_cmd
-from primitives import Instance, Config
+from primitives import Instance, Config, WorkerResult
 
 log = logging.getLogger(__name__)
 
@@ -26,13 +26,18 @@ def worker(worker_id: int, q: Queue, exit_flag: Event, error: Event, b: Barrier)
     else:
         b.wait()
 
+    start = time.time_ns()
+
     while not exit_flag.is_set():
         with conn.cursor() as c:
             c.execute('insert into public.queue (data) values (%s)', (i,))
             conn.commit()
         i += 1
 
-    q.put((worker_id, i))
+    end = time.time_ns()
+
+    r = WorkerResult(worker_id, i, end-start)
+    q.put(r)
 
 
 def check(error):
@@ -58,7 +63,6 @@ def sample_workers(c: Config, n: int):
                 check(error)
 
         b.wait()
-        start = time.time_ns()
 
         print("Waiting")
         for i in range(c.DURATION, 0, -1):
@@ -70,29 +74,30 @@ def sample_workers(c: Config, n: int):
         for p in ps:
             p.join()
 
-        end = time.time_ns()
-
         check(error)
         print("collecting results")
         xs = {}
         for _ in range(0, n):
-            worker_id, txs = q.get()
-            xs[worker_id] = txs
+            r = q.get()
+            xs[r.worker_id] = r
 
-        total = sum(xs.values())
-        txps = total / ((end - start) * 10**-9)
-        return (total, txps, xs)
+        total = WorkerResult(
+            0,
+            sum(r.messages_total for r in xs.values()),
+            sum(r.duration_ns for r in xs.values()),
+        )
+        return (total, xs)
     except:
         for p in ps:
             p.kill()
         raise
 
-def print_sample(total: int, txps: float, worker_txs: dict):
+def print_sample(total: WorkerResult, workers: [WorkerResult]):
     # print results
-    for i, txs in worker_txs.items():
-        print(f"{i}: {txs}")
-    print(f"Total: {total}")
-    print(f"Total txps: {txps:.3f}\n")
+    for r in workers.values():
+        print(f"{r.worker_id}: {r.messages_total}")
+    print(f"Total: {total.messages_total}")
+    print(f"Total mps: {total.messages_per_second:.3f}\n")
 
 
 def main():
@@ -103,14 +108,14 @@ def main():
 
     prev = None
     for i in (2**x for x in itertools.count(app.config.POWER)):
-        total, txps, worker_txs = sample_workers(app.config, i)
-        print_sample(total, txps, worker_txs)
+        total, workers = sample_workers(app.config, i)
+        print_sample(total, workers)
         if prev and prev >= total:
             break
 
     for j in range(2**(i-1)+1, 2**(i)):
-        total, txps, worker_txs = sample_workers(app.config, j)
-        print_sample(total, txps, worker_txs)
+        total, workers = sample_workers(app.config, j)
+        print_sample(total, workers)
         if prev and prev >= total:
             break
 

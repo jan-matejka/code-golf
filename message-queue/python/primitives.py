@@ -69,3 +69,16 @@ class Config:
             else:
                 x = reader(x)
             setattr(self, name, x)
+
+@dataclass
+class WorkerResult:
+    worker_id: int
+    messages_total: int
+    duration_ns: int
+
+    messages_per_second: float = None
+    duration_seconds: float = None
+
+    def __post_init__(self):
+        self.duration_seconds = self.duration_ns * 10**-9
+        self.messages_per_second = self.messages_total / self.duration_seconds
