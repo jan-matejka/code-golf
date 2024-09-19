@@ -5,8 +5,8 @@ import "math"
 import "os"
 import "context"
 import "time"
-import "github.com/jackc/pgx/v4/pgxpool"
 import "sync"
+import "github.com/jackc/pgx/v4/pgxpool"
 
 func die(message string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, message, args...)
