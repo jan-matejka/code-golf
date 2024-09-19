@@ -4,6 +4,7 @@ PORTS=
 PORTS+= -p 127.0.0.1:5432:5432
 PORTS+= -p 127.0.0.1:9090:9090
 PORTS+= -p 127.0.0.1:9091:9091
+PORTS+= -p 127.0.0.1:9187:9187
 
 containers=$(shell find ./container -maxdepth 1 -mindepth 1 -type d)
 
