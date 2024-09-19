@@ -82,12 +82,10 @@ func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) *gola
 	rs := golang.NewResults()
 	for i := range end_channels {
 		r := <-end_channels[i]
-		fmt.Printf("%d: %d\n", r.WorkerId, r.MessagesTotal)
 		rs.Add(r)
 	}
 
-	fmt.Printf("Total: %d\n", rs.MessagesTotal)
-	fmt.Printf("Total mps: %f\n\n", rs.MessagesPerSecond)
+	rs.Print()
 	return rs
 }
 

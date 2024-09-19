@@ -1,5 +1,6 @@
 package golang
 
+import "fmt"
 import "time"
 import "math"
 
@@ -46,4 +47,13 @@ func (rs *Results) Add(r *WorkerResult) {
 
 	rs.DurationSeconds = float64(rs.DurationNs) * math.Pow10(-9)
 	rs.MessagesPerSecond = float64(rs.MessagesTotal) / r.DurationSeconds
+}
+
+func (rs *Results) Print() {
+	for _, r := range rs.Workers {
+		fmt.Printf("%d: %d\n", r.WorkerId, r.MessagesTotal)
+	}
+
+	fmt.Printf("Total: %d\n", rs.MessagesTotal)
+	fmt.Printf("Total mps: %f\n\n", rs.MessagesPerSecond)
 }
