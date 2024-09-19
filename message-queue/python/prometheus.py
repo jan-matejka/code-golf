@@ -22,3 +22,10 @@ class Pusher:
             job='mq-producer',
             registry=registry
         )
+
+def test_cmd(app):
+    test_metric.labels(
+        worker_id='worker_1',
+        **app.runtime.metric_labels(),
+    ).inc()
+    app.prometheus.push()
