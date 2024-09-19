@@ -46,7 +46,7 @@ func worker(wg *sync.WaitGroup, id int, quit chan bool, pool *pgxpool.Pool, end 
 	}
 }
 
-func spawn_workers(workers int, pool *pgxpool.Pool) float64 {
+func sample_workers(workers int, pool *pgxpool.Pool) float64 {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
 	end_channels := make([]chan int, workers, workers)
@@ -95,7 +95,7 @@ func main() {
 	var i int
 	for ; ; i++ {
 		workers = 1 << i
-		ips := spawn_workers(workers, pool)
+		ips := sample_workers(workers, pool)
 		if last_ips != 0 && last_ips >= ips {
 			i--
 			break
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
-		ips := spawn_workers(workers, pool)
+		ips := sample_workers(workers, pool)
 		if last_ips != 0 && last_ips >= ips {
 			fmt.Println("Done")
 			break
