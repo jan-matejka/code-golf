@@ -5,8 +5,11 @@ import "math"
 import "os"
 import "context"
 import "time"
-import "github.com/jackc/pgx/v4/pgxpool"
 import "sync"
+
+import "github.com/jan-matejka/code-golf/message-queue/golang"
+
+import "github.com/jackc/pgx/v4/pgxpool"
 
 func die(message string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, message, args...)
@@ -84,6 +87,19 @@ func sample_workers(workers int, pool *pgxpool.Pool) float64 {
 }
 
 func main() {
+	app, err := golang.NewInstance()
+	if err != nil {
+		die("Couldnt construct instance: %v\n", err)
+	}
+	if app.Config.Test_prometheus == 1 {
+		fmt.Println("Testing prometheus")
+		golang.TestMetric.Set(42)
+		//golang.Push(app.Prometheus)
+		if err := app.Prometheus.Add(); err != nil {
+			die("Prometheus push failed: %v\n", err.Error())
+		}
+		os.Exit(0)
+	}
 	pool, err := pgxpool.Connect(context.Background(), "postgres://mq@localhost/mq?pool_max_conns=2048")
 	if err != nil {
 		die("Unable to connect to database: %v\n", err)
