@@ -70,7 +70,11 @@ func sample_workers(workers int, pool *pgxpool.Pool) float64 {
 	wg.Done()
 	wg.Wait()
 	var start = time.Now()
-	time.Sleep(time.Second * 3)
+	fmt.Printf("Waiting\n")
+	for i := 3; i > 0; i-- {
+		fmt.Printf("%d\n", i)
+		time.Sleep(time.Second)
+	}
 
 	for i := range quit_channels {
 		quit_channels[i] <- true
