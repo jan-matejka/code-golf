@@ -8,6 +8,7 @@ import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
 from prometheus import Pusher, test_metric
+from primitives import Runtime
 
 log = logging.getLogger(__name__)
 
@@ -118,8 +119,12 @@ def print_sample(total: int, txps: float, worker_txs: dict):
 def main():
     c = Config()
     p = Pusher(c)
+    r = Runtime()
     if c.TEST_PROMETHEUS:
-        test_metric.labels(worker_id='worker_1').inc()
+        test_metric.labels(
+            worker_id='worker_1',
+            **r.metric_labels(),
+        ).inc()
         p.push()
         sys.exit(1)
     log.info(f"Config: {asdict(c)}")
