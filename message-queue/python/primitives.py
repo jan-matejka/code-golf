@@ -82,3 +82,18 @@ class WorkerResult:
     def __post_init__(self):
         self.duration_seconds = self.duration_ns * 10**-9
         self.messages_per_second = self.messages_total / self.duration_seconds
+
+@dataclass
+class Results:
+    workers: [WorkerResult]
+    messages_total: int = None
+    duration_ns: int = None
+
+    messages_per_second: float = None
+    duration_seconds: float = None
+
+    def __post_init__(self):
+        self.messages_total = sum(r.messages_total for r in self.workers)
+        self.duration_ns = sum(r.duration_ns for r in self.workers)
+        self.duration_seconds = self.duration_ns * 10**-9
+        self.messages_per_second = self.messages_total / self.duration_seconds

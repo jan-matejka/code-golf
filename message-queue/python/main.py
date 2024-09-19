@@ -8,7 +8,7 @@ import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
 from prometheus import Pusher, test_cmd
-from primitives import Instance, Config, WorkerResult
+from primitives import Instance, Config, WorkerResult, Results
 
 log = logging.getLogger(__name__)
 
@@ -76,28 +76,19 @@ def sample_workers(c: Config, n: int):
 
         check(error)
         print("collecting results")
-        xs = {}
-        for _ in range(0, n):
-            r = q.get()
-            xs[r.worker_id] = r
-
-        total = WorkerResult(
-            0,
-            sum(r.messages_total for r in xs.values()),
-            sum(r.duration_ns for r in xs.values()),
-        )
-        return (total, xs)
+        xs = [q.get() for _ in range(0, n)]
+        return Results(xs)
     except:
         for p in ps:
             p.kill()
         raise
 
-def print_sample(total: WorkerResult, workers: [WorkerResult]):
+def print_sample(rs: Results):
     # print results
-    for r in workers.values():
+    for r in rs.workers:
         print(f"{r.worker_id}: {r.messages_total}")
-    print(f"Total: {total.messages_total}")
-    print(f"Total mps: {total.messages_per_second:.3f}\n")
+    print(f"Total: {rs.messages_total}")
+    print(f"Total mps: {rs.messages_per_second:.3f}\n")
 
 
 def main():
@@ -108,14 +99,14 @@ def main():
 
     prev = None
     for i in (2**x for x in itertools.count(app.config.POWER)):
-        total, workers = sample_workers(app.config, i)
-        print_sample(total, workers)
+        rs = sample_workers(app.config, i)
+        print_sample(rs)
         if prev and prev >= total:
             break
 
     for j in range(2**(i-1)+1, 2**(i)):
-        total, workers = sample_workers(app.config, j)
-        print_sample(total, workers)
+        rs = sample_workers(app.config, j)
+        print_sample(rs)
         if prev and prev >= total:
             break
 
