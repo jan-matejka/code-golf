@@ -1,3 +1,6 @@
+.PHONY: all
+all: format build
+
 .PHONY: build
 build:
 
