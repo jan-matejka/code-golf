@@ -1,36 +1,16 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass, asdict
-import os, time, itertools
+import time, itertools
 import sys
 import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
-from prometheus import Pusher, m_test
+from prometheus import Pusher, test_cmd
+from primitives import Instance, Config
 
 log = logging.getLogger(__name__)
-
-@dataclass
-class Config:
-    _opts = (
-        ('DURATION', int, 3),
-        ('POWER', int, 0),
-        ('TEST_PROMETHEUS', int, 0),
-    )
-    DURATION: int = None
-    POWER: int = None
-    PUSHGATEWAY: str = 'localhost:9091'
-    TEST_PROMETHEUS: int = 0
-
-    def __post_init__(self):
-        for name, reader, default in self._opts:
-            x = os.environ.get(name, None)
-            if x is None:
-                x = default
-            else:
-                x = reader(x)
-            setattr(self, name, x)
 
 def worker(worker_id: int, q: Queue, exit_flag: Event, error: Event, b: Barrier):
     try:
@@ -116,22 +96,20 @@ def print_sample(total: int, txps: float, worker_txs: dict):
 
 
 def main():
-    c = Config()
-    p = Pusher(c)
-    if c.TEST_PROMETHEUS:
-        m_test.labels(worker_id='worker_1').inc()
-        p.push()
+    app = Instance()
+    if app.config.TEST_PROMETHEUS:
+        test_cmd(app)
         sys.exit(1)
-    log.info(f"Config: {asdict(c)}")
+
     prev = None
-    for i in (2**x for x in itertools.count(c.POWER)):
-        total, txps, worker_txs = sample_workers(c, i)
+    for i in (2**x for x in itertools.count(app.config.POWER)):
+        total, txps, worker_txs = sample_workers(app.config, i)
         print_sample(total, txps, worker_txs)
         if prev and prev >= total:
             break
 
     for j in range(2**(i-1)+1, 2**(i)):
-        total, txps, worker_txs = sample_workers(c, j)
+        total, txps, worker_txs = sample_workers(app.config, j)
         print_sample(total, txps, worker_txs)
         if prev and prev >= total:
             break
