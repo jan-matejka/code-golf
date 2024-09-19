@@ -53,7 +53,7 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 	}
 }
 
-func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) float64 {
+func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) *golang.Results {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
 	end_channels := make([]chan *golang.WorkerResult, workers, workers)
@@ -79,16 +79,16 @@ func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) float
 		quit_channels[i] <- true
 	}
 
-  rs := golang.NewResults();
+	rs := golang.NewResults()
 	for i := range end_channels {
 		r := <-end_channels[i]
 		fmt.Printf("%d: %d\n", r.WorkerId, r.MessagesTotal)
-    rs.Add(r)
+		rs.Add(r)
 	}
 
 	fmt.Printf("Total: %d\n", rs.MessagesTotal)
 	fmt.Printf("Total mps: %f\n\n", rs.MessagesPerSecond)
-	return rs.MessagesPerSecond
+	return rs
 }
 
 func main() {
@@ -112,22 +112,22 @@ func main() {
 	defer pool.Close()
 
 	var workers int
-	var last_ips float64
+	var prev *golang.Results
 	var i int
 	for ; ; i++ {
 		workers = 1 << i
-		ips := sample_workers(app, workers, pool)
-		if last_ips != 0 && last_ips >= ips {
+		r := sample_workers(app, workers, pool)
+		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
 			i--
 			break
 		} else {
-			last_ips = ips
+			prev = r
 		}
 	}
 
 	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
-		ips := sample_workers(app, workers, pool)
-		if last_ips != 0 && last_ips >= ips {
+		r := sample_workers(app, workers, pool)
+		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
 			fmt.Println("Done")
 			break
 		}

@@ -26,23 +26,23 @@ func NewWorkerResult(workerId int, messagesTotal int, durationNs time.Duration) 
 }
 
 type Results struct {
-  Workers []*WorkerResult
-  MessagesTotal int
-  DurationNs time.Duration
+	Workers       []*WorkerResult
+	MessagesTotal int
+	DurationNs    time.Duration
 
-  MessagesPerSecond float64
-  DurationSeconds float64
+	MessagesPerSecond float64
+	DurationSeconds   float64
 }
 
 func NewResults() *Results {
-  r := new(Results)
-  return r
+	r := new(Results)
+	return r
 }
 
 func (rs *Results) Add(r *WorkerResult) {
-  rs.Workers = append(rs.Workers, r)
-  rs.MessagesTotal += r.MessagesTotal
-  rs.DurationNs += r.DurationNs
+	rs.Workers = append(rs.Workers, r)
+	rs.MessagesTotal += r.MessagesTotal
+	rs.DurationNs += r.DurationNs
 
 	rs.DurationSeconds = float64(rs.DurationNs) * math.Pow10(-9)
 	rs.MessagesPerSecond = float64(rs.MessagesTotal) / r.DurationSeconds
