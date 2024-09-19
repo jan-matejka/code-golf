@@ -18,8 +18,9 @@ pod:
 	printf "%s\n" $(containers) | xargs -I% -n1 make -C % podrun
 
 .PHONY: rm ## Remove the pod
-rm:
+pod-rm:
 
+	podman pod stop mq
 	podman pod rm mq
 
 .PHONY: help
