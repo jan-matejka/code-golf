@@ -98,8 +98,8 @@ def main():
         sys.exit(1)
 
     prev = None
-    for i in (2**x for x in itertools.count(app.config.POWER)):
-        rs = sample_workers(app.config, i)
+    for i in itertools.count(app.config.POWER):
+        rs = sample_workers(app.config, 2**i)
         print_sample(rs)
         if prev and prev.messages_per_second >= rs.messages_per_second:
             break
