@@ -112,6 +112,9 @@ def main():
             break
         prev = rs
 
+    print("Found maximum:")
+    print_sample(prev)
+
 if __name__ == "__main__":
     try:
         logging.basicConfig(level=logging.INFO)
