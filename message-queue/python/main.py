@@ -101,14 +101,16 @@ def main():
     for i in (2**x for x in itertools.count(app.config.POWER)):
         rs = sample_workers(app.config, i)
         print_sample(rs)
-        if prev and prev >= total:
+        if prev and prev.messages_per_second >= rs.messages_per_second:
             break
+        prev = rs
 
     for j in range(2**(i-1)+1, 2**(i)):
         rs = sample_workers(app.config, j)
         print_sample(rs)
-        if prev and prev >= total:
+        if prev and prev.messages_per_second >= rs.messages_per_second:
             break
+        prev = rs
 
 if __name__ == "__main__":
     try:
