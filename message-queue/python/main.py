@@ -7,7 +7,7 @@ import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
-from prometheus import Pusher, test_cmd
+from prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds
 from primitives import Instance, Config, WorkerResult, Results
 
 log = logging.getLogger(__name__)
@@ -90,6 +90,33 @@ def print_sample(rs: Results):
     print(f"Total: {rs.messages_total}")
     print(f"Total mps: {rs.messages_per_second:.3f}\n")
 
+def send_prometheus(app: Instance, algorithm: str, mq_system: str, rs: Results):
+    for w in rs.workers:
+        messages_total.labels(
+            worker_id=w.worker_id,
+            n_workers=len(rs.workers),
+            algorithm=algorithm,
+            mq_system=mq_system,
+            **app.runtime.metric_labels(),
+        ).set(w.messages_total)
+
+        messages_per_second.labels(
+            worker_id=w.worker_id,
+            n_workers=len(rs.workers),
+            algorithm=algorithm,
+            mq_system=mq_system,
+            **app.runtime.metric_labels(),
+        ).set(w.messages_per_second)
+
+        duration_seconds.labels(
+            worker_id=w.worker_id,
+            n_workers=len(rs.workers),
+            algorithm=algorithm,
+            mq_system=mq_system,
+            **app.runtime.metric_labels(),
+        ).set(w.duration_seconds)
+
+    app.prometheus.push()
 
 def main():
     app = Instance()
@@ -101,6 +128,7 @@ def main():
     for i in itertools.count(app.config.POWER):
         rs = sample_workers(app.config, 2**i)
         print_sample(rs)
+        send_prometheus(app, 'multiprocessing', 'postgres', rs)
         if prev and prev.messages_per_second >= rs.messages_per_second:
             break
         prev = rs
@@ -108,11 +136,12 @@ def main():
     for j in range(2**(i-1)+1, 2**(i)):
         rs = sample_workers(app.config, j)
         print_sample(rs)
+        send_prometheus(app, 'multiprocessing', 'postgres', rs)
         if prev and prev.messages_per_second >= rs.messages_per_second:
             break
         prev = rs
 
-    print("Found maximum:")
+    print("\nFound maximum:")
     print_sample(prev)
 
 if __name__ == "__main__":
