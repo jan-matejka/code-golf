@@ -1,4 +1,4 @@
-module src
+module github.com/jan-matejka/code-golf/message-queue/golang
 
 go 1.19
 
