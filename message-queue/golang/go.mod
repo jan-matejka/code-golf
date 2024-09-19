@@ -22,4 +22,5 @@ require (
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
+	github.com/prometheus/common v0.46.0 // version lock for go 1.19
 )
