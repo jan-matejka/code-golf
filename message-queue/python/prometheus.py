@@ -4,7 +4,7 @@ from prometheus_client import push_to_gateway
 
 registry = CollectorRegistry()
 
-m_test = Gauge(
+test_metric = Gauge(
     'test', 'Test Metric',
     ['worker_id'],
     registry=registry,

@@ -7,7 +7,7 @@ import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
-from prometheus import Pusher, m_test
+from prometheus import Pusher, test_metric
 
 log = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ def main():
     c = Config()
     p = Pusher(c)
     if c.TEST_PROMETHEUS:
-        m_test.labels(worker_id='worker_1').inc()
+        test_metric.labels(worker_id='worker_1').inc()
         p.push()
         sys.exit(1)
     log.info(f"Config: {asdict(c)}")
