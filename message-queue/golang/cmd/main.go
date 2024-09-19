@@ -33,7 +33,7 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(wg *sync.WaitGroup, id int, quit chan bool, pool *pgxpool.Pool, end chan *golang.WorkerResult) {
+func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, end chan<- *golang.WorkerResult) {
 	wg.Done()
 	wg.Wait()
 
