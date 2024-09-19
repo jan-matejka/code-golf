@@ -7,6 +7,7 @@ import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 import logging
+from prometheus import Pusher, m_test
 
 log = logging.getLogger(__name__)
 
@@ -15,9 +16,12 @@ class Config:
     _opts = (
         ('DURATION', int, 3),
         ('POWER', int, 0),
+        ('TEST_PROMETHEUS', int, 0),
     )
     DURATION: int = None
     POWER: int = None
+    PUSHGATEWAY: str = 'localhost:9091'
+    TEST_PROMETHEUS: int = 0
 
     def __post_init__(self):
         for name, reader, default in self._opts:
@@ -113,6 +117,11 @@ def print_sample(total: int, txps: float, worker_txs: dict):
 
 def main():
     c = Config()
+    p = Pusher(c)
+    if c.TEST_PROMETHEUS:
+        m_test.labels(worker_id='worker_1').inc()
+        p.push()
+        sys.exit(1)
     log.info(f"Config: {asdict(c)}")
     prev = None
     for i in (2**x for x in itertools.count(c.POWER)):
