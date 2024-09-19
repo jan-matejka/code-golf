@@ -130,6 +130,8 @@ func main() {
 		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
 			fmt.Println("Done")
 			break
+		} else {
+			prev = r
 		}
 	}
 
