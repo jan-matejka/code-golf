@@ -126,12 +126,18 @@ func main() {
 	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
 		r := sample_workers(app, workers, pool)
 		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
-			fmt.Println("Done")
 			break
 		} else {
 			prev = r
 		}
 	}
+
+	if prev == nil {
+		die("No successful run")
+	}
+
+	fmt.Printf("Found maximum:\n")
+	prev.Print()
 
 	os.Exit(0)
 }
