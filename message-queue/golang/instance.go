@@ -1,5 +1,6 @@
 package golang
 
+import "strconv"
 import "runtime"
 import "time"
 import "github.com/google/uuid"
@@ -80,4 +81,22 @@ func (r Runtime) Map() map[string]string {
 
 func RuntimeFieldNames() []string {
 	return []string{"ctime", "uuid", "lang", "lang_version", "runtime", "os", "kernel", "arch"}
+}
+
+type SampleDesc struct {
+	n_workers int
+	algorithm string
+	mq_system string
+}
+
+func (s SampleDesc) Map() map[string]string {
+	return map[string]string{
+		"n_workers": strconv.Itoa(s.n_workers),
+		"algorithm": s.algorithm,
+		"mq_system": s.mq_system,
+	}
+}
+
+func SampleDescFieldNames() []string {
+	return []string{"n_workers", "algorithm", "mq_system"}
 }
