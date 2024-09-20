@@ -59,7 +59,7 @@ func mkLabels(app *Instance, sample SampleDesc, worker *WorkerResult) prometheus
 func TestPusher(app *Instance) {
 	fmt.Println("Testing prometheus push")
 	result := NewWorkerResult(0, 1, time.Second)
-	labels := mkLabels(app, SampleDesc{n_workers: 8, algorithm: "channels", mq_system: "postgres"}, result)
+	labels := mkLabels(app, SampleDesc{8, "channels", "postgres"}, result)
 	TestMetric.With(labels).Set(42)
 	if err := app.Prometheus.Add(); err != nil {
 		panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
