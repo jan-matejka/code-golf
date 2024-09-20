@@ -14,6 +14,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include "./config.cpp"
+#include "./runtime.cpp"
 #include "./prometheus.cpp"
 #include "./log.cpp"
 
@@ -193,18 +194,18 @@ optional<int> sample_workers(Config c, int n) {
 }
 
 int _main(void) {
-  auto c = Config();
-  INFO("Config: " << c.str());
+  auto app = Instance();
+  INFO("Config: " << app.config.str());
 
-  if (c.test_prometheus) {
-    PushTestMetric(c);
+  if (app.config.test_prometheus) {
+    PushTestMetric(app.config);
     return 0;
   }
   int last=0;
-  int i = c.power;
+  int i = app.config.power;
   for(;;i++) {
     int n = pow(2, i);
-    auto r = sample_workers(c, n);
+    auto r = sample_workers(app.config, n);
     if (r.has_value()) {
       if (r <= last)
         break;
@@ -217,7 +218,7 @@ int _main(void) {
 
   i = pow(2, i-1) + 1;
   for(auto n : ranges::views::iota(i)) {
-    auto r = sample_workers(c, i);
+    auto r = sample_workers(app.config, i);
     if (r.has_value()) {
       if (r <= last)
         break;

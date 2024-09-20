@@ -14,6 +14,7 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include "./log.cpp"
+#include "./config.cpp"
 
 using namespace std;
 
@@ -92,5 +93,11 @@ Runtime::Runtime()
 , arch(_arch())
 {
 }
+
+class Instance {
+public:
+  Config config;
+  Runtime runtime;
+};
 
 #endif
