@@ -30,6 +30,7 @@ public:
   const string kernel;
   const string arch;
   Runtime();
+  map<string,string> Map() const;
 
   string ctime_string() const {
     // TBD: this is a mess without <format>, figure out later
@@ -43,15 +44,10 @@ public:
 
   operator std::string() const {
     stringstream ss;
-    ss << "Runtime:"
-      << " ctime=" << ctime_string()
-      << " uuid=" << uuid
-      << " lang_version=" << lang_version
-      << " runtime=" << runtime
-      << " os=" << os
-      << " kernel=" << kernel
-      << " arch=" << arch
-    ;
+    ss << "Runtime:";
+    for(const auto& [k, v] : Map()) {
+      ss << " " << k << "=" << v;
+    }
     return ss.str();
   }
 };
@@ -93,6 +89,19 @@ Runtime::Runtime()
 , kernel(_kernel())
 , arch(_arch())
 {
+}
+
+map<string,string> Runtime::Map() const {
+  map<string,string> xs = {
+    {"ctime", ctime_string()},
+    {"uuid", to_string(uuid)},
+    {"lang_version", lang_version},
+    {"runtime", runtime},
+    {"os", os},
+    {"kernel", kernel},
+    {"arch", arch},
+  };
+  return xs;
 }
 
 class Instance {
