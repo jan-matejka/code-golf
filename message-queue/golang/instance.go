@@ -64,3 +64,20 @@ func NewRuntime() (*Runtime, error) {
 
 	return r, nil
 }
+
+func (r Runtime) Map() map[string]string {
+	return map[string]string{
+		"ctime":        r.ctime.Format(time.RFC3339),
+		"uuid":         r.uuid.String(),
+		"lang":         r.lang,
+		"lang_version": r.lang_version,
+		"runtime":      r.runtime,
+		"os":           r.os,
+		"kernel":       r.kernel,
+		"arch":         r.arch,
+	}
+}
+
+func RuntimeFieldNames() []string {
+	return []string{"ctime", "uuid", "lang", "lang_version", "runtime", "os", "kernel", "arch"}
+}
