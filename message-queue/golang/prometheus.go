@@ -5,10 +5,12 @@ import "github.com/prometheus/client_golang/prometheus"
 import "github.com/prometheus/client_golang/prometheus/push"
 
 var (
-	TestMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+	TestMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "test",
 		Help: "Test metric",
-	})
+	},
+		[]string{"worker_id"},
+	)
 )
 
 func NewPusher() *push.Pusher {
@@ -21,7 +23,9 @@ func NewPusher() *push.Pusher {
 
 func TestPusher(app *Instance) {
 	fmt.Println("Testing prometheus push")
-	TestMetric.Set(42)
+	TestMetric.With(
+		prometheus.Labels{"worker_id": "0"},
+	).Set(42)
 	if err := app.Prometheus.Add(); err != nil {
 		panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
 	}
