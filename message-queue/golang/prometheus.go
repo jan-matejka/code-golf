@@ -65,3 +65,15 @@ func TestPusher(app *Instance) {
 		panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
 	}
 }
+
+func PushMetrics(app *Instance, sample SampleDesc, rs *Results) {
+	for _, r := range rs.Workers {
+		MessagesTotal.With(mkLabels(app, sample, r)).Set(float64(r.MessagesTotal))
+		MessagesPerSecond.With(mkLabels(app, sample, r)).Set(r.MessagesPerSecond)
+		DurationSeconds.With(mkLabels(app, sample, r)).Set(r.DurationSeconds)
+
+		if err := app.Prometheus.Add(); err != nil {
+			panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
+		}
+	}
+}
