@@ -5,14 +5,19 @@
 #include <prometheus/registry.h>
 #include <prometheus/gateway.h>
 
+#include <boost/predef.h>
 #include "./log.cpp"
 #include "./config.cpp"
+#include "./runtime.cpp"
 
 using namespace std;
 using namespace prometheus;
 
 void PushTestMetric(Config &c) {
   INFO("Testing push to prometheus");
+
+  auto rt = Runtime();
+  INFO(string(rt));
 
   auto registry = std::make_shared<Registry>();
   auto& test_metric = BuildGauge()
