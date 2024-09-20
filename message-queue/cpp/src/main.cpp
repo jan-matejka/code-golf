@@ -13,27 +13,11 @@
 #include <optional>
 
 #include <boost/algorithm/string.hpp>
+#include "./config.cpp"
 #include "./log.cpp"
 
 using namespace std;
 using namespace pqxx;
-
-class Config {
-public:
-  int duration = 3;
-  int power = 0;
-
-  Config() {
-    duration = igetenv("DURATION", 3);
-    power = igetenv("POWER", 0);
-  }
-
-  string str() {
-    stringstream s;
-    s << "duration=" << duration << " power=" << power;
-    return s.str();
-  }
-};
 
 class Worker {
   int worker_id;
