@@ -14,6 +14,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include "./config.cpp"
+#include "./prometheus.cpp"
 #include "./log.cpp"
 
 using namespace std;
@@ -194,6 +195,11 @@ optional<int> sample_workers(Config c, int n) {
 int _main(void) {
   auto c = Config();
   INFO("Config: " << c.str());
+
+  if (c.test_prometheus) {
+    PushTestMetric(c);
+    return 0;
+  }
   int last=0;
   int i = c.power;
   for(;;i++) {
