@@ -1,5 +1,6 @@
 package golang
 
+import "fmt"
 import "github.com/prometheus/client_golang/prometheus"
 import "github.com/prometheus/client_golang/prometheus/push"
 
@@ -16,4 +17,12 @@ func NewPusher() *push.Pusher {
 
 	pusher := push.New("http://localhost:9091", "mq-producer").Gatherer(registry)
 	return pusher
+}
+
+func TestPusher(app *Instance) {
+	fmt.Println("Testing prometheus push")
+	TestMetric.Set(42)
+	if err := app.Prometheus.Add(); err != nil {
+		panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
+	}
 }

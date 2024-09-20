@@ -95,12 +95,7 @@ func main() {
 		die("Couldnt construct instance: %v\n", err)
 	}
 	if app.Config.Test_prometheus == 1 {
-		fmt.Println("Testing prometheus")
-		golang.TestMetric.Set(42)
-		//golang.Push(app.Prometheus)
-		if err := app.Prometheus.Add(); err != nil {
-			die("Prometheus push failed: %v\n", err.Error())
-		}
+		golang.TestPusher(app)
 		os.Exit(0)
 	}
 	pool, err := pgxpool.Connect(context.Background(), "postgres://mq@localhost/mq?pool_max_conns=2048")
