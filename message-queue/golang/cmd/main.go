@@ -110,6 +110,11 @@ func main() {
 	for ; ; i++ {
 		workers = 1 << i
 		r := sample_workers(app, workers, pool)
+		golang.PushMetrics(
+			app,
+			golang.SampleDesc{workers, "channels", "postgres"},
+			r,
+		)
 		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
 			i--
 			break
@@ -120,6 +125,11 @@ func main() {
 
 	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
 		r := sample_workers(app, workers, pool)
+		golang.PushMetrics(
+			app,
+			golang.SampleDesc{workers, "channels", "postgres"},
+			r,
+		)
 		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
 			break
 		} else {
