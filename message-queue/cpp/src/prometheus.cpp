@@ -1,3 +1,5 @@
+#ifndef PROMETHEUS_CPP
+#define PROMETHEUS_CPP
 #include <string>
 #include <memory>
 
@@ -13,36 +15,46 @@
 using namespace std;
 using namespace prometheus;
 
-void PushTestMetric(Config &c) {
+void PushTestMetric(Instance &app) {
   INFO("Testing push to prometheus");
+  INFO(string(app.runtime));
 
-  auto rt = Runtime();
-  INFO(string(rt));
-
-  auto registry = std::make_shared<Registry>();
-  auto& test_metric = BuildGauge()
-    .Name("test")
-    .Help("Test Metric")
-    .Register(*registry);
-
-  auto& test_metric_labeled = test_metric.Add(
+  app.prometheus.test_metric.Add(
     {{"worker_id", "0"}}
-  );
+  ).Increment();
 
-  test_metric_labeled.Increment();
+  app.prometheus.Push();
+}
 
+Gateway mk_gateway(const Config& c) {
   auto job_name = string("mq-producer");
-  auto port = to_string(c.prometheus_gateway_port);
-  auto g = Gateway(
+  return Gateway(
     c.prometheus_gateway_host,
-    port,
+    to_string(c.prometheus_gateway_port),
     job_name
   );
+}
 
-  g.RegisterCollectable(registry);
+#include "prometheus.hpp"
 
-  auto status = g.PushAdd();
+Prometheus::Prometheus(const Config &c)
+: registry(std::make_shared<Registry>())
+, gateway(mk_gateway(c))
+, test_metric(
+    BuildGauge()
+    .Name("test")
+    .Help("Test Metric")
+    .Register(*registry)
+  )
+{
+  gateway.RegisterCollectable(registry);
+}
+
+void Prometheus::Push() {
+  auto status = gateway.PushAdd();
   if (status != 200) {
     THROW("Prometheus push failed: " << status);
   }
 }
+
+#endif

@@ -15,6 +15,7 @@
 
 #include "./log.cpp"
 #include "./config.cpp"
+#include "./prometheus.hpp"
 
 using namespace std;
 
@@ -98,6 +99,10 @@ class Instance {
 public:
   Config config;
   Runtime runtime;
+  Prometheus prometheus;
+  Instance();
 };
+
+Instance::Instance() : prometheus(Prometheus(config)) {}
 
 #endif

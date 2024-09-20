@@ -198,7 +198,7 @@ int _main(void) {
   INFO("Config: " << app.config.str());
 
   if (app.config.test_prometheus) {
-    PushTestMetric(app.config);
+    PushTestMetric(app);
     return 0;
   }
   int last=0;
