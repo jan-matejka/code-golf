@@ -1,5 +1,7 @@
 package golang
 
+import "time"
+import "strconv"
 import "fmt"
 import "github.com/prometheus/client_golang/prometheus"
 import "github.com/prometheus/client_golang/prometheus/push"
@@ -46,12 +48,18 @@ func NewPusher() *push.Pusher {
 	return pusher
 }
 
+func mkLabels(app *Instance, sample SampleDesc, worker *WorkerResult) prometheus.Labels {
+	str_labels := app.Runtime.Map()
+	maps.Copy(str_labels, map[string]string{"worker_id": strconv.Itoa(worker.WorkerId)})
+	maps.Copy(str_labels, sample.Map())
+	var labels prometheus.Labels = str_labels
+	return labels
+}
+
 func TestPusher(app *Instance) {
 	fmt.Println("Testing prometheus push")
-	str_labels := app.Runtime.Map()
-	maps.Copy(str_labels, map[string]string{"worker_id": "0"})
-	maps.Copy(str_labels, SampleDesc{n_workers: 8, algorithm: "channels", mq_system: "postgres"}.Map())
-	var labels prometheus.Labels = str_labels
+	result := NewWorkerResult(0, 1, time.Second)
+	labels := mkLabels(app, SampleDesc{n_workers: 8, algorithm: "channels", mq_system: "postgres"}, result)
 	TestMetric.With(labels).Set(42)
 	if err := app.Prometheus.Add(); err != nil {
 		panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
