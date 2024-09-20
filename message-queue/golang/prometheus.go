@@ -12,11 +12,35 @@ var (
 	},
 		append(append([]string{"worker_id"}, RuntimeFieldNames()...), SampleDescFieldNames()...),
 	)
+
+	MessagesTotal = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "messages_total",
+		Help: "Messages sent",
+	},
+		append(append([]string{"worker_id"}, RuntimeFieldNames()...), SampleDescFieldNames()...),
+	)
+
+	MessagesPerSecond = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "messages_per_second",
+		Help: "Messages per second sent",
+	},
+		append(append([]string{"worker_id"}, RuntimeFieldNames()...), SampleDescFieldNames()...),
+	)
+
+	DurationSeconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "duration_seconds",
+		Help: "Work duration in seconds",
+	},
+		append(append([]string{"worker_id"}, RuntimeFieldNames()...), SampleDescFieldNames()...),
+	)
 )
 
 func NewPusher() *push.Pusher {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(TestMetric)
+	registry.MustRegister(MessagesTotal)
+	registry.MustRegister(MessagesPerSecond)
+	registry.MustRegister(DurationSeconds)
 
 	pusher := push.New("http://localhost:9091", "mq-producer").Gatherer(registry)
 	return pusher
