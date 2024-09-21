@@ -228,6 +228,11 @@ int _main(void) {
     }
   }
 
+  if (prev.has_value()) {
+    INFO("Found maximum:");
+    prev.value().Print();
+  }
+
   return 0;
 }
 
