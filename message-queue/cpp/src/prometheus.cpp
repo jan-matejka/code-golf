@@ -19,9 +19,10 @@ void PushTestMetric(Instance &app) {
   INFO("Testing push to prometheus");
   INFO(string(app.runtime));
 
-  app.prometheus.test_metric.Add(
-    {{"worker_id", "0"}}
-  ).Increment();
+  Labels labels = app.runtime.Map();
+  Labels extra = {{"worker_id", "0"}};
+  labels.merge(extra);
+  app.prometheus.test_metric.Add(labels).Increment();
 
   app.prometheus.Push();
 }
