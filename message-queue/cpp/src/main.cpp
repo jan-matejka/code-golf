@@ -17,6 +17,7 @@
 #include "./runtime.cpp"
 #include "./prometheus.cpp"
 #include "./log.cpp"
+#include "./primitives.cpp"
 
 using namespace std;
 using namespace pqxx;
@@ -36,7 +37,7 @@ class Worker {
     tx.commit();
   }
 
-  int sample() {
+  WorkerResult sample() {
     WVERBOSE(worker_id, "starting");
     WVERBOSE(worker_id, "got result q " << result.get());
     WVERBOSE(worker_id, "ready for work");
@@ -44,12 +45,16 @@ class Worker {
     barriers_passed = true;
     barr.arrive_and_wait();
 
+    auto start = chrono::steady_clock::now();
+
     int i=0;
     while(!exit) {
       insert(i++);
     }
 
-    return i;
+    auto end = chrono::steady_clock::now();
+    auto wr = WorkerResult(worker_id, i, end-start);
+    return wr;
   }
 
 public:
@@ -84,9 +89,9 @@ public:
   void operator()() {
     try {
       try {
-        int i = sample();
-        WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
-        push(i);
+        auto wr = sample();
+        WVERBOSE(worker_id, "pushing " << wr.MessagesTotal << " into " << result.get());
+        push(wr.MessagesTotal);
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
         throw;
