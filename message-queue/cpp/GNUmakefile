@@ -1,3 +1,14 @@
-build:
+CXXOPTS =-g -std=c++23
+CXXOPTS+=-lpqxx
+# prometheus-cpp-dev on debian
+CXXOPTS+=-lprometheus-cpp-push -lprometheus-cpp-core -lcurl -lz
+CXXOPTS+=-Wall
+CXXOPTS+=-o main
 
-	g++ src/main.cpp -g -std=c++23 -lpqxx -o main -Wall
+sources := $(wildcard src/*)
+
+.PHONY: build
+build: main
+
+main: $(sources)
+	g++ src/main.cpp $(CXXOPTS)

@@ -13,63 +13,19 @@
 #include <optional>
 
 #include <boost/algorithm/string.hpp>
-
-#define VERBOSE(x) if(igetenv("VERBOSE", 0)) osyncstream(cout) << x << endl
-#define INFO(x) osyncstream(cout) << x << endl
-#define ERR(x) osyncstream(cerr) << x << endl
-#define WVERBOSE(id, x) VERBOSE("Worker " << id << ": " << x)
-#define WERR(id, x) ERR("Worker " << id << ": " << x)
-#define THROW(x) { stringstream ss; ss << x; throw runtime_error(ss.str()); }
+#include "./config.cpp"
+#include "./runtime.cpp"
+#include "./prometheus.cpp"
+#include "./log.cpp"
+#include "./primitives.cpp"
 
 using namespace std;
 using namespace pqxx;
 
-inline int igetenv(const char* x, int def) {
-  char *c = getenv(x);
-  if(!c)
-    return def; // x undefined
-
-  string s(c);
-  boost::trim(s);
-  if (s.empty()) // x defined empty
-    return def;
-
-  // x defined with some value
-  try {
-    int i = stoi(s);
-    return i;
-  }catch(const invalid_argument& e) {
-    stringstream s;
-    s << "invalid environemnt variable: " << x;
-    throw runtime_error(s.str());
-  }catch(const out_of_range& e) {
-    stringstream s;
-    s << "out of bounds environment variable:" << x;
-    throw runtime_error(s.str());
-  }
-}
-
-class Config {
-public:
-  int duration = 3;
-  int power = 0;
-
-  Config() {
-    duration = igetenv("DURATION", 3);
-    power = igetenv("POWER", 0);
-  }
-
-  string str() {
-    stringstream s;
-    s << "duration=" << duration << " power=" << power;
-    return s.str();
-  }
-};
-
 class Worker {
   int worker_id;
   bool& exit;
-  shared_ptr<queue<optional<int>>>& result;
+  shared_ptr<queue<optional<WorkerResult>>>& result;
   barrier<>& barr;
   bool barriers_passed = false;
   mutex &mut;
@@ -81,7 +37,7 @@ class Worker {
     tx.commit();
   }
 
-  int sample() {
+  WorkerResult sample() {
     WVERBOSE(worker_id, "starting");
     WVERBOSE(worker_id, "got result q " << result.get());
     WVERBOSE(worker_id, "ready for work");
@@ -89,19 +45,23 @@ class Worker {
     barriers_passed = true;
     barr.arrive_and_wait();
 
+    auto start = chrono::steady_clock::now();
+
     int i=0;
     while(!exit) {
       insert(i++);
     }
 
-    return i;
+    auto end = chrono::steady_clock::now();
+    auto wr = WorkerResult(worker_id, i, end-start);
+    return wr;
   }
 
 public:
   Worker(
     int worker_id,
     bool& exit,
-    shared_ptr<queue<optional<int>>>& result,
+    shared_ptr<queue<optional<WorkerResult>>>& result,
     barrier<>& barr,
     mutex& mut
   ) try :
@@ -129,9 +89,9 @@ public:
   void operator()() {
     try {
       try {
-        int i = sample();
-        WVERBOSE(worker_id, "pushing " << i << " into " << result.get());
-        push(i);
+        auto wr = sample();
+        WVERBOSE(worker_id, "pushing " << wr.MessagesTotal << " into " << result.get());
+        push(wr);
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
         throw;
@@ -144,11 +104,11 @@ public:
     }
   }
 
-  void push(optional<int> i) {
+  void push(optional<WorkerResult> wr) {
     try{
       WVERBOSE(worker_id, "awaiting lock");
       mut.lock();
-      result->push(i);
+      result->push(wr);
       mut.unlock();
     }catch(...) {
       mut.unlock();
@@ -157,13 +117,12 @@ public:
   }
 };
 
-optional<int> sample_workers(Config c, int n) {
+optional<Results> sample_workers(Config c, int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
-  auto results = make_shared<queue<optional<int>>>();
+  auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<Worker>> workers;
   barrier b(n+1);
-  chrono::time_point<chrono::steady_clock> start, end;
 
   {
     mutex mut;
@@ -199,7 +158,6 @@ optional<int> sample_workers(Config c, int n) {
 
     // this barrier syncs all threads on ready to send out messages
     b.arrive_and_wait();
-    start = chrono::steady_clock::now();
 
     INFO("Waiting");
     for(auto i : ranges::views::iota(0, c.duration)) {
@@ -208,11 +166,10 @@ optional<int> sample_workers(Config c, int n) {
     }
 
     exit = true;
-    end = chrono::steady_clock::now();
   }
 
   VERBOSE("collecting results");
-  int total=0;
+  Results rs;
   for(int i : ranges::views::iota(0, n)) {
     for(int j = 0; results->empty(); j++) {
       if (j % 1000 == 0)
@@ -221,36 +178,53 @@ optional<int> sample_workers(Config c, int n) {
     }
     auto r = results->front();
     if (r.has_value()) {
-      total += r.value();
+      rs.Add(r.value());
       results->pop();
-      INFO(r.value());
     }else{
       return nullopt;
     }
   }
 
-  INFO("Total: " << total);
-  double secs = chrono::duration<double>(end-start).count();
-  float txps = total / secs;
-  INFO(secs);
-  INFO("Total txps: " << txps);
+  rs.Print();
   cout << endl;
-  return total;
+  return rs;
 }
 
 int _main(void) {
-  auto c = Config();
-  INFO("Config: " << c.str());
-  int last=0;
-  int i = c.power;
+  auto app = Instance();
+  INFO("Config: " << app.config.str());
+
+  if (app.config.test_prometheus) {
+    PushTestMetric(app);
+    return 0;
+  }
+  optional<Results> prev = nullopt;
+  int i = app.config.power;
   for(;;i++) {
     int n = pow(2, i);
-    auto r = sample_workers(c, n);
-    if (r.has_value()) {
-      if (r <= last)
+    auto opt = sample_workers(app.config, n);
+    if (opt.has_value()) {
+      auto rs = opt.value();
+      auto sdesc = SampleDesc(n, "threading", "postgres");
+      for(const auto& wr : rs.Workers) {
+        app.prometheus.messages_total
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesTotal);
+
+        app.prometheus.messages_per_second
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesPerSecond);
+
+        app.prometheus.duration_seconds
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.DurationSeconds);
+      }
+
+      app.prometheus.Push();
+      if (prev.has_value() && rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
         break;
 
-      last = r.value();
+      prev = rs;
     }else{
       THROW("failed to sample " << n << " workers");
     }
@@ -258,15 +232,36 @@ int _main(void) {
 
   i = pow(2, i-1) + 1;
   for(auto n : ranges::views::iota(i)) {
-    auto r = sample_workers(c, i);
-    if (r.has_value()) {
-      if (r <= last)
+    auto opt = sample_workers(app.config, i);
+    if (opt.has_value()) {
+      auto rs = opt.value();
+      auto sdesc = SampleDesc(n, "threading", "postgres");
+      for(const auto& wr : rs.Workers) {
+        app.prometheus.messages_total
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesTotal);
+
+        app.prometheus.messages_per_second
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesPerSecond);
+
+        app.prometheus.duration_seconds
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.DurationSeconds);
+      }
+      app.prometheus.Push();
+      if (prev.has_value() and rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
         break;
 
-      last = r.value();
+      prev = rs;
     }else{
       THROW("failed to sample " << n << " workers");
     }
+  }
+
+  if (prev.has_value()) {
+    INFO("Found maximum:");
+    prev.value().Print();
   }
 
   return 0;
