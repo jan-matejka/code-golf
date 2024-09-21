@@ -3,6 +3,9 @@
 
 #include <chrono>
 #include <string>
+#include <list>
+
+#include "./log.cpp"
 
 using namespace std;
 
@@ -36,5 +39,44 @@ WorkerResult::WorkerResult(int WorkerId, int MessagesTotal, WorkDuration Duratio
 , DurationSeconds(Duration.count())
 , MessagesPerSecond(MessagesTotal / DurationSeconds)
 {
+}
+
+class Results {
+public:
+  list<WorkerResult> Workers;
+  int MessagesTotal = 0;
+  WorkDuration Duration = chrono::nanoseconds(0);
+  float DurationSeconds = 0;
+  float MessagesPerSecond = 0;
+
+  void Add(WorkerResult wr);
+  void Print() const;
+  operator string() {
+    stringstream ss;
+    ss << "Results:"
+      << " MessagesTotal=" << MessagesTotal
+      << " Duration=" << Duration
+      << " MessagesPerSecond=" << MessagesPerSecond
+    ;
+    return ss.str();
+  }
+};
+
+void Results::Add(WorkerResult wr) {
+  Workers.push_back(wr);
+  MessagesTotal += wr.MessagesTotal;
+  Duration += wr.Duration;
+
+  DurationSeconds = Duration.count();
+  MessagesPerSecond = MessagesTotal / DurationSeconds;
+}
+
+void Results::Print() const {
+  for(auto& wr : Workers) {
+    INFO(string(wr));
+  }
+
+  INFO("Total: " << MessagesTotal);
+  INFO("Total mps: " << MessagesPerSecond);
 }
 #endif

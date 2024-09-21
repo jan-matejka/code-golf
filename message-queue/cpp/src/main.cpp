@@ -123,7 +123,6 @@ optional<int> sample_workers(Config c, int n) {
   auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<Worker>> workers;
   barrier b(n+1);
-  chrono::time_point<chrono::steady_clock> start, end;
 
   {
     mutex mut;
@@ -159,7 +158,6 @@ optional<int> sample_workers(Config c, int n) {
 
     // this barrier syncs all threads on ready to send out messages
     b.arrive_and_wait();
-    start = chrono::steady_clock::now();
 
     INFO("Waiting");
     for(auto i : ranges::views::iota(0, c.duration)) {
@@ -168,11 +166,10 @@ optional<int> sample_workers(Config c, int n) {
     }
 
     exit = true;
-    end = chrono::steady_clock::now();
   }
 
   VERBOSE("collecting results");
-  int total=0;
+  Results rs;
   for(int i : ranges::views::iota(0, n)) {
     for(int j = 0; results->empty(); j++) {
       if (j % 1000 == 0)
@@ -181,22 +178,16 @@ optional<int> sample_workers(Config c, int n) {
     }
     auto r = results->front();
     if (r.has_value()) {
-      auto wr = r.value();
-      total += wr.MessagesTotal;
+      rs.Add(r.value());
       results->pop();
-      INFO(string(wr));
     }else{
       return nullopt;
     }
   }
 
-  INFO("Total: " << total);
-  double secs = chrono::duration<double>(end-start).count();
-  float txps = total / secs;
-  INFO(secs);
-  INFO("Total txps: " << txps);
+  rs.Print();
   cout << endl;
-  return total;
+  return rs.MessagesTotal;
 }
 
 int _main(void) {
