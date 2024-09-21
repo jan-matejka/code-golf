@@ -47,6 +47,24 @@ Prometheus::Prometheus(const Config &c)
     .Help("Test Metric")
     .Register(*registry)
   )
+, messages_total(
+    BuildGauge()
+    .Name("messages_total")
+    .Help("Messages sent")
+    .Register(*registry)
+  )
+, messages_per_second(
+    BuildGauge()
+    .Name("messages_per_second")
+    .Help("Messages per second sent")
+    .Register(*registry)
+  )
+, duration_seconds(
+    BuildGauge()
+    .Name("duration_seconds")
+    .Help("Work duration in seconds")
+    .Register(*registry)
+  )
 {
   gateway.RegisterCollectable(registry);
 }

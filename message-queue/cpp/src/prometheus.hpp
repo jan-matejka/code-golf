@@ -17,6 +17,9 @@ class Prometheus {
 public:
   Prometheus(const Config &c);
   Family<Gauge>& test_metric;
+  Family<Gauge>& messages_total;
+  Family<Gauge>& messages_per_second;
+  Family<Gauge>& duration_seconds;
   void Push();
 };
 
