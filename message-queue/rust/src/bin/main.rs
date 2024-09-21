@@ -11,6 +11,8 @@ use std::time::Duration;
 use std::time::Instant;
 use std::fmt;
 
+use jmcgmqp::Config;
+
 #[derive(Debug)]
 enum Error {
     WorkerRxDisconnect,
@@ -126,7 +128,12 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
     return Ok((total, ips));
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), Box<dyn error::Error>> {
+    let c = Config::new()?;
+    if c.test_prometheus == 1 {
+        println!("Testing prometheus");
+        return Ok(());
+    }
     let mut last = 0 as f64;
     let mut i = 0;
     let base = 2 as u64;
