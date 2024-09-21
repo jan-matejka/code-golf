@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 postgres = "0.19.7"
+
+[lib]
+name = "jmcgmqp"
+path = "src/lib/lib.rs"
