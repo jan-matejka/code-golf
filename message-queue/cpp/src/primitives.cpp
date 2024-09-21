@@ -2,6 +2,7 @@
 #define PRIMITIVES_CPP
 
 #include <chrono>
+#include <string>
 
 using namespace std;
 
@@ -16,6 +17,16 @@ public:
   float MessagesPerSecond;
 
   WorkerResult(int WorkerId, int MessagesTotal, WorkDuration Duration);
+  operator string() const {
+    stringstream ss;
+    ss << "WorkerResult:"
+      << " WorkerId=" << WorkerId
+      << " MessagesTotal=" << MessagesTotal
+      << " Duration=" << Duration
+      << " MessagesPerSecond=" << MessagesPerSecond
+    ;
+    return ss.str();
+  }
 };
 
 WorkerResult::WorkerResult(int WorkerId, int MessagesTotal, WorkDuration Duration)

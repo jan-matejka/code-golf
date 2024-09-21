@@ -25,7 +25,7 @@ using namespace pqxx;
 class Worker {
   int worker_id;
   bool& exit;
-  shared_ptr<queue<optional<int>>>& result;
+  shared_ptr<queue<optional<WorkerResult>>>& result;
   barrier<>& barr;
   bool barriers_passed = false;
   mutex &mut;
@@ -61,7 +61,7 @@ public:
   Worker(
     int worker_id,
     bool& exit,
-    shared_ptr<queue<optional<int>>>& result,
+    shared_ptr<queue<optional<WorkerResult>>>& result,
     barrier<>& barr,
     mutex& mut
   ) try :
@@ -91,7 +91,7 @@ public:
       try {
         auto wr = sample();
         WVERBOSE(worker_id, "pushing " << wr.MessagesTotal << " into " << result.get());
-        push(wr.MessagesTotal);
+        push(wr);
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());
         throw;
@@ -104,11 +104,11 @@ public:
     }
   }
 
-  void push(optional<int> i) {
+  void push(optional<WorkerResult> wr) {
     try{
       WVERBOSE(worker_id, "awaiting lock");
       mut.lock();
-      result->push(i);
+      result->push(wr);
       mut.unlock();
     }catch(...) {
       mut.unlock();
@@ -120,7 +120,7 @@ public:
 optional<int> sample_workers(Config c, int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
-  auto results = make_shared<queue<optional<int>>>();
+  auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<Worker>> workers;
   barrier b(n+1);
   chrono::time_point<chrono::steady_clock> start, end;
@@ -181,9 +181,10 @@ optional<int> sample_workers(Config c, int n) {
     }
     auto r = results->front();
     if (r.has_value()) {
-      total += r.value();
+      auto wr = r.value();
+      total += wr.MessagesTotal;
       results->pop();
-      INFO(r.value());
+      INFO(string(wr));
     }else{
       return nullopt;
     }
