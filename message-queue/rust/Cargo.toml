@@ -8,6 +8,18 @@ edition = "2021"
 [dependencies]
 postgres = "0.19.7"
 thiserror = "1.0"
+platform-info = "2"
+rustc_version_runtime = "0.3.0"
+chrono = "0.4.38"
+# derive_more = "1.0", can't use. Requires newer rustc >= 1.75.
+
+[dependencies.uuid]
+version = "1.10.0"
+features = [
+    "v4",
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
 
 [lib]
 name = "jmcgmqp"
