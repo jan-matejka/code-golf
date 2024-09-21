@@ -4,6 +4,9 @@
 #include <chrono>
 #include <string>
 #include <list>
+#include <map>
+
+#include <prometheus/labels.h>
 
 #include "./log.cpp"
 
@@ -79,4 +82,22 @@ void Results::Print() const {
   INFO("Total: " << MessagesTotal);
   INFO("Total mps: " << MessagesPerSecond);
 }
+
+class SampleDesc {
+public:
+  int n_workers;
+  string algorithm;
+  string mq_system;
+  map<string,string> Map() const;
+};
+
+map<string,string> SampleDesc::Map() const {
+  map<string,string> xs = {
+    {"n_workers", to_string(n_workers)},
+    {"algorithm", algorithm},
+    {"mq_system", mq_system},
+  };
+  return xs;
+}
+
 #endif

@@ -13,9 +13,12 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include <prometheus/labels.h>
+
 #include "./log.cpp"
 #include "./config.cpp"
 #include "./prometheus.hpp"
+#include "./primitives.cpp"
 
 using namespace std;
 
@@ -113,5 +116,12 @@ public:
 };
 
 Instance::Instance() : prometheus(Prometheus(config)) {}
+
+prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc) {
+  Labels labels = app.runtime.Map();
+  labels.merge(sdesc.Map());
+  labels.insert(pair{"worker_id", to_string(wr.WorkerId)});
+  return labels;
+}
 
 #endif

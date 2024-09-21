@@ -6,6 +6,7 @@
 #include <prometheus/gateway.h>
 
 #include "./config.cpp"
+#include "./runtime.cpp"
 
 using namespace std;
 using namespace prometheus;

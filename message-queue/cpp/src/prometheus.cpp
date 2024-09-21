@@ -11,17 +11,20 @@
 #include "./log.cpp"
 #include "./config.cpp"
 #include "./runtime.cpp"
+#include "./primitives.cpp"
 
 using namespace std;
 using namespace prometheus;
 
-void PushTestMetric(Instance &app) {
+void PushTestMetric(Instance& app) {
   INFO("Testing push to prometheus");
   INFO(string(app.runtime));
 
-  Labels labels = app.runtime.Map();
-  Labels extra = {{"worker_id", "0"}};
-  labels.merge(extra);
+  auto labels = mk_labels(
+    app,
+    WorkerResult(0, 42, chrono::seconds(1)),
+    SampleDesc(4, "threading", "postgres")
+  );
   app.prometheus.test_metric.Add(labels).Increment();
 
   app.prometheus.Push();
