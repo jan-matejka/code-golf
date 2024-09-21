@@ -117,7 +117,7 @@ public:
   }
 };
 
-optional<int> sample_workers(Config c, int n) {
+optional<Results> sample_workers(Config c, int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
   auto results = make_shared<queue<optional<WorkerResult>>>();
@@ -187,7 +187,7 @@ optional<int> sample_workers(Config c, int n) {
 
   rs.Print();
   cout << endl;
-  return rs.MessagesTotal;
+  return rs;
 }
 
 int _main(void) {
@@ -198,16 +198,17 @@ int _main(void) {
     PushTestMetric(app);
     return 0;
   }
-  int last=0;
+  optional<Results> prev = nullopt;
   int i = app.config.power;
   for(;;i++) {
     int n = pow(2, i);
-    auto r = sample_workers(app.config, n);
-    if (r.has_value()) {
-      if (r <= last)
+    auto opt = sample_workers(app.config, n);
+    if (opt.has_value()) {
+      auto rs = opt.value();
+      if (prev.has_value() && rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
         break;
 
-      last = r.value();
+      prev = rs;
     }else{
       THROW("failed to sample " << n << " workers");
     }
@@ -215,12 +216,13 @@ int _main(void) {
 
   i = pow(2, i-1) + 1;
   for(auto n : ranges::views::iota(i)) {
-    auto r = sample_workers(app.config, i);
-    if (r.has_value()) {
-      if (r <= last)
+    auto opt = sample_workers(app.config, i);
+    if (opt.has_value()) {
+      auto rs = opt.value();
+      if (prev.has_value() and rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
         break;
 
-      last = r.value();
+      prev = rs;
     }else{
       THROW("failed to sample " << n << " workers");
     }
