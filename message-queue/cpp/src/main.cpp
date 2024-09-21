@@ -205,6 +205,22 @@ int _main(void) {
     auto opt = sample_workers(app.config, n);
     if (opt.has_value()) {
       auto rs = opt.value();
+      auto sdesc = SampleDesc(n, "threading", "postgres");
+      for(const auto& wr : rs.Workers) {
+        app.prometheus.messages_total
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesTotal);
+
+        app.prometheus.messages_per_second
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesPerSecond);
+
+        app.prometheus.duration_seconds
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.DurationSeconds);
+      }
+
+      app.prometheus.Push();
       if (prev.has_value() && rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
         break;
 
@@ -219,6 +235,21 @@ int _main(void) {
     auto opt = sample_workers(app.config, i);
     if (opt.has_value()) {
       auto rs = opt.value();
+      auto sdesc = SampleDesc(n, "threading", "postgres");
+      for(const auto& wr : rs.Workers) {
+        app.prometheus.messages_total
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesTotal);
+
+        app.prometheus.messages_per_second
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.MessagesPerSecond);
+
+        app.prometheus.duration_seconds
+          .Add(mk_labels(app, wr, sdesc))
+          .Set(wr.DurationSeconds);
+      }
+      app.prometheus.Push();
       if (prev.has_value() and rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
         break;
 
