@@ -8,4 +8,4 @@ pub mod prometheus;
 pub use crate::prometheus::test_cmd;
 
 pub mod worker;
-pub use crate::worker::SampleDesc;
+pub use crate::worker::{SampleDesc,WorkerResult,Results};

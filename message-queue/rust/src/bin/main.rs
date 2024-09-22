@@ -11,7 +11,7 @@ use std::time::Duration;
 use std::time::Instant;
 use std::fmt;
 
-use jmcgmqp::{Instance,test_cmd};
+use jmcgmqp::{Instance,test_cmd,WorkerResult,Results};
 
 #[derive(Debug)]
 enum Error {
@@ -113,19 +113,17 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
 
     let elapsed = now.elapsed();
 
-    let mut total = 0;
+    let mut wresults: Vec<WorkerResult> = Vec::new();
     for v in workers {
         let (is_error, n) = v.join().unwrap();
         if is_error {
             return Err(Error::WorkerFailed);
         }
         println!("{}", n);
-        total += n
+        wresults.push(WorkerResult::new(0, n, elapsed));
     }
-
-    let ips = total as f64 / elapsed.as_secs() as f64;
-
-    return Ok((total, ips));
+    let results = Results::new(wresults);
+    return Ok((results.messages_total, results.messages_per_second));
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
