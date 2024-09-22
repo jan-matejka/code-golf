@@ -87,7 +87,7 @@ fn worker_thread(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandl
     return h
 }
 
-fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
+fn sample_workers(n: u64) -> Result<Results,Error> {
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
 
@@ -123,7 +123,7 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
         wresults.push(WorkerResult::new(0, n, elapsed));
     }
     let results = Results::new(wresults);
-    return Ok((results.messages_total, results.messages_per_second));
+    return Ok(results);
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
@@ -140,12 +140,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             eprintln!("Ran out of u64 powers");
             exit(1);
         }
-        let (total, ips) = sample_workers(pow.unwrap())?;
-        println!("Total: {}\nips: {}\n", total, ips);
-        if last >= ips {
+        let rs = sample_workers(pow.unwrap())?;
+        println!(
+            "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
+        );
+        if last >= rs.messages_per_second {
             break;
         } else {
-            last = ips;
+            last = rs.messages_per_second;
         }
     }
 
@@ -154,12 +156,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     last = 0 as f64;
 
     for i in i..max {
-        let (total, ips) = sample_workers(i as u64)?;
-        println!("Total: {}\nips: {}\n", total, ips);
-        if last >= ips {
+        let rs = sample_workers(i as u64)?;
+        println!(
+            "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
+        );
+        if last >= rs.messages_per_second {
             break;
         } else {
-            last = ips;
+            last = rs.messages_per_second;
         }
     }
     return Ok(())
