@@ -44,6 +44,28 @@ impl Runtime {
             arch: pi.machine().to_str().unwrap().to_string()
         });
     }
+
+    pub fn to_map(&self) -> HashMap<String,String> {
+        let rt_string = format!(
+            "{}{}",
+            self.runtime.short_version_string,
+            match self.runtime.llvm_version.as_ref() {
+                Some(x) => { format!(" llvm {}", x.to_string()) }
+                None => { "".to_string() }
+            }
+        );
+
+        let mut m = HashMap::new();
+        m.insert("ctime".to_string(), self.ctime.to_rfc3339());
+        m.insert("uuid".to_string(), self.uuid.to_string());
+        m.insert("lang".to_string(), self.lang.to_owned());
+        m.insert("lang_version".to_string(), self.lang_version.to_string());
+        m.insert("runtime".to_string(), rt_string);
+        m.insert("os".to_string(), self.os.to_owned());
+        m.insert("kernel".to_string(), self.kernel.to_owned());
+        m.insert("arch".to_string(), self.arch.to_owned());
+        return m;
+    }
 }
 
 pub struct Instance {
@@ -54,11 +76,13 @@ pub struct Instance {
 
 impl Instance {
     pub fn new() -> Result<Self,Box<dyn error::Error>> {
+        let r = Runtime::new()?;
+        let p = Prometheus::new(&r)?;
         return Ok(
             Self{
                 config: Config::new()?,
-                runtime: Runtime::new()?,
-                prometheus: Prometheus::new()?,
+                runtime: r,
+                prometheus: p,
             }
         );
     }
