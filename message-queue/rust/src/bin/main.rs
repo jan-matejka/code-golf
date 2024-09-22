@@ -6,9 +6,9 @@ use std::thread;
 use std::error;
 use std::time::Duration;
 
-use jmcgmqp::{Instance,test_cmd,WorkerResult,Results,worker};
+use jmcgmqp::{Instance,test_cmd,WorkerResult,Results,worker,SampleDesc};
 
-fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
+fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error>> {
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
 
@@ -34,11 +34,22 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
     for v in workers {
         let r = v.join().unwrap();
         if let Err(e) = r {
-            return Err(e);
+            return Err(Box::new(e));
         }
         let wr = r.unwrap();
         println!("{}", wr.messages_total);
+
+        app.prometheus.messages_total.set(wr.messages_total.clone() as i64);
+        app.prometheus.messages_per_second.set(wr.messages_per_second.clone());
+        app.prometheus.duration_seconds.set(wr.duration.as_secs_f64().clone());
+
         wresults.push(wr);
+        let sdesc = SampleDesc{
+            n_workers: n,
+            algorithm: "threading".to_string(),
+            mq_system: "postgres".to_string(),
+        };
+        app.prometheus.push(sdesc)?;
     }
     let results = Results::new(wresults);
     return Ok(results);
