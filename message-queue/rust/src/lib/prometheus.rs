@@ -44,11 +44,13 @@ impl Prometheus {
         return Ok(s);
     }
 
-    pub fn push(&self, sdesc: SampleDesc) -> Result<(),Box<dyn error::Error>> {
+    pub fn push(&self, sdesc: SampleDesc, worker_id: u64) -> Result<(),Box<dyn error::Error>> {
         let metrics = self.registry.gather();
+        let mut labels = sdesc.to_map();
+        labels.insert("worker_id".to_string(), worker_id.to_string());
         let r = prometheus::push_add_metrics(
             "mq-producer",
-            sdesc.to_map(),
+            labels,
             "localhost:9091",
             metrics,
             None,
@@ -72,7 +74,7 @@ pub fn test_cmd(app: &Instance) -> Result<(), Box<dyn error::Error>> {
     };
 
     app.prometheus.test_metric.set(2);
-    app.prometheus.push(sdesc)?;
+    app.prometheus.push(sdesc, 1)?;
 
     return Ok(());
 }

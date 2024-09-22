@@ -42,6 +42,7 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error
         app.prometheus.messages_total.set(wr.messages_total.clone() as i64);
         app.prometheus.messages_per_second.set(wr.messages_per_second.clone());
         app.prometheus.duration_seconds.set(wr.duration.as_secs_f64().clone());
+        let worker_id = wr.worker_id;
 
         wresults.push(wr);
         let sdesc = SampleDesc{
@@ -49,7 +50,7 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error
             algorithm: "threading".to_string(),
             mq_system: "postgres".to_string(),
         };
-        app.prometheus.push(sdesc)?;
+        app.prometheus.push(sdesc, worker_id)?;
     }
     let results = Results::new(wresults);
     return Ok(results);
