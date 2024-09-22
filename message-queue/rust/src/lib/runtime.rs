@@ -8,6 +8,7 @@ use platform_info::{PlatformInfo, PlatformInfoAPI, UNameAPI};
 use rustc_version_runtime;
 
 use crate::Config;
+use crate::prometheus::Prometheus;
 
 #[derive(Debug)]
 pub struct Runtime {
@@ -48,6 +49,7 @@ impl Runtime {
 pub struct Instance {
     pub config: Config,
     pub runtime: Runtime,
+    pub prometheus: Prometheus,
 }
 
 impl Instance {
@@ -56,6 +58,7 @@ impl Instance {
             Self{
                 config: Config::new()?,
                 runtime: Runtime::new()?,
+                prometheus: Prometheus::new()?,
             }
         );
     }

@@ -21,6 +21,10 @@ features = [
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
 
+[dependencies.prometheus]
+version = "0.13.4"
+features = ["push"]
+
 [lib]
 name = "jmcgmqp"
 path = "src/lib/lib.rs"
