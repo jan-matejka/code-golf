@@ -1,6 +1,6 @@
 use std::error;
 
-use prometheus::{IntGauge, Registry};
+use prometheus::{IntGauge, Registry, Gauge};
 
 use crate::Instance;
 use crate::runtime::Runtime;
@@ -8,7 +8,10 @@ use crate::SampleDesc;
 
 pub struct Prometheus {
     registry: Registry,
-    pub test_metric: IntGauge
+    pub test_metric: IntGauge,
+    pub messages_total: IntGauge,
+    pub messages_per_second: Gauge,
+    pub duration_seconds: Gauge,
 }
 
 impl Prometheus {
@@ -21,8 +24,23 @@ impl Prometheus {
         let s = Self{
             registry: r.unwrap(),
             test_metric: IntGauge::new("test", "Test metric.").unwrap(),
+            messages_total: IntGauge::new(
+                "messages_total",
+                "Messages sent."
+            ).unwrap(),
+            messages_per_second: Gauge::new(
+                "messages_per_second",
+                "Messages per second sent."
+            ).unwrap(),
+            duration_seconds: Gauge::new(
+                "duration_seconds",
+                "Work duration in seconds."
+            ).unwrap(),
         };
         s.registry.register(Box::new(s.test_metric.clone()))?;
+        s.registry.register(Box::new(s.messages_total.clone()))?;
+        s.registry.register(Box::new(s.messages_per_second.clone()))?;
+        s.registry.register(Box::new(s.duration_seconds.clone()))?;
         return Ok(s);
     }
 
