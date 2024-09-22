@@ -1,2 +1,5 @@
 module Jmcgmqp
-where
+( worker
+) where
+
+import Jmcgmqp.Worker
