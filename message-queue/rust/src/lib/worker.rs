@@ -1,5 +1,26 @@
 use std::time::Duration;
 use std::collections::HashMap;
+use std::sync::mpsc::Receiver;
+use std::sync::{Arc,Barrier,mpsc};
+use std::thread;
+use std::error;
+use std::fmt;
+
+use postgres as pg;
+
+#[derive(Debug)]
+pub enum Error {
+    WorkerRxDisconnect,
+    WorkerFailed
+}
+
+impl error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 pub struct SampleDesc {
     pub n_workers: u64,
@@ -59,4 +80,65 @@ impl Results {
                 messages as f64 / duration.as_secs() as f64,
         };
     }
+}
+
+pub fn new(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<(bool, u64)> {
+    // Note: can not return boxed dyn error. Print error to stderr and terminate.
+    let h = thread::spawn(move || {
+        let r = worker(rx, barrier);
+        if r.is_err() {
+            eprintln!("worker error: {}", r.unwrap_err().to_string());
+            return (true, 0);
+        }
+
+        return (false, r.unwrap());
+    });
+    return h
+}
+
+fn make_client() -> Result<pg::Client, pg::Error>  {
+    let mut client = pg::Client::connect("postgres://mq@localhost/mq", pg::NoTls)?;
+    client.execute("select 1", &[])?;
+    return Ok(client);
+}
+
+fn worker(rx: Receiver<bool>, pg_barrier: Arc<Barrier>) -> Result<u64, Box<dyn error::Error>> {
+    let r = make_client();
+    if r.is_err() {
+        pg_barrier.wait();
+        unsafe {
+            // have to use unchecked because Client does not implement Debug trait
+            return Err(Box::new(r.unwrap_err_unchecked()));
+        }
+    }
+    let mut client = r.unwrap();
+    pg_barrier.wait();
+
+    let i: u64 = 0;
+    for i in 1.. {
+        if worker_check_quit(&rx).unwrap() {
+            return Ok(i);
+        }
+        insert(&mut client, i)?;
+    }
+    return Ok(i);
+}
+
+fn worker_check_quit(rx: &Receiver<bool>) -> Result<bool,Box<dyn error::Error>> {
+    let r = rx.try_recv();
+    if r.is_err() {
+        let e = r.unwrap_err();
+        if matches!(e, mpsc::TryRecvError::Disconnected) {
+            return Err(Box::new(Error::WorkerRxDisconnect));
+        }
+    }else{
+        return Ok(true);
+    }
+    return Ok(false);
+}
+
+fn insert(c: &mut pg::Client, i: u64) -> Result<(),Box<dyn error::Error>> {
+    let i_sql = i.to_string();
+    c.execute("insert into queue (data) values ($1)", &[&i_sql])?;
+    return Ok(())
 }
