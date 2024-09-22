@@ -3,7 +3,7 @@ Name: Src
 Version: 0.1.1
 
 Executable main
-  Main-is: Main.hs
+  Main-is: bin/Main.hs
   Build-Depends: base >4 && <5
-  Hs-Source-Dirs: ./
+  Hs-Source-Dirs: ./src
   Build-Depends: base, postgresql-simple == 0.7.0.0, monad-loops == 0.4.3, clock == 0.8.4
