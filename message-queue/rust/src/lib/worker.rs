@@ -46,7 +46,7 @@ impl WorkerResult {
             messages_total: messages_total,
             duration: duration,
             messages_per_second:
-                messages_total as f64 / duration.as_secs() as f64,
+                messages_total as f64 / duration.as_secs_f64(),
         }
     }
 }
@@ -71,7 +71,7 @@ impl Results {
             messages_total: messages,
             duration: duration,
             messages_per_second:
-                messages as f64 / duration.as_secs() as f64,
+                messages as f64 / duration.as_secs_f64(),
         };
     }
 }
