@@ -4,22 +4,16 @@ use std::sync::mpsc::Receiver;
 use std::sync::{Arc,Barrier,mpsc};
 use std::thread;
 use std::error;
-use std::fmt;
 
+use thiserror::Error;
 use postgres as pg;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("WorkerRxDisconnect")]
     WorkerRxDisconnect,
+    #[error("WorkerFailed")]
     WorkerFailed
-}
-
-impl error::Error for Error {}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }
 
 pub struct SampleDesc {
