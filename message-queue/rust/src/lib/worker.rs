@@ -76,6 +76,12 @@ impl Results {
     }
 }
 
+impl std::fmt::Display for Results {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Total: {}\nTotal mps: {}\n", self.messages_total, self.messages_per_second)
+    }
+}
+
 pub fn new(worker_id: u64, rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<Result<WorkerResult,Error>> {
     // Note: can not return boxed dyn error. Print error to stderr and terminate.
     let h = thread::spawn(move || {

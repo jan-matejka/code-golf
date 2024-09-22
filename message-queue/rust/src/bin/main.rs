@@ -9,6 +9,7 @@ use std::time::Duration;
 use jmcgmqp::{Instance,test_cmd,WorkerResult,Results,worker,SampleDesc};
 
 fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error>> {
+    println!("Spawning {} workers", n);
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
 
@@ -23,7 +24,11 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error
     let b = Arc::clone(&barrier);
     b.wait();
 
-    thread::sleep(Duration::from_secs(app.config.duration));
+    println!("Waiting");
+    for i in (1..=app.config.duration).rev() {
+        println!("{}", i);
+        thread::sleep(Duration::from_secs(1));
+    }
 
     for s in quit_sig_senders {
         let _ = s.send(true);
@@ -37,7 +42,7 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error
             return Err(Box::new(e));
         }
         let wr = r.unwrap();
-        println!("{}", wr.messages_total);
+        println!("{}: {}", wr.worker_id, wr.messages_total);
 
         app.prometheus.messages_total.set(wr.messages_total.clone() as i64);
         app.prometheus.messages_per_second.set(wr.messages_per_second.clone());
@@ -71,9 +76,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             exit(1);
         }
         let rs = sample_workers(&app, pow.unwrap())?;
-        println!(
-            "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
-        );
+        println!("{}", rs);
         if prev.is_some()
         && prev.as_ref().unwrap().messages_per_second >= rs.messages_per_second
         {
@@ -88,9 +91,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     for i in i..max {
         let rs = sample_workers(&app, i as u64)?;
-        println!(
-            "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
-        );
+        println!("{}", rs);
         if prev.is_some()
         && prev.as_ref().unwrap().messages_per_second >= rs.messages_per_second
         {
@@ -99,5 +100,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             prev = Some(rs);
         }
     }
+
+    match prev {
+        Some(rs) => {
+            println!("Found maximum:\n{}", rs);
+        }
+        None => {
+            println!("No successful run");
+        }
+    }
+
     return Ok(())
 }
