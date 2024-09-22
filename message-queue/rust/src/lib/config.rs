@@ -11,7 +11,8 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct Config {
-    pub test_prometheus: i64
+    pub test_prometheus: i64,
+    pub duration: u64,
 }
 
 impl Config {
@@ -40,6 +41,7 @@ impl Config {
     pub fn new() -> Result<Self,Box<dyn error::Error>> {
         return Ok(Self{
             test_prometheus: Config::getenv::<i64>("TEST_PROMETHEUS", 0)?,
+            duration: Config::getenv::<u64>("DURATION", 3)?,
         });
     }
 }

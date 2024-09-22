@@ -9,7 +9,7 @@ use std::time::Instant;
 
 use jmcgmqp::{Instance,test_cmd,WorkerResult,Results,worker};
 
-fn sample_workers(n: u64) -> Result<Results,worker::Error> {
+fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
 
@@ -26,7 +26,7 @@ fn sample_workers(n: u64) -> Result<Results,worker::Error> {
     b.wait();
     let now = Instant::now();
 
-    thread::sleep(Duration::from_secs(3));
+    thread::sleep(Duration::from_secs(app.config.duration));
 
     for s in quit_sig_senders {
         let _ = s.send(true);
@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             eprintln!("Ran out of u64 powers");
             exit(1);
         }
-        let rs = sample_workers(pow.unwrap())?;
+        let rs = sample_workers(&app, pow.unwrap())?;
         println!(
             "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
         );
@@ -79,7 +79,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     i -= 1;
 
     for i in i..max {
-        let rs = sample_workers(i as u64)?;
+        let rs = sample_workers(&app, i as u64)?;
         println!(
             "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
         );
