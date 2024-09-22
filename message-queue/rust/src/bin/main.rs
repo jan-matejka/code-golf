@@ -11,7 +11,7 @@ use std::time::Duration;
 use std::time::Instant;
 use std::fmt;
 
-use jmcgmqp::Instance;
+use jmcgmqp::{Instance,test_cmd};
 
 #[derive(Debug)]
 enum Error {
@@ -131,9 +131,7 @@ fn sample_workers(n: u64) -> Result<(u64, f64),Error> {
 fn main() -> Result<(), Box<dyn error::Error>> {
     let app = Instance::new()?;
     if app.config.test_prometheus == 1 {
-        println!("Testing prometheus");
-        println!("{:?}", app.runtime);
-        return Ok(());
+        return test_cmd(&app);
     }
     let mut last = 0 as f64;
     let mut i = 0;
