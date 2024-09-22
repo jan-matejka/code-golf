@@ -76,16 +76,16 @@ impl Results {
     }
 }
 
-pub fn new(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<(bool, u64)> {
+pub fn new(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<Result<u64,Error>> {
     // Note: can not return boxed dyn error. Print error to stderr and terminate.
     let h = thread::spawn(move || {
         let r = worker(rx, barrier);
         if r.is_err() {
             eprintln!("worker error: {}", r.unwrap_err().to_string());
-            return (true, 0);
+            return Err(Error::WorkerFailed);
         }
 
-        return (false, r.unwrap());
+        return Ok(r.unwrap());
     });
     return h
 }

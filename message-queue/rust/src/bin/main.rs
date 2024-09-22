@@ -37,10 +37,11 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
 
     let mut wresults: Vec<WorkerResult> = Vec::new();
     for v in workers {
-        let (is_error, n) = v.join().unwrap();
-        if is_error {
-            return Err(worker::Error::WorkerFailed);
+        let r = v.join().unwrap();
+        if let Err(e) = r {
+            return Err(e);
         }
+        let n = r.unwrap();
         println!("{}", n);
         wresults.push(WorkerResult::new(0, n, elapsed));
     }
