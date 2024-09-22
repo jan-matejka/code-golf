@@ -67,10 +67,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         return test_cmd(&app);
     }
     let mut prev:Option<Results> = None;
-    let mut i = 0;
+    let mut exp:u32 = 0;
     let base = 2 as u64;
-    for i in 1.. {
-        let pow = base.checked_pow(i);
+    loop {
+        let pow = base.checked_pow(exp);
         if pow.is_none() {
             eprintln!("Ran out of u64 powers");
             exit(1);
@@ -84,11 +84,11 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         } else {
             prev = Some(rs);
         }
+        exp += 1;
     }
 
-    let max = base.pow(i) as u32;
-    i -= 1;
-
+    let max = base.pow(exp);
+    let i = base.pow(exp-1) + 1;
     for i in i..max {
         let rs = sample_workers(&app, i as u64)?;
         println!("{}", rs);
