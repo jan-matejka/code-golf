@@ -5,7 +5,6 @@ use std::sync::mpsc::channel;
 use std::thread;
 use std::error;
 use std::time::Duration;
-use std::time::Instant;
 
 use jmcgmqp::{Instance,test_cmd,WorkerResult,Results,worker};
 
@@ -23,7 +22,6 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
 
     let b = Arc::clone(&barrier);
     b.wait();
-    let now = Instant::now();
 
     thread::sleep(Duration::from_secs(app.config.duration));
 
@@ -31,8 +29,6 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
         let _ = s.send(true);
         // if we get an error, it means client disconnected; ignore.
     }
-
-    let elapsed = now.elapsed();
 
     let mut wresults: Vec<WorkerResult> = Vec::new();
     for v in workers {
@@ -42,7 +38,7 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
         }
         let wr = r.unwrap();
         println!("{}", wr.messages_total);
-        wresults.push(WorkerResult::new(wr.worker_id, wr.messages_total, elapsed));
+        wresults.push(wr);
     }
     let results = Results::new(wresults);
     return Ok(results);
