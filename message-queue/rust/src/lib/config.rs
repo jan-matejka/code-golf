@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::env;
 use std::error;
 use thiserror::Error;
@@ -14,7 +15,9 @@ pub struct Config {
 }
 
 impl Config {
-    fn igetenv(name: &str, default: i64) -> Result<i64,Box<dyn error::Error>> {
+    fn getenv<T: FromStr>(name: &str, default: T) -> Result<T,Box<dyn error::Error>>
+    where <T as FromStr>::Err: 'static, <T as FromStr>::Err: error::Error
+    {
         if let Some(x) = env::var_os(name) {
             let r = x.into_string();
             if r.is_err() {
@@ -24,7 +27,11 @@ impl Config {
                     ))
                 );
             }
-            return Ok(r.unwrap().parse::<i64>()?);
+            let p = r.unwrap().parse::<T>();
+            if let Err(e) = p {
+                return Err(Box::new(e));
+            }
+            return Ok(p.unwrap());
         } else {
             return Ok(default);
         }
@@ -32,7 +39,7 @@ impl Config {
 
     pub fn new() -> Result<Self,Box<dyn error::Error>> {
         return Ok(Self{
-            test_prometheus: Config::igetenv("TEST_PROMETHEUS", 0)?
+            test_prometheus: Config::getenv::<i64>("TEST_PROMETHEUS", 0)?,
         });
     }
 }
