@@ -131,7 +131,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     if app.config.test_prometheus == 1 {
         return test_cmd(&app);
     }
-    let mut last = 0 as f64;
+    let mut prev:Option<Results> = None;
     let mut i = 0;
     let base = 2 as u64;
     for i in 1.. {
@@ -144,26 +144,29 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         println!(
             "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
         );
-        if last >= rs.messages_per_second {
+        if prev.is_some()
+        && prev.as_ref().unwrap().messages_per_second >= rs.messages_per_second
+        {
             break;
         } else {
-            last = rs.messages_per_second;
+            prev = Some(rs);
         }
     }
 
     let max = base.pow(i) as u32;
     i -= 1;
-    last = 0 as f64;
 
     for i in i..max {
         let rs = sample_workers(i as u64)?;
         println!(
             "Total: {}\nips: {}\n", rs.messages_total, rs.messages_per_second
         );
-        if last >= rs.messages_per_second {
+        if prev.is_some()
+        && prev.as_ref().unwrap().messages_per_second >= rs.messages_per_second
+        {
             break;
         } else {
-            last = rs.messages_per_second;
+            prev = Some(rs);
         }
     }
     return Ok(())
