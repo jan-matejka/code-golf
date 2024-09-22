@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration,Instant};
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 use std::sync::{Arc,Barrier,mpsc};
@@ -76,12 +76,12 @@ impl Results {
     }
 }
 
-pub fn new(rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<Result<u64,Error>> {
+pub fn new(worker_id: u64, rx: Receiver<bool>, barrier: Arc<Barrier>) -> thread::JoinHandle<Result<WorkerResult,Error>> {
     // Note: can not return boxed dyn error. Print error to stderr and terminate.
     let h = thread::spawn(move || {
-        let r = worker(rx, barrier);
-        if r.is_err() {
-            eprintln!("worker error: {}", r.unwrap_err().to_string());
+        let r = worker(worker_id, rx, barrier);
+        if let Err(e) = r {
+            eprintln!("worker error: {}", e.to_string());
             return Err(Error::WorkerFailed);
         }
 
@@ -96,7 +96,7 @@ fn make_client() -> Result<pg::Client, pg::Error>  {
     return Ok(client);
 }
 
-fn worker(rx: Receiver<bool>, pg_barrier: Arc<Barrier>) -> Result<u64, Box<dyn error::Error>> {
+fn worker(worker_id: u64, rx: Receiver<bool>, pg_barrier: Arc<Barrier>) -> Result<WorkerResult, Box<dyn error::Error>> {
     let r = make_client();
     if r.is_err() {
         pg_barrier.wait();
@@ -107,15 +107,18 @@ fn worker(rx: Receiver<bool>, pg_barrier: Arc<Barrier>) -> Result<u64, Box<dyn e
     }
     let mut client = r.unwrap();
     pg_barrier.wait();
+    let now = Instant::now();
 
-    let i: u64 = 0;
-    for i in 1.. {
+    let mut i: u64 = 1;
+    loop {
         if worker_check_quit(&rx).unwrap() {
-            return Ok(i);
+            break;
         }
         insert(&mut client, i)?;
+        i += 1;
     }
-    return Ok(i);
+
+    return Ok(WorkerResult::new(worker_id, i, now.elapsed()));
 }
 
 fn worker_check_quit(rx: &Receiver<bool>) -> Result<bool,Box<dyn error::Error>> {

@@ -15,11 +15,10 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
 
     let barrier = Arc::new(Barrier::new(n as usize + 1));
 
-    for _ in 0..n {
+    for i in 0..n {
         let (tx, rx) = channel();
         quit_sig_senders.push(tx);
-        let h = worker::new(rx, Arc::clone(&barrier));
-        workers.push(h);
+        workers.push(worker::new(i, rx, Arc::clone(&barrier)));
     }
 
     let b = Arc::clone(&barrier);
@@ -41,9 +40,9 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,worker::Error> {
         if let Err(e) = r {
             return Err(e);
         }
-        let n = r.unwrap();
-        println!("{}", n);
-        wresults.push(WorkerResult::new(0, n, elapsed));
+        let wr = r.unwrap();
+        println!("{}", wr.messages_total);
+        wresults.push(WorkerResult::new(wr.worker_id, wr.messages_total, elapsed));
     }
     let results = Results::new(wresults);
     return Ok(results);
