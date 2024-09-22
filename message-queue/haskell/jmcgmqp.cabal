@@ -7,3 +7,8 @@ Executable main
   Build-Depends: base >4 && <5
   Hs-Source-Dirs: ./src
   Build-Depends: base, postgresql-simple == 0.7.0.0, monad-loops == 0.4.3, clock == 0.8.4
+
+Library
+  Hs-Source-Dirs: ./src
+  Exposed-Modules: Jmcgmqp
+  Build-Depends: base
