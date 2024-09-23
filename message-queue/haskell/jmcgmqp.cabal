@@ -6,6 +6,7 @@ Executable main
   Main-is: bin/Main.hs
   Build-Depends: base >4 && <5
   Hs-Source-Dirs: ./src
+  ghc-options: -Wall
   Other-Modules:
     Jmcgmqp,
     Jmcgmqp.Worker,
@@ -22,6 +23,7 @@ Library
   Exposed-Modules:
     Jmcgmqp,
     Jmcgmqp.Prometheus,
+  ghc-options: -Wall
   Other-Modules:
     Jmcgmqp.Worker,
     Jmcgmqp.Config,
