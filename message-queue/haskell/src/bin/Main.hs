@@ -1,13 +1,9 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
 
-import GHC.Num.Integer
 import Control.Concurrent
-import Control.Concurrent.MVar
-import Control.Monad
 import Control.Monad.Loops
+import Control.Monad
 -- import Data.Foldable
-import Data.Maybe
-import Database.PostgreSQL.Simple
 import Text.Printf
 import System.Clock
 
@@ -15,10 +11,10 @@ import Jmcgmqp
 import Jmcgmqp.Prometheus (cmdTestPrometheus)
 
 forkWorker :: Int -> IO (MVar Bool, MVar Int)
-forkWorker id = do
+forkWorker worker_id = do
   quit <- newEmptyMVar
   result <- newEmptyMVar
-  forkIO $ worker id quit result
+  void . forkIO $ worker worker_id quit result
   return (quit, result)
 
 forkNWorkers :: Int -> IO ([MVar Bool], [MVar Int])
@@ -31,14 +27,14 @@ sample :: IO ([MVar Bool], [MVar Int]) -> IO Double
 sample workers = do
   start <- getTime Monotonic
   (quits, results) <- workers
-  threadDelay (10^6*3::Int)
+  threadDelay ((10::Int)^(6::Int)*3::Int)
   stop quits
   xs <- read_results results
   end <- getTime Monotonic
   mapM_ (putStrLn.show) xs
   let total = fromIntegral $ sum xs :: Double
   let nanosecs = fromIntegral $ toNanoSecs $ diffTimeSpec end start :: Double
-  let secs = nanosecs * 10 ^^ (-9) :: Double
+  let secs = nanosecs * (10::Double) ^^ (-9::Int) :: Double
   -- printf "total: %.3f\n" total
   -- printf "ns: %.3f\n" nanosecs
   -- printf "s: %.3f\n" secs
@@ -62,13 +58,13 @@ cmd_run = do
   maxMVar <- newEmptyMVar
   putMVar maxMVar 0
   let checkQuitAndSample n_workers = do
-      max <- takeMVar maxMVar
+      prev_max <- takeMVar maxMVar
       new <- sample $ forkNWorkers n_workers
-      case new > max of
+      case new > prev_max of
         True -> putMVar maxMVar new >> return False
-        _ -> putMVar maxMVar max >> return True
+        _ -> putMVar maxMVar prev_max >> return True
 
-  maybeMax <- firstM checkQuitAndSample $ map (2^) [0..]
+  maybeMax <- firstM checkQuitAndSample $ map ((2::Int)^) ([0..]::[Int])
   case maybeMax of
     Nothing -> putStrLn "Done"
     Just n_workers -> firstM checkQuitAndSample [n_workers+1..] >> return ()

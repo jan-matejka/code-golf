@@ -6,14 +6,14 @@ module Jmcgmqp.Worker
 import Database.PostgreSQL.Simple
 import Control.Concurrent.MVar
 import Control.Monad.Loops
+import Control.Monad
 
-insert :: Connection -> Int -> IO Int
-insert conn i = do
-  execute conn "insert into public.queue (data) values (?)" $ Only $ show i
-  return i
+insert :: Connection -> Int -> IO ()
+insert conn i =
+  void . execute conn "insert into public.queue (data) values (?)" . Only $ show i
 
 worker :: Int -> MVar Bool -> MVar Int -> IO ()
-worker id quit result = do
+worker _ quit result = do
   conn <- connectPostgreSQL "postgres://mq@localhost/mq"
   -- this is where the magic happens. Refactor later.
   let checkQuitAndInsert x = do
