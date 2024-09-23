@@ -12,6 +12,7 @@ import Text.Printf
 import System.Clock
 
 import Jmcgmqp
+import Jmcgmqp.Prometheus (cmdTestPrometheus)
 
 forkWorker :: Int -> IO (MVar Bool, MVar Int)
 forkWorker id = do
@@ -56,7 +57,8 @@ stop = mapM_ (\mvar -> putMVar mvar True)
 read_results :: [MVar Int] -> IO [Int]
 read_results = mapM (\result -> takeMVar result)
 
-main = do
+cmd_run :: IO ()
+cmd_run = do
   maxMVar <- newEmptyMVar
   putMVar maxMVar 0
   let checkQuitAndSample n_workers = do
@@ -71,3 +73,12 @@ main = do
     Nothing -> putStrLn "Done"
     Just n_workers -> firstM checkQuitAndSample [n_workers+1..] >> return ()
   putStrLn "Done"
+
+main :: IO ()
+main = newConfig >>= dispatch
+
+dispatch :: Config -> IO ()
+dispatch c = _dispatch $ test_prometheus c
+  where
+    _dispatch 1 = cmdTestPrometheus
+    _dispatch _ = cmd_run

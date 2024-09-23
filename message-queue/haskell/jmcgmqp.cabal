@@ -10,6 +10,7 @@ Executable main
     Jmcgmqp,
     Jmcgmqp.Worker,
     Jmcgmqp.Config,
+    Jmcgmqp.Prometheus,
   Build-Depends:
     base
     , postgresql-simple == 0.7.0.0
@@ -18,10 +19,12 @@ Executable main
 
 Library
   Hs-Source-Dirs: ./src
-  Exposed-Modules: Jmcgmqp
+  Exposed-Modules:
+    Jmcgmqp,
+    Jmcgmqp.Prometheus,
   Other-Modules:
     Jmcgmqp.Worker,
-    Jmcgmqp.Config
+    Jmcgmqp.Config,
   Build-Depends:
     base
     , postgresql-simple == 0.7.0.0

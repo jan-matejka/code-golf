@@ -1,6 +1,8 @@
 module Jmcgmqp
 ( worker
 , Config
+, test_prometheus
+, newConfig
 ) where
 
 import Jmcgmqp.Worker

@@ -1,5 +1,6 @@
 module Jmcgmqp.Config
 ( Config
+, test_prometheus
 , newConfig
 ) where
 
@@ -17,5 +18,3 @@ newConfig :: IO Config
 newConfig = do
   tp <- igetenv "TEST_PROMETHEUS" "0"
   return $ Config $ read tp
-  where
-    d = defaultConfig
