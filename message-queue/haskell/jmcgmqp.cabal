@@ -9,6 +9,7 @@ Executable main
   Other-Modules:
     Jmcgmqp,
     Jmcgmqp.Worker,
+    Jmcgmqp.Config,
   Build-Depends:
     base
     , postgresql-simple == 0.7.0.0
@@ -20,6 +21,7 @@ Library
   Exposed-Modules: Jmcgmqp
   Other-Modules:
     Jmcgmqp.Worker,
+    Jmcgmqp.Config
   Build-Depends:
     base
     , postgresql-simple == 0.7.0.0
