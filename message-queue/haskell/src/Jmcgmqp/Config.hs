@@ -4,8 +4,8 @@ module Jmcgmqp.Config
 , newConfig
 ) where
 
-import System.Environment
-import Data.Maybe
+import System.Environment (lookupEnv)
+import Data.Maybe (fromMaybe)
 
 data Config = Config {
   test_prometheus :: Int

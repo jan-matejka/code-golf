@@ -1,14 +1,15 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
 
-import Control.Concurrent
-import Control.Monad.Loops
-import Control.Monad
--- import Data.Foldable
-import Text.Printf
-import System.Clock
+import Control.Concurrent (
+  MVar, newEmptyMVar, putMVar, takeMVar, forkIO, threadDelay
+  )
+import Control.Monad.Loops (firstM)
+import Control.Monad (void)
+import Text.Printf (printf)
+import System.Clock (getTime, Clock(Monotonic), toNanoSecs, diffTimeSpec)
 
-import Jmcgmqp
 import Jmcgmqp.Prometheus (cmdTestPrometheus)
+import Jmcgmqp (newConfig, worker, Config, test_prometheus)
 
 forkWorker :: Int -> IO (MVar Bool, MVar Int)
 forkWorker worker_id = do
@@ -76,5 +77,6 @@ main = newConfig >>= dispatch
 dispatch :: Config -> IO ()
 dispatch c = _dispatch $ test_prometheus c
   where
+    _dispatch :: Int -> IO ()
     _dispatch 1 = cmdTestPrometheus
     _dispatch _ = cmd_run

@@ -5,5 +5,5 @@ module Jmcgmqp
 , newConfig
 ) where
 
-import Jmcgmqp.Worker
-import Jmcgmqp.Config
+import Jmcgmqp.Worker (worker)
+import Jmcgmqp.Config (newConfig, Config, test_prometheus)

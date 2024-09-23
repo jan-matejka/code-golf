@@ -3,10 +3,12 @@ module Jmcgmqp.Worker
 ( worker
 ) where
 
-import Database.PostgreSQL.Simple
-import Control.Concurrent.MVar
-import Control.Monad.Loops
-import Control.Monad
+import Database.PostgreSQL.Simple (
+  Connection, execute, Only(Only), connectPostgreSQL)
+import Control.Concurrent.MVar (MVar, putMVar, tryTakeMVar)
+import Control.Monad.Loops (firstM)
+import Control.Monad (void)
+import Data.Maybe (fromMaybe)
 
 insert :: Connection -> Int -> IO ()
 insert conn i =
@@ -24,7 +26,4 @@ worker _ quit result = do
               return False
           Just _ -> return True
   x <- firstM checkQuitAndInsert [0..]
-  putMVar result $ x_or_zero x
-  where
-    x_or_zero Nothing = 0
-    x_or_zero (Just x) = x
+  putMVar result $ fromMaybe 0 x
