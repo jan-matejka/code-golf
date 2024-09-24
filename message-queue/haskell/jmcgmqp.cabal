@@ -9,6 +9,7 @@ Executable main
   ghc-options: -Wall -Weverything
     -Wno-unsafe -Wno-missing-safe-haskell-mode -Wno-safe
     -Wno-all-missed-specializations
+    -Wno-implicit-prelude
  -- can't enable -Wno-unsafe due to postgresql-simple not being safe, maybe later.
  -- -Wall-missed-specializations might be worthwhile, later.
   Other-Modules:
@@ -30,6 +31,7 @@ Library
   ghc-options: -Wall -Weverything
     -Wno-unsafe -Wno-missing-safe-haskell-mode -Wno-safe
     -Wno-all-missed-specializations
+    -Wno-implicit-prelude
  -- can't enable -Wno-unsafe due to postgresql-simple not being safe, maybe later.
  -- -Wall-missed-specializations might be worthwhile, later.
   Other-Modules:
