@@ -8,8 +8,9 @@ import Control.Monad (void)
 import Text.Printf (printf)
 import System.Clock (getTime, Clock(Monotonic), toNanoSecs, diffTimeSpec)
 
+import Jmcgmqp (worker, test_prometheus)
 import Jmcgmqp.Prometheus (cmdTestPrometheus)
-import Jmcgmqp (newConfig, worker, Config, test_prometheus)
+import Jmcgmqp.Runtime (newInstance, Instance, config)
 
 forkWorker :: Int -> IO (MVar Bool, MVar Int)
 forkWorker worker_id = do
@@ -72,10 +73,10 @@ cmd_run = do
   putStrLn "Done"
 
 main :: IO ()
-main = newConfig >>= dispatch
+main = newInstance >>= dispatch
 
-dispatch :: Config -> IO ()
-dispatch c = _dispatch $ test_prometheus c
+dispatch :: Instance -> IO ()
+dispatch app = _dispatch $ test_prometheus $ config app
   where
     _dispatch :: Int -> IO ()
     _dispatch 1 = cmdTestPrometheus

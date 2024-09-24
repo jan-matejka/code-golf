@@ -17,6 +17,7 @@ Executable main
     Jmcgmqp.Worker,
     Jmcgmqp.Config,
     Jmcgmqp.Prometheus,
+    Jmcgmqp.Runtime,
   Build-Depends:
     base
     , postgresql-simple == 0.7.0.0
@@ -37,6 +38,7 @@ Library
   Other-Modules:
     Jmcgmqp.Worker,
     Jmcgmqp.Config,
+    Jmcgmqp.Runtime,
   Build-Depends:
     base
     , postgresql-simple == 0.7.0.0
