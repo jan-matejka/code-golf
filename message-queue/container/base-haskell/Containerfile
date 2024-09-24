@@ -1,0 +1,31 @@
+FROM ghcr.io/linuxcontainers/debian-slim:12
+# Base image with haskell tooling
+
+RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
+RUN apt-get update
+
+RUN apt-get install -y \
+  vim procps iproute2 make \
+  g++ libpq-dev \
+  ghc haskell-stack cabal-install
+# https://docs.haskellstack.org/en/stable/install_and_upgrade/#__tabbed_8_2
+RUN stack upgrade --binary-only
+
+RUN useradd -m -s /bin/bash user
+USER user
+# Note: stack setup takes a while as it downloads and compiles ghc
+RUN stack setup
+
+WORKDIR /home/user/
+
+# Update the package index.
+# This takes a while so run it separately in case the next command fails.
+RUN stack update
+
+RUN stack new dummy
+# RUN cd dummy && stack install --allow-newer hfmt
+# hfmt does not build due to
+# `Distribution.PackageDescription.Parsec' does not export `readGenericPackageDescription
+# RUN cd dummy && stack install --allow-newer hfmt
+# hlint also does not build.
+# cba to deal with this now.
