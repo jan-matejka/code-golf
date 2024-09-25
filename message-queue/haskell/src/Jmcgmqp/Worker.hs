@@ -3,6 +3,7 @@ module Jmcgmqp.Worker
 ( cmdRun
 ) where
 
+import Data.Kind (Type)
 import Text.Printf (printf)
 import System.Clock (getTime, Clock(Monotonic), toNanoSecs, diffTimeSpec)
 import Database.PostgreSQL.Simple (
@@ -43,7 +44,10 @@ forkWorker worker_id = do
   void . forkIO $ worker worker_id quit result
   return (quit, result)
 
-forkNWorkers :: Int -> IO ([MVar Bool], [MVar Int])
+type QuitMVars :: Type
+type QuitMVars = [MVar Bool]
+
+forkNWorkers :: Int -> IO (QuitMVars, [MVar Int])
 forkNWorkers n = do
   printf "Starting %d workers\n" n
   mvars <- mapM forkWorker [0..n]
@@ -57,7 +61,7 @@ waitDuration Instance{config=Config{duration=n}} = forM_ [n,n-1..1] sleep
     sleep :: Int -> IO ()
     sleep x = print x >> threadDelay 1_000_000
 
-sample :: Instance -> IO ([MVar Bool], [MVar Int]) -> IO Double
+sample :: Instance -> IO (QuitMVars, [MVar Int]) -> IO Double
 sample app workers = do
   start <- getTime Monotonic
   (quits, results) <- workers
@@ -82,7 +86,7 @@ sample app workers = do
   -- _ -> return ips
   return ips
 
-stop :: [MVar Bool] -> IO ()
+stop :: QuitMVars -> IO ()
 stop = mapM_ (`putMVar` True)
 
 readResults :: [MVar Int] -> IO [Int]
