@@ -29,7 +29,7 @@ sample :: IO ([MVar Bool], [MVar Int]) -> IO Double
 sample workers = do
   start <- getTime Monotonic
   (quits, results) <- workers
-  threadDelay ((10::Int)^(6::Int)*3::Int)
+  threadDelay ((10::Int) ^ (6::Int)*3::Int)
   stop quits
   xs <- readResults results
   end <- getTime Monotonic
@@ -66,10 +66,10 @@ cmdRun = do
         then putMVar maxMVar new >> return False
         else putMVar maxMVar prev_max >> return True
 
-  maybeMax <- firstM checkQuitAndSample $ map ((2::Int)^) ([0..]::[Int])
+  maybeMax <- firstM checkQuitAndSample $ map ((2::Int) ^) ([0..]::[Int])
   case maybeMax of
     Nothing -> putStrLn "Done"
-    Just n_workers -> void $ firstM checkQuitAndSample [n_workers+1..]
+    Just n_workers -> void $ firstM checkQuitAndSample [n_workers + 1..]
   putStrLn "Done"
 
 main :: IO ()

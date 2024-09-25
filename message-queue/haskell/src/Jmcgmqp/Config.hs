@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneKindSignatures #-}
 module Jmcgmqp.Config
 ( Config
 , test_prometheus
@@ -5,12 +6,14 @@ module Jmcgmqp.Config
 ) where
 
 import System.Environment (lookupEnv)
+import Data.Kind (Type)
 import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 
+type Config :: Type
 newtype Config = Config {
-  test_prometheus :: Int
-}
+    test_prometheus :: Int
+  }
 
 igetenv :: String -> String -> IO String
 igetenv var def = lookupEnv var <&> fromMaybe def
