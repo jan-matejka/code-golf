@@ -12,8 +12,11 @@ import Control.Concurrent (
   )
 import Control.Concurrent.MVar (tryTakeMVar)
 import Control.Monad.Loops (firstM)
-import Control.Monad (void)
+import Control.Monad (void, forM_)
 import Data.Maybe (fromMaybe)
+
+import Jmcgmqp.Runtime (Instance(Instance), config)
+import Jmcgmqp.Config (duration, Config(Config))
 
 insert :: Connection -> Int -> IO ()
 insert conn i =
@@ -46,11 +49,20 @@ forkNWorkers n = do
   mvars <- mapM forkWorker [0..n]
   return $ unzip mvars
 
-sample :: IO ([MVar Bool], [MVar Int]) -> IO Double
-sample workers = do
+-- | Sleep for Config.duration seconds and print countdown after every
+-- second waited
+waitDuration :: Instance -> IO ()
+waitDuration Instance{config=Config{duration=n}} = forM_ [n,n-1..1] sleep
+  where
+    sleep :: Int -> IO ()
+    sleep x = print x >> threadDelay 1_000_000
+
+sample :: Instance -> IO ([MVar Bool], [MVar Int]) -> IO Double
+sample app workers = do
   start <- getTime Monotonic
   (quits, results) <- workers
-  threadDelay ((10::Int) ^ (6::Int)*3::Int)
+  putStrLn "Waiting"
+  waitDuration app
   stop quits
   xs <- readResults results
   end <- getTime Monotonic
@@ -76,13 +88,13 @@ stop = mapM_ (`putMVar` True)
 readResults :: [MVar Int] -> IO [Int]
 readResults = mapM takeMVar
 
-cmdRun :: IO ()
-cmdRun = do
+cmdRun :: Instance -> IO ()
+cmdRun app = do
   maxMVar <- newEmptyMVar
   putMVar maxMVar 0
   let checkQuitAndSample n_workers = do
       prev_max <- takeMVar maxMVar
-      new <- sample $ forkNWorkers n_workers
+      new <- sample app $ forkNWorkers n_workers
       if new > prev_max
         then putMVar maxMVar new >> return False
         else putMVar maxMVar prev_max >> return True

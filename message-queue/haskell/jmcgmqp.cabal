@@ -31,7 +31,7 @@ Library
  -- -Wall-missed-specializations might be worthwhile, later.
   default-extensions:
     ImportQualifiedPost, StandaloneKindSignatures, OverloadedStrings,
-    DerivingStrategies
+    DerivingStrategies, NumericUnderscores
   Other-Modules:
     Jmcgmqp.Config,
     Jmcgmqp.Uname,

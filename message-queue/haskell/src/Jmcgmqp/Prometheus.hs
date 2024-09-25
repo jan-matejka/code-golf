@@ -10,15 +10,15 @@ import Prometheus (
   exportMetricsAsText, incGauge
   )
 
-import Jmcgmqp.Runtime (newRuntime)
+import Jmcgmqp.Runtime (newRuntime, Instance)
 
 newMetrics :: IO [Gauge]
 newMetrics = do
   test <- register $ gauge (Info "test" "Test Metric")
   return [test]
 
-cmdTestPrometheus :: IO ()
-cmdTestPrometheus = do
+cmdTestPrometheus :: Instance -> IO ()
+cmdTestPrometheus _ = do
   putStrLn "Test prometheus"
   r <- newRuntime
   print r

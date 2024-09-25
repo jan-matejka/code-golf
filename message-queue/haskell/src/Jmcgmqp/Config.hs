@@ -1,7 +1,8 @@
 {-# LANGUAGE StandaloneKindSignatures #-}
 module Jmcgmqp.Config
-( Config
+( Config(Config)
 , test_prometheus
+, duration
 , newConfig
 ) where
 
@@ -11,8 +12,9 @@ import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 
 type Config :: Type
-newtype Config = Config {
-    test_prometheus :: Int
+data Config = Config {
+    test_prometheus :: Int,
+    duration :: Int
   }
 
 igetenv :: String -> String -> IO String
@@ -21,4 +23,8 @@ igetenv var def = lookupEnv var <&> fromMaybe def
 newConfig :: IO Config
 newConfig = do
   tp <- igetenv "TEST_PROMETHEUS" "0"
-  return $ Config $ read tp
+  dur <- igetenv "DURATION" "3"
+  return $ Config {
+    test_prometheus = read tp,
+    duration = read dur
+  }
