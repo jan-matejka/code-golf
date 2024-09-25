@@ -37,3 +37,4 @@ Library
     base >= 4 && < 5
     , postgresql-simple >= 0.7.0 && < 0.8
     , monad-loops >= 0.4.3 && < 0.5
+    , prometheus-client >= 1.1 && < 1.2
