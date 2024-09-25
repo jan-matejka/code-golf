@@ -11,7 +11,7 @@ import Database.PostgreSQL.Simple (
 import Control.Concurrent (
   MVar, newEmptyMVar, putMVar, takeMVar, forkIO, threadDelay
   )
-import Control.Concurrent.MVar (tryTakeMVar)
+import Control.Concurrent.Extra (newVar, Var, readVar, writeVar)
 import Control.Monad.Loops (firstM)
 import Control.Monad (void, forM_)
 import Data.Maybe (fromMaybe)
@@ -23,35 +23,27 @@ insert :: Connection -> Int -> IO ()
 insert conn i =
   void . execute conn "insert into public.queue (data) values (?)" . Only $ show i
 
-worker :: Int -> MVar Bool -> MVar Int -> IO ()
+worker :: Int -> QuitVar -> MVar Int -> IO ()
 worker _ quit result = do
   conn <- connectPostgreSQL "postgres://mq@localhost/mq"
   -- this is where the magic happens. Refactor later.
   let checkQuitAndInsert x = do
-        q <- tryTakeMVar quit
-        case q of
-          Nothing -> do
-              insert conn x
-              return False
-          Just _ -> return True
+        q <- readVar quit
+        if q
+          then return True
+          else insert conn x >> return False
   x <- firstM checkQuitAndInsert [0..]
   putMVar result $ fromMaybe 0 x
 
-forkWorker :: Int -> IO (MVar Bool, MVar Int)
-forkWorker worker_id = do
-  quit <- newEmptyMVar
+forkWorker :: QuitVar -> Int -> IO (MVar Int)
+forkWorker quit worker_id = do
   result <- newEmptyMVar
   void . forkIO $ worker worker_id quit result
-  return (quit, result)
+  return result
 
-type QuitMVars :: Type
-type QuitMVars = [MVar Bool]
-
-forkNWorkers :: Int -> IO (QuitMVars, [MVar Int])
-forkNWorkers n = do
-  printf "Starting %d workers\n" n
-  mvars <- mapM forkWorker [0..n]
-  return $ unzip mvars
+-- | Signal to workers they should quit.
+type QuitVar :: Type
+type QuitVar = Var Bool
 
 -- | Sleep for Config.duration seconds and print countdown after every
 -- second waited
@@ -61,13 +53,18 @@ waitDuration Instance{config=Config{duration=n}} = forM_ [n,n-1..1] sleep
     sleep :: Int -> IO ()
     sleep x = print x >> threadDelay 1_000_000
 
-sample :: Instance -> IO (QuitMVars, [MVar Int]) -> IO Double
-sample app workers = do
+sample :: Instance -> Int -> IO Double
+sample app n_workers = do
   start <- getTime Monotonic
-  (quits, results) <- workers
+  q <- newVar False
+
+  printf "Starting %d workers\n" n_workers
+  results <- mapM (forkWorker q) [0..n_workers]
+
   putStrLn "Waiting"
   waitDuration app
-  stop quits
+
+  writeVar q True
   xs <- readResults results
   end <- getTime Monotonic
   mapM_ print xs
@@ -86,9 +83,6 @@ sample app workers = do
   -- _ -> return ips
   return ips
 
-stop :: QuitMVars -> IO ()
-stop = mapM_ (`putMVar` True)
-
 readResults :: [MVar Int] -> IO [Int]
 readResults = mapM takeMVar
 
@@ -98,7 +92,7 @@ cmdRun app = do
   putMVar maxMVar 0
   let checkQuitAndSample n_workers = do
       prev_max <- takeMVar maxMVar
-      new <- sample app $ forkNWorkers n_workers
+      new <- sample app n_workers
       if new > prev_max
         then putMVar maxMVar new >> return False
         else putMVar maxMVar prev_max >> return True

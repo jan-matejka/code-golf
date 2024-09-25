@@ -46,3 +46,4 @@ Library
     , time >= 1.12 && < 1.13
     , timerep >= 2.1.0 && < 2.2
     , containers >= 0.6.7 && < 0.7
+    , extra >= 1.7.16 && < 1.8
