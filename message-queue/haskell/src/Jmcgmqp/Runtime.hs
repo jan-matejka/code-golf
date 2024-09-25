@@ -5,11 +5,12 @@ module Jmcgmqp.Runtime
 , config
 ) where
 
+import Data.Functor ((<&>))
 import Jmcgmqp.Config (newConfig, Config)
 
-data Instance = Instance {
+newtype Instance = Instance {
   config :: Config
   }
 
-newInstance :: IO (Instance)
-newInstance = newConfig >>= return . Instance
+newInstance :: IO Instance
+newInstance = newConfig <&> Instance

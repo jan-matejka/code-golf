@@ -5,14 +5,15 @@ module Jmcgmqp.Config
 ) where
 
 import System.Environment (lookupEnv)
+import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 
-data Config = Config {
+newtype Config = Config {
   test_prometheus :: Int
 }
 
 igetenv :: String -> String -> IO String
-igetenv var def = lookupEnv var >>= return . fromMaybe def
+igetenv var def = lookupEnv var <&> fromMaybe def
 
 newConfig :: IO Config
 newConfig = do

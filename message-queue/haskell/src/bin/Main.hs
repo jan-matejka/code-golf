@@ -31,9 +31,9 @@ sample workers = do
   (quits, results) <- workers
   threadDelay ((10::Int)^(6::Int)*3::Int)
   stop quits
-  xs <- read_results results
+  xs <- readResults results
   end <- getTime Monotonic
-  mapM_ (putStrLn.show) xs
+  mapM_ print xs
   let total = fromIntegral $ sum xs :: Double
   let nanosecs = fromIntegral $ toNanoSecs $ diffTimeSpec end start :: Double
   let secs = nanosecs * (10::Double) ^^ (-9::Int) :: Double
@@ -50,26 +50,26 @@ sample workers = do
   return ips
 
 stop :: [MVar Bool] -> IO ()
-stop = mapM_ (\mvar -> putMVar mvar True)
+stop = mapM_ (`putMVar` True)
 
-read_results :: [MVar Int] -> IO [Int]
-read_results = mapM (\result -> takeMVar result)
+readResults :: [MVar Int] -> IO [Int]
+readResults = mapM takeMVar
 
-cmd_run :: IO ()
-cmd_run = do
+cmdRun :: IO ()
+cmdRun = do
   maxMVar <- newEmptyMVar
   putMVar maxMVar 0
   let checkQuitAndSample n_workers = do
       prev_max <- takeMVar maxMVar
       new <- sample $ forkNWorkers n_workers
-      case new > prev_max of
-        True -> putMVar maxMVar new >> return False
-        _ -> putMVar maxMVar prev_max >> return True
+      if new > prev_max
+        then putMVar maxMVar new >> return False
+        else putMVar maxMVar prev_max >> return True
 
   maybeMax <- firstM checkQuitAndSample $ map ((2::Int)^) ([0..]::[Int])
   case maybeMax of
     Nothing -> putStrLn "Done"
-    Just n_workers -> firstM checkQuitAndSample [n_workers+1..] >> return ()
+    Just n_workers -> void $ firstM checkQuitAndSample [n_workers+1..]
   putStrLn "Done"
 
 main :: IO ()
@@ -80,4 +80,4 @@ dispatch app = _dispatch $ test_prometheus $ config app
   where
     _dispatch :: Int -> IO ()
     _dispatch 1 = cmdTestPrometheus
-    _dispatch _ = cmd_run
+    _dispatch _ = cmdRun
