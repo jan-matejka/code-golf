@@ -15,8 +15,6 @@ Executable main
   Build-Depends:
     base >4 && < 5
     , jmcgmqp
-    , monad-loops >= 0.4.3 && < 0.5
-    , clock >= 0.8.4 && < 0.9
 
 Library
   Hs-Source-Dirs: ./src
@@ -24,6 +22,7 @@ Library
     Jmcgmqp,
     Jmcgmqp.Prometheus,
     Jmcgmqp.Runtime,
+    Jmcgmqp.Worker,
   ghc-options: -Wall -Weverything
     -Wno-unsafe -Wno-missing-safe-haskell-mode -Wno-safe
     -Wno-all-missed-specializations
@@ -34,11 +33,11 @@ Library
     ImportQualifiedPost, StandaloneKindSignatures, OverloadedStrings,
     DerivingStrategies
   Other-Modules:
-    Jmcgmqp.Worker,
     Jmcgmqp.Config,
     Jmcgmqp.Uname,
   Build-Depends:
     base >= 4 && < 5
+    , clock >= 0.8.4 && < 0.9
     , postgresql-simple >= 0.7.0 && < 0.8
     , monad-loops >= 0.4.3 && < 0.5
     , prometheus-client >= 1.1 && < 1.2
