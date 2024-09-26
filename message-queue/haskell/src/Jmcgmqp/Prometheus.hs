@@ -1,29 +1,20 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, OverloadedRecordDot #-}
 module Jmcgmqp.Prometheus
 ( cmdTestPrometheus
 , newMetrics
 , push
 ) where
 
-import Prometheus (
-  Gauge, gauge, register, Info(Info),
-  exportMetricsAsText, incGauge
-  )
+import Prometheus (exportMetricsAsText, incGauge)
 
-import Jmcgmqp.Runtime (newRuntime, Instance)
-
-newMetrics :: IO [Gauge]
-newMetrics = do
-  test <- register $ gauge (Info "test" "Test Metric")
-  return [test]
+import Jmcgmqp.Runtime (Instance(runtime, metrics))
+import Jmcgmqp.Prometheus.Metrics (Metrics(test), newMetrics)
 
 cmdTestPrometheus :: Instance -> IO ()
-cmdTestPrometheus _ = do
+cmdTestPrometheus app = do
   putStrLn "Test prometheus"
-  r <- newRuntime
-  print r
-  m <- newMetrics
-  incGauge $ head m
+  print $ app.runtime
+  incGauge $ app.metrics.test
   push
 
 push :: IO ()

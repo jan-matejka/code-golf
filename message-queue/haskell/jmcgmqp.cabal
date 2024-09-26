@@ -21,6 +21,7 @@ Library
   Exposed-Modules:
     Jmcgmqp,
     Jmcgmqp.Prometheus,
+    Jmcgmqp.Prometheus.Metrics,
     Jmcgmqp.Runtime,
     Jmcgmqp.Worker,
   ghc-options: -Wall -Weverything

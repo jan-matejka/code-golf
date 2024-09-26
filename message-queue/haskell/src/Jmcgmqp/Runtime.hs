@@ -1,14 +1,12 @@
-{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE StandaloneKindSignatures, OverloadedRecordDot #-}
 module Jmcgmqp.Runtime
-( Instance(Instance)
+( Instance(Instance, config, metrics, runtime)
 , newInstance
-, config
 , newRuntime
 , runtimeAsMap
 ) where
 
 import Data.Kind (Type)
-import Data.Functor ((<&>))
 import Data.Map (Map, fromList)
 import Data.Maybe (fromJust)
 import Data.UUID (UUID)
@@ -21,6 +19,7 @@ import Text.Printf (printf)
 
 import Jmcgmqp.Config (newConfig, Config)
 import Jmcgmqp.Uname (getKernel)
+import Jmcgmqp.Prometheus.Metrics (newMetrics, Metrics)
 
 type Runtime :: Type
 data Runtime = Runtime {
@@ -59,16 +58,21 @@ runtimeAsMap r = fromList [
   ("uuid", show $ uuid r),
   ("lang", lang r),
   ("lang_version", lang_version r),
-  ("runtime", runtime r),
+  ("runtime", r.runtime),
   ("os", os r),
   ("kernel", kernel r),
   ("arch", arch r)
   ]
 
 type Instance :: Type
-newtype Instance = Instance {
-  config :: Config
+data Instance = Instance {
+  config :: Config,
+  runtime :: Runtime,
+  metrics :: Metrics
   }
 
 newInstance :: IO Instance
-newInstance = newConfig <&> Instance
+newInstance = do
+  c <- newConfig
+  r <- newRuntime
+  Instance c r <$> newMetrics

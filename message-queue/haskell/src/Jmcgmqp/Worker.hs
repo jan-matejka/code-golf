@@ -140,6 +140,7 @@ checkQuitAndSample app prevMVar n_workers = do
   prev <- tryTakeMVar prevMVar
   new <- sample app n_workers
   let (put, ret) = pick prev new
+
   putMVar prevMVar put
   return ret
   where
