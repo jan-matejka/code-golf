@@ -5,7 +5,7 @@ module Jmcgmqp.Worker
 
 import Data.Kind (Type)
 import Text.Printf (printf)
-import System.Clock (getTime, Clock(Monotonic), toNanoSecs, diffTimeSpec)
+import System.Clock (getTime, Clock(Monotonic), toNanoSecs, diffTimeSpec, TimeSpec)
 import Database.PostgreSQL.Simple (
   Connection, execute, Only(Only), connectPostgreSQL)
 import Control.Concurrent (
@@ -38,13 +38,36 @@ until'1 d p (f:fs) = do
     y <- f
     until'1 (Just y) p fs
 
-worker :: Int -> QuitVar -> MVar Int -> IO ()
-worker _ quit result = do
-  conn <- connectPostgreSQL "postgres://mq@localhost/mq"
-  x <- until'1 Nothing (readVar quit) [returning (insert conn) i | i <- [0..]]
-  putMVar result $ fromJust x
+type WorkerResult :: Type
+data WorkerResult = WorkerResult {
+  workerId :: Int,
+  messagesTotal :: Int,
+  duration :: TimeSpec,
+  messagesPerSecond :: Double
+} deriving stock (Show)
 
-forkWorker :: QuitVar -> Int -> IO (MVar Int)
+newWorkerResult :: Int -> Int -> TimeSpec -> WorkerResult
+newWorkerResult wId mTotal dur = WorkerResult {
+  workerId = wId,
+  messagesTotal = mTotal,
+  duration = dur,
+  messagesPerSecond = fromIntegral mTotal / secs :: Double
+  }
+  where
+    nsecs :: Double
+    nsecs = fromIntegral $ toNanoSecs dur
+    secs :: Double
+    secs = nsecs * (10::Double) ^^ (-9::Int)
+
+worker :: Int -> QuitVar -> MVar WorkerResult -> IO ()
+worker wId quit result = do
+  conn <- connectPostgreSQL "postgres://mq@localhost/mq"
+  start <- getTime Monotonic
+  x <- until'1 Nothing (readVar quit) [returning (insert conn) i | i <- [0..]]
+  end <- getTime Monotonic
+  putMVar result $ newWorkerResult wId (fromJust x) (diffTimeSpec end start)
+
+forkWorker :: QuitVar -> Int -> IO (MVar WorkerResult)
 forkWorker quit worker_id = do
   result <- newEmptyMVar
   void . forkIO $ worker worker_id quit result
@@ -74,26 +97,24 @@ sample app n_workers = do
   waitDuration app
 
   writeVar q True
-  xs <- readResults results
+  xs <- mapM takeMVar results
   end <- getTime Monotonic
   mapM_ print xs
-  let total = fromIntegral $ sum xs :: Double
+
+  let total = fromIntegral $ sum (map messagesTotal xs) :: Double
   let nanosecs = fromIntegral $ toNanoSecs $ diffTimeSpec end start :: Double
   let secs = nanosecs * (10::Double) ^^ (-9::Int) :: Double
   -- printf "total: %.3f\n" total
   -- printf "ns: %.3f\n" nanosecs
   -- printf "s: %.3f\n" secs
   let ips = total / secs
-  printf "Total: %d\n" $ sum xs
+  printf "Total: %f\n" total
   printf "ips: %.3f\n" ips
   -- emulate slowdown with more than 2 workers for testing
   -- case length xs > 2 of
   -- True -> return 1
   -- _ -> return ips
   return ips
-
-readResults :: [MVar Int] -> IO [Int]
-readResults = mapM takeMVar
 
 cmdRun :: Instance -> IO ()
 cmdRun app = do
