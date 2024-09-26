@@ -3,6 +3,7 @@ module Jmcgmqp.Config
 ( Config(Config)
 , test_prometheus
 , duration
+, power
 , newConfig
 ) where
 
@@ -14,7 +15,8 @@ import Data.Maybe (fromMaybe)
 type Config :: Type
 data Config = Config {
     test_prometheus :: Int,
-    duration :: Int
+    duration :: Int,
+    power :: Int
   }
 
 igetenv :: String -> String -> IO String
@@ -24,7 +26,9 @@ newConfig :: IO Config
 newConfig = do
   tp <- igetenv "TEST_PROMETHEUS" "0"
   dur <- igetenv "DURATION" "3"
+  pow <- igetenv "POWER" "0"
   return $ Config {
     test_prometheus = read tp,
-    duration = read dur
+    duration = read dur,
+    power = read pow
   }

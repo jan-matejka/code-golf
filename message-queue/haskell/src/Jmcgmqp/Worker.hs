@@ -21,7 +21,7 @@ import Data.Maybe (fromJust, isNothing)
 import Prometheus (setGauge)
 
 import Jmcgmqp.Runtime (Instance(Instance, metrics, runtime), config)
-import Jmcgmqp.Config (duration, Config(Config))
+import Jmcgmqp.Config (duration, Config(Config), power)
 import Jmcgmqp.Prometheus.Metrics (SampleDesc(SampleDesc),
   Metrics(messagesTotal, messagesPerSecond, durationSeconds)
   )
@@ -184,7 +184,7 @@ cmdRun app = findMax app >>= print'
 findMax :: Instance -> IO (Maybe Results)
 findMax app = do
   prevMVar <- newEmptyMVar
-  failedExp <- firstPowers (checkQuitAndSample app prevMVar) [0..]
+  failedExp <- firstPowers (checkQuitAndSample app prevMVar) [app.config.power..]
   prev <- tryTakeMVar prevMVar
   if isNothing prev then return Nothing
   else do
