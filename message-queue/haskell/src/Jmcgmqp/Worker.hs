@@ -18,8 +18,14 @@ import Control.Monad (void, forM_)
 import Control.Monad.IfElse (returning)
 import Data.Maybe (fromJust, isNothing)
 
-import Jmcgmqp.Runtime (Instance(Instance), config)
+import Prometheus (setGauge)
+
+import Jmcgmqp.Runtime (Instance(Instance, metrics, runtime), config)
 import Jmcgmqp.Config (duration, Config(Config))
+import Jmcgmqp.Prometheus.Metrics (SampleDesc(SampleDesc),
+  Metrics(messagesTotal, messagesPerSecond, durationSeconds)
+  )
+import Jmcgmqp.Prometheus (push)
 
 insert :: Connection -> Int -> IO ()
 insert conn =
@@ -56,12 +62,10 @@ newWorkerResult wId mTotal dur = WorkerResult {
   }
 
 mps :: Int -> TimeSpec -> Double
-mps n d = fromIntegral n / secs :: Double
-  where
-    nsecs :: Double
-    nsecs = fromIntegral $ toNanoSecs d
-    secs :: Double
-    secs = nsecs * (10::Double) ^^ (-9::Int)
+mps n d = fromIntegral n / durSecs d :: Double
+
+durSecs :: TimeSpec -> Double
+durSecs d = (fromIntegral $ toNanoSecs d) * (10::Double) ^^ (-9::Int)
 
 type Results :: Type
 data Results = Results {
@@ -135,6 +139,13 @@ sample app n_workers = do
 
   return rs
 
+setMetrics :: Metrics -> WorkerResult -> IO ()
+setMetrics m wr = do
+  setGauge m.messagesTotal $ fromIntegral wr.messagesTotal
+  setGauge m.messagesPerSecond wr.messagesPerSecond
+  setGauge m.durationSeconds $ durSecs wr.duration
+  return ()
+
 checkQuitAndSample :: Instance -> MVar Results -> Int -> IO Bool
 checkQuitAndSample app prevMVar n_workers = do
   prev <- tryTakeMVar prevMVar
@@ -142,6 +153,9 @@ checkQuitAndSample app prevMVar n_workers = do
   let (put, ret) = pick prev new
 
   putMVar prevMVar put
+  mapM_
+    (\wr -> setMetrics app.metrics wr >> push app.runtime sdesc wr.workerId)
+    put.workers
   return ret
   where
     pick :: Maybe Results -> Results -> (Results, Bool)
@@ -149,6 +163,8 @@ checkQuitAndSample app prevMVar n_workers = do
     pick (Just p) new
       | new.messagesPerSecond > p.messagesPerSecond = (new, False)
       | True = (p, True)
+    sdesc :: SampleDesc
+    sdesc = SampleDesc n_workers "forkIO" "postgres"
 
 firstPowers :: (Int -> IO Bool) -> [Int] -> IO (Maybe Int)
 firstPowers f = firstM (\exp' -> f $ 2 ^ exp')

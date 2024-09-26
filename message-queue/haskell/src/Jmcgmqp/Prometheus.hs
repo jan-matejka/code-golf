@@ -7,17 +7,20 @@ module Jmcgmqp.Prometheus
 
 import Prometheus (exportMetricsAsText, incGauge)
 
-import Jmcgmqp.Runtime (Instance(runtime, metrics))
-import Jmcgmqp.Prometheus.Metrics (Metrics(test), newMetrics)
+import Jmcgmqp.Runtime (Instance(runtime, metrics), Runtime)
+import Jmcgmqp.Prometheus.Metrics (
+  Metrics(test), newMetrics, SampleDesc(SampleDesc))
 
 cmdTestPrometheus :: Instance -> IO ()
 cmdTestPrometheus app = do
   putStrLn "Test prometheus"
-  print $ app.runtime
   incGauge $ app.metrics.test
-  push
+  push app.runtime (SampleDesc 4 "forkIO" "postgres") 3
 
-push :: IO ()
-push = do
+push :: Runtime -> SampleDesc -> Int -> IO ()
+push r sdesc wId = do
   samples <- exportMetricsAsText
+  print wId
+  print sdesc
+  print r
   print samples

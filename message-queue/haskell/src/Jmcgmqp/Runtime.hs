@@ -1,6 +1,7 @@
 {-# LANGUAGE StandaloneKindSignatures, OverloadedRecordDot #-}
 module Jmcgmqp.Runtime
 ( Instance(Instance, config, metrics, runtime)
+, Runtime(..)
 , newInstance
 , newRuntime
 , runtimeAsMap
