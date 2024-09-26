@@ -49,3 +49,14 @@ Library
     , containers >= 0.6.7 && < 0.7
     , extra >= 1.7.16 && < 1.8
     , IfElse >= 0.85 && < 0.86
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/test
+  main-is: Main.hs
+  build-depends:
+    base >= 4 && < 5
+    , jmcgmqp
+    , hspec >= 2.11.9 && < 2.12
+    , QuickCheck >= 2.15.0.1 && < 2.16
+  default-language: Haskell2010

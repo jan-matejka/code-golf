@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, OverloadedRecordDot #-}
 module Jmcgmqp.Worker
 ( cmdRun
+, newStart
 ) where
 
 import Data.Kind (Type)
@@ -15,7 +16,7 @@ import Control.Concurrent.Extra (newVar, Var, readVar, writeVar)
 import Control.Monad.Loops (firstM)
 import Control.Monad (void, forM_)
 import Control.Monad.IfElse (returning)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isNothing)
 
 import Jmcgmqp.Runtime (Instance(Instance), config)
 import Jmcgmqp.Config (duration, Config(Config))
@@ -134,24 +135,45 @@ sample app n_workers = do
 
   return rs
 
-cmdRun :: Instance -> IO ()
-cmdRun app = do
-  prevMVar <- newEmptyMVar
-  let checkQuitAndSample n_workers = do
-      prev <- tryTakeMVar prevMVar
-      new <- sample app n_workers
-      let (put, ret) = pick prev new
-      putMVar prevMVar put
-      return ret
-      where
-        pick :: Maybe Results -> Results -> (Results, Bool)
-        pick Nothing new = (new, False)
-        pick (Just p) new
-          | new.messagesPerSecond > p.messagesPerSecond = (new, False)
-          | True = (p, True)
+checkQuitAndSample :: Instance -> MVar Results -> Int -> IO Bool
+checkQuitAndSample app prevMVar n_workers = do
+  prev <- tryTakeMVar prevMVar
+  new <- sample app n_workers
+  let (put, ret) = pick prev new
+  putMVar prevMVar put
+  return ret
+  where
+    pick :: Maybe Results -> Results -> (Results, Bool)
+    pick Nothing new = (new, False)
+    pick (Just p) new
+      | new.messagesPerSecond > p.messagesPerSecond = (new, False)
+      | True = (p, True)
 
-  maybeMax <- firstM checkQuitAndSample $ map ((2::Int) ^) ([0..]::[Int])
-  case maybeMax of
-    Nothing -> putStrLn "Done"
-    Just n_workers -> void $ firstM checkQuitAndSample [n_workers + 1..]
-  putStrLn "Done"
+firstPowers :: (Int -> IO Bool) -> [Int] -> IO (Maybe Int)
+firstPowers f = firstM (\exp' -> f $ 2 ^ exp')
+
+newStart :: Int -> Maybe Int
+newStart 0 = Nothing
+newStart 1 = Nothing
+newStart 2 = Just 3
+newStart exp' = Just $ (((2::Int) ^) (exp' - 1)) + 1
+
+cmdRun :: Instance -> IO ()
+cmdRun app = findMax app >>= print'
+  where
+    print' Nothing = printf "No successfull run"
+    print' (Just max') = putStrLn "Found maximum:" >> printResults max'
+
+findMax :: Instance -> IO (Maybe Results)
+findMax app = do
+  prevMVar <- newEmptyMVar
+  failedExp <- firstPowers (checkQuitAndSample app prevMVar) [0..]
+  prev <- tryTakeMVar prevMVar
+  if isNothing prev then return Nothing
+  else do
+    let start = newStart $ fromJust failedExp
+    if isNothing start then return prev
+    else
+      putMVar prevMVar (fromJust prev)
+      >> firstM (checkQuitAndSample app prevMVar) [(fromJust start)..]
+      >> tryTakeMVar prevMVar
