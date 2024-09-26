@@ -9,7 +9,7 @@ import System.Clock (getTime, Clock(Monotonic), toNanoSecs, diffTimeSpec, TimeSp
 import Database.PostgreSQL.Simple (
   Connection, execute, Only(Only), connectPostgreSQL)
 import Control.Concurrent (
-  MVar, newEmptyMVar, putMVar, takeMVar, forkIO, threadDelay
+  MVar, newEmptyMVar, putMVar, takeMVar, forkIO, threadDelay, tryTakeMVar
   )
 import Control.Concurrent.Extra (newVar, Var, readVar, writeVar)
 import Control.Monad.Loops (firstM)
@@ -118,7 +118,7 @@ waitDuration Instance{config=Config{duration=n}} = forM_ [n,n-1..1] sleep
     sleep :: Int -> IO ()
     sleep x = print x >> threadDelay 1_000_000
 
-sample :: Instance -> Int -> IO Double
+sample :: Instance -> Int -> IO Results
 sample app n_workers = do
   q <- newVar False
 
@@ -132,18 +132,23 @@ sample app n_workers = do
   rs <- newResults <$> mapM takeMVar results
   printResults rs
 
-  return rs.messagesPerSecond
+  return rs
 
 cmdRun :: Instance -> IO ()
 cmdRun app = do
-  maxMVar <- newEmptyMVar
-  putMVar maxMVar 0
+  prevMVar <- newEmptyMVar
   let checkQuitAndSample n_workers = do
-      prev_max <- takeMVar maxMVar
+      prev <- tryTakeMVar prevMVar
       new <- sample app n_workers
-      if new > prev_max
-        then putMVar maxMVar new >> return False
-        else putMVar maxMVar prev_max >> return True
+      let (put, ret) = pick prev new
+      putMVar prevMVar put
+      return ret
+      where
+        pick :: Maybe Results -> Results -> (Results, Bool)
+        pick Nothing new = (new, False)
+        pick (Just p) new
+          | new.messagesPerSecond > p.messagesPerSecond = (new, False)
+          | True = (p, True)
 
   maybeMax <- firstM checkQuitAndSample $ map ((2::Int) ^) ([0..]::[Int])
   case maybeMax of
