@@ -1,10 +1,14 @@
+{-# LANGUAGE OverloadedStrings, OverloadedRecordDot #-}
 module Jmcgmqp.Prometheus.Metrics
 ( newMetrics
 , Metrics(test, messagesTotal, messagesPerSecond, durationSeconds)
 , SampleDesc(..)
+, sdescAsMap
 ) where
 
 import Data.Kind (Type)
+import Data.Map (fromList, Map)
+import Data.ByteString.Lazy.Char8 (ByteString, pack)
 
 import Prometheus (Gauge, gauge, register, Info(Info))
 
@@ -29,5 +33,12 @@ type SampleDesc :: Type
 data SampleDesc = SampleDesc {
   nWorkers :: Int,
   algorithm :: String,
-  mq_system :: String
+  mqSystem :: String
   } deriving stock (Show)
+
+sdescAsMap :: SampleDesc -> Map ByteString ByteString
+sdescAsMap s = fromList [
+  ("n_workers", pack $ show s.nWorkers),
+  ("algorithm", pack s.algorithm),
+  ("mq_system", pack s.mqSystem)
+  ]

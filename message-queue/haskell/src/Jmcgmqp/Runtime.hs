@@ -7,6 +7,7 @@ module Jmcgmqp.Runtime
 , runtimeAsMap
 ) where
 
+import Data.ByteString.Lazy.Char8 (pack, ByteString)
 import Data.Kind (Type)
 import Data.Map (Map, fromList)
 import Data.Maybe (fromJust)
@@ -53,16 +54,16 @@ newRuntime = do
     runtime_ :: String
     runtime_ = printf "%s %s" I.compilerName $ showVersion I.fullCompilerVersion
 
-runtimeAsMap :: Runtime -> Map String String
+runtimeAsMap :: Runtime -> Map ByteString ByteString
 runtimeAsMap r = fromList [
-  ("ctime", formatTimeRFC3339 $ ctime r),
-  ("uuid", show $ uuid r),
-  ("lang", lang r),
-  ("lang_version", lang_version r),
-  ("runtime", r.runtime),
-  ("os", os r),
-  ("kernel", kernel r),
-  ("arch", arch r)
+  ("ctime", pack $ formatTimeRFC3339 $ ctime r),
+  ("uuid", pack $ show $ uuid r),
+  ("lang", pack $ lang r),
+  ("lang_version", pack $ lang_version r),
+  ("runtime", pack $ r.runtime),
+  ("os", pack $ os r),
+  ("kernel", pack $ kernel r),
+  ("arch", pack $ arch r)
   ]
 
 type Instance :: Type

@@ -50,6 +50,7 @@ Library
     , containers >= 0.6.7 && < 0.7
     , extra >= 1.7.16 && < 1.8
     , IfElse >= 0.85 && < 0.86
+    , bytestring >= 0.11.5 && <0.12
 
 test-suite spec
   type: exitcode-stdio-1.0
