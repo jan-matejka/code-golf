@@ -14,26 +14,35 @@ import Control.Concurrent (
 import Control.Concurrent.Extra (newVar, Var, readVar, writeVar)
 import Control.Monad.Loops (firstM)
 import Control.Monad (void, forM_)
-import Data.Maybe (fromMaybe)
+import Control.Monad.IfElse (returning)
+import Data.Maybe (fromJust)
 
 import Jmcgmqp.Runtime (Instance(Instance), config)
 import Jmcgmqp.Config (duration, Config(Config))
 
 insert :: Connection -> Int -> IO ()
-insert conn i =
-  void . execute conn "insert into public.queue (data) values (?)" . Only $ show i
+insert conn =
+  void . execute conn "insert into public.queue (data) values (?)" . Only . show
+
+-- | Perform monadic `fs` until p is True,
+-- then return the result of last executed `f` from `fs`
+-- or `d` if there is no result yet.
+--
+-- A weird combination of whileM and iterateM from Conrol.Monad.Loops
+until'1 :: Monad m => Maybe a -> m Bool -> [m a] -> m (Maybe a)
+until'1 d _ [] = return d
+until'1 d p (f:fs) = do
+  x <- p
+  if x then return d
+  else do
+    y <- f
+    until'1 (Just y) p fs
 
 worker :: Int -> QuitVar -> MVar Int -> IO ()
 worker _ quit result = do
   conn <- connectPostgreSQL "postgres://mq@localhost/mq"
-  -- this is where the magic happens. Refactor later.
-  let checkQuitAndInsert x = do
-        q <- readVar quit
-        if q
-          then return True
-          else insert conn x >> return False
-  x <- firstM checkQuitAndInsert [0..]
-  putMVar result $ fromMaybe 0 x
+  x <- until'1 Nothing (readVar quit) [returning (insert conn) i | i <- [0..]]
+  putMVar result $ fromJust x
 
 forkWorker :: QuitVar -> Int -> IO (MVar Int)
 forkWorker quit worker_id = do
