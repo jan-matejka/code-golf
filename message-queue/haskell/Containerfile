@@ -1,7 +1,9 @@
 FROM localhost/base-hs-stack
 
 USER root
-RUN apt-get install -y libpq-dev # libpq-dev required by postgres-simple
+RUN apt-get install -y libpq-dev libghc-zlib-dev
+# libpq-dev required by postgres-simple
+# libghc-zlib-dev required by http-client (zlib)
 
 USER user
 # RUN mkdir -p code-golf/message-queue/haskell
