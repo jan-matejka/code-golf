@@ -32,7 +32,7 @@ Library
   default-extensions:
     ImportQualifiedPost, StandaloneKindSignatures, OverloadedStrings,
     DerivingStrategies, NumericUnderscores, DoAndIfThenElse,
-    DisambiguateRecordFields
+    DisambiguateRecordFields, DuplicateRecordFields
   Other-Modules:
     Jmcgmqp.Config,
     Jmcgmqp.Uname,

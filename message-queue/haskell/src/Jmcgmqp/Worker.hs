@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, OverloadedRecordDot #-}
 module Jmcgmqp.Worker
 ( cmdRun
 ) where
@@ -51,13 +51,46 @@ newWorkerResult wId mTotal dur = WorkerResult {
   workerId = wId,
   messagesTotal = mTotal,
   duration = dur,
-  messagesPerSecond = fromIntegral mTotal / secs :: Double
+  messagesPerSecond = mps mTotal dur
   }
+
+mps :: Int -> TimeSpec -> Double
+mps n d = fromIntegral n / secs :: Double
   where
     nsecs :: Double
-    nsecs = fromIntegral $ toNanoSecs dur
+    nsecs = fromIntegral $ toNanoSecs d
     secs :: Double
     secs = nsecs * (10::Double) ^^ (-9::Int)
+
+type Results :: Type
+data Results = Results {
+  workers :: [WorkerResult],
+  messagesTotal :: Int,
+  duration :: TimeSpec,
+  messagesPerSecond :: Double
+} deriving stock (Show)
+
+newResults :: [WorkerResult] -> Results
+newResults ws = Results {
+  workers = ws,
+  messagesTotal = totalMsg,
+  duration = totalDur,
+  messagesPerSecond = mps totalMsg totalDur
+  }
+  where
+    totalMsg :: Int
+    totalMsg = sum $ map (\WorkerResult{messagesTotal=n} -> n) ws
+    totalDur :: TimeSpec
+    totalDur = sum $ map (\WorkerResult{duration=d} -> d) ws
+
+printResults :: Results -> IO ()
+printResults rs = do
+  mapM_ printWorker rs.workers
+  printf "Total: %d\n" rs.messagesTotal
+  printf "Total mps: %.3f\n" rs.messagesPerSecond
+  where
+    printWorker :: WorkerResult -> IO ()
+    printWorker w = printf "%d: %d\n" w.workerId w.messagesTotal
 
 worker :: Int -> QuitVar -> MVar WorkerResult -> IO ()
 worker wId quit result = do
@@ -87,7 +120,6 @@ waitDuration Instance{config=Config{duration=n}} = forM_ [n,n-1..1] sleep
 
 sample :: Instance -> Int -> IO Double
 sample app n_workers = do
-  start <- getTime Monotonic
   q <- newVar False
 
   printf "Starting %d workers\n" n_workers
@@ -97,24 +129,10 @@ sample app n_workers = do
   waitDuration app
 
   writeVar q True
-  xs <- mapM takeMVar results
-  end <- getTime Monotonic
-  mapM_ print xs
+  rs <- newResults <$> mapM takeMVar results
+  printResults rs
 
-  let total = fromIntegral $ sum (map messagesTotal xs) :: Double
-  let nanosecs = fromIntegral $ toNanoSecs $ diffTimeSpec end start :: Double
-  let secs = nanosecs * (10::Double) ^^ (-9::Int) :: Double
-  -- printf "total: %.3f\n" total
-  -- printf "ns: %.3f\n" nanosecs
-  -- printf "s: %.3f\n" secs
-  let ips = total / secs
-  printf "Total: %f\n" total
-  printf "ips: %.3f\n" ips
-  -- emulate slowdown with more than 2 workers for testing
-  -- case length xs > 2 of
-  -- True -> return 1
-  -- _ -> return ips
-  return ips
+  return rs.messagesPerSecond
 
 cmdRun :: Instance -> IO ()
 cmdRun app = do
