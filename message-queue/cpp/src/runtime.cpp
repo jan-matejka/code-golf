@@ -98,6 +98,7 @@ map<string,string> Runtime::Map() const {
   map<string,string> xs = {
     {"ctime", ctime_string()},
     {"uuid", to_string(uuid)},
+    {"lang", lang},
     {"lang_version", lang_version},
     {"runtime", runtime},
     {"os", os},
