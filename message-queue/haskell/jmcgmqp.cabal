@@ -31,9 +31,14 @@ Library
  -- can't enable -Wno-unsafe due to postgresql-simple not being safe, maybe later.
  -- -Wall-missed-specializations might be worthwhile, later.
   default-extensions:
-    ImportQualifiedPost, StandaloneKindSignatures, OverloadedStrings,
-    DerivingStrategies, NumericUnderscores, DoAndIfThenElse,
-    DisambiguateRecordFields, DuplicateRecordFields
+    DerivingStrategies,
+    DoAndIfThenElse,
+    DisambiguateRecordFields,
+    DuplicateRecordFields,
+    ImportQualifiedPost,
+    NumericUnderscores,
+    OverloadedStrings,
+    StandaloneKindSignatures,
   Other-Modules:
     Jmcgmqp.Config,
     Jmcgmqp.Uname,
