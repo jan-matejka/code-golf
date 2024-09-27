@@ -1,0 +1,19 @@
+FROM localhost/base-hs-stack
+
+USER root
+RUN apt-get install -y libpq-dev libghc-zlib-dev
+# libpq-dev required by postgres-simple
+# libghc-zlib-dev required by http-client (zlib)
+
+USER user
+# RUN mkdir -p code-golf/message-queue/haskell
+# Note the snapshot of stack.yml here must match the one from dummy
+# Add a check later
+# Note: podman-build can mount a volume, however, it does not accept --userns=keep-id so the
+# permissions gets messed up
+COPY --chown=user jmcgmqp.cabal stack.yaml code-golf/message-queue/haskell/
+RUN cd code-golf/message-queue/haskell && stack build --only-dependencies
+
+WORKDIR code-golf/message-queue/haskell
+COPY --chown=user ./ ./
+# RUN cd code-golf/message-queue/haskell && stack build
