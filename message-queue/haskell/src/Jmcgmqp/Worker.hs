@@ -128,7 +128,7 @@ sample app n_workers = do
   q <- newVar False
 
   printf "Starting %d workers\n" n_workers
-  results <- mapM (forkWorker q) [0..n_workers]
+  results <- mapM (forkWorker q) [1..n_workers]
 
   putStrLn "Waiting"
   waitDuration app
