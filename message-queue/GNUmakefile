@@ -6,7 +6,7 @@ PORTS+= -p 127.0.0.1:9090:9090
 PORTS+= -p 127.0.0.1:9091:9091
 PORTS+= -p 127.0.0.1:9187:9187
 
-containers=$(shell find ./container -maxdepth 1 -mindepth 1 -type d)
+containers=$(shell find ./container -maxdepth 1 -mindepth 1 -type d | grep -v base)
 
 .PHONY: build
 build: ## TBD, probably recurse into container/ and <lang>/ or container/<lang>
