@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedRecordDot #-}
 module Jmcgmqp.Prometheus.Http
 ( pushAdd
 ) where

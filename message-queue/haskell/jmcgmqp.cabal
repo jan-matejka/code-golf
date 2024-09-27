@@ -37,6 +37,7 @@ Library
     DuplicateRecordFields,
     ImportQualifiedPost,
     NumericUnderscores,
+    OverloadedRecordDot,
     OverloadedStrings,
     StandaloneKindSignatures,
   Other-Modules:

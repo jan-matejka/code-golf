@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts, OverloadedRecordDot #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Jmcgmqp.Worker
 ( cmdRun
 , newStart

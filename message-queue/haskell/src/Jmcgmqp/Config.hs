@@ -1,4 +1,3 @@
-{-# LANGUAGE StandaloneKindSignatures #-}
 module Jmcgmqp.Config
 ( Config(Config)
 , test_prometheus

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings, OverloadedRecordDot #-}
 module Jmcgmqp.Prometheus
 ( cmdTestPrometheus
 , newMetrics
