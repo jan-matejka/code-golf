@@ -1,0 +1,25 @@
+FROM ghcr.io/linuxcontainers/debian-slim:12
+# Base debian image
+
+RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
+RUN apt-get update
+
+RUN apt-get install -y \
+  vim procps iproute2 make git zsh ca-certificates \
+  g++ libpq-dev
+
+RUN useradd -m -s /bin/zsh user
+USER user
+
+WORKDIR /home/user
+
+RUN set -e;\
+  mkdir -p git/dotfiles;\
+  cd git/dotfiles;\
+  git clone https://github.com/jan-matejka/dotfiles-zsh.git zsh;\
+  cd zsh;\
+  make install
+
+USER root
+RUN set -e; cd /home/user/git/dotfiles/zsh; make install
+RUN usermod -s /bin/zsh root
