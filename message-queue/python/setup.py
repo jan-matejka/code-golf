@@ -15,7 +15,7 @@ requires = [
     "prometheus-client>=0.16.0,<1",
 ]
 test_requirements = [
-    "pytest>=7.2.1",
+    "pytest>=8.3.3",
 ]
 
 setup(
