@@ -21,7 +21,7 @@ container: ## Run the image in container
 	podman run \
 		--name $(FULL_NAME) \
 		--userns keep-id \
-		-v $(realpath ../../):/home/user/code-golf \
+		-v $(realpath .):/home/user/mq \
 		-u user \
 		--network=host \
 		-it \
