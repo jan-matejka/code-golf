@@ -9,7 +9,8 @@ FULL_NAME := $(COMMON_NAME)-$(NAME)
 .PHONY: image
 image: ## Build image
 
-	podman build -f $(CONTAINERFILE) -t localhost/$(FULL_NAME)
+	# Need to build with parent as context due to some shared code like this makefile
+	podman build -f $(CONTAINERFILE) -t localhost/$(FULL_NAME) ..
 
 .PHONY: container
 container: ## Run the image in container
