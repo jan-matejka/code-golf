@@ -1,4 +1,4 @@
-FROM localhost/base-hs-stack
+FROM localhost/base-haskell
 
 USER root
 RUN apt-get install -y libpq-dev libghc-zlib-dev
