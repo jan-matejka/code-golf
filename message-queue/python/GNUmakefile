@@ -4,3 +4,8 @@ include ../mqp-base.mk
 build: # Build
 
 	# NOOP
+
+.PHONY: check
+check: # Run tests
+
+	pytest ./
