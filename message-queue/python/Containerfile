@@ -5,6 +5,7 @@ RUN apt-get install -y python3 python3-venv
 COPY --chown=user python/setup.py mq/
 COPY --chown=user python/src/jmcgmqp/__init__.py mq/src/jmcgmqp/
 
+USER user
 RUN set -e;\
   python3 -m venv venv;\
   . venv/bin/activate;\
