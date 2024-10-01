@@ -15,15 +15,12 @@ class Instance:
     observer: Registry = None
     runtime: "Runtime" = None
     config: "Config" = None
-    prometheus: "prometheus.Pusher" = None
 
     def __post_init__(self):
         self.observer = Registry()
         self.runtime = Runtime()
         self.config = Config()
         log.info(f"Config: {asdict(self.config)}")
-        from jmcgmqp.observer.prometheus import Pusher
-        self.prometheus = Pusher(self.config)
 
 @dataclass
 class Runtime:

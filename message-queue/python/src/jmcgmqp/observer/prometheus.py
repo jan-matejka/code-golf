@@ -5,6 +5,7 @@ from prometheus_client import push_to_gateway
 from jmcgmqp.runtime import Runtime_labels, Instance
 from jmcgmqp.primitives import Results
 from jmcgmqp import event
+from jmcgmqp.config import Config
 
 registry = CollectorRegistry()
 
@@ -32,24 +33,19 @@ duration_seconds = Gauge(
     registry=registry,
 )
 
-class Pusher:
-    def __init__(self, c: "Config"):
-        self.config = c
-
-    def push(self):
-        push_to_gateway(
-            self.config.PUSHGATEWAY,
-            job='mq-producer',
-            registry=registry
-        )
+def push(config: Config):
+    push_to_gateway(
+        config.PUSHGATEWAY,
+        job='mq-producer',
+        registry=registry
+    )
 
 def test_cmd(app):
     test_metric.labels(
         worker_id='worker_1',
         **app.runtime.metric_labels(),
     ).inc()
-    app.prometheus.push()
-
+    push(app.config)
 
 def observer(app: Instance, e: event.Event):
     if isinstance(e, event.WorkerResult):
@@ -65,4 +61,4 @@ def observer(app: Instance, e: event.Event):
         messages_per_second.labels(**labels).set(e.result.messages_per_second)
         duration_seconds.labels(**labels).set(e.result.duration_seconds)
 
-        app.prometheus.push()
+        push(app.config)
