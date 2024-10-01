@@ -11,7 +11,7 @@ RUN set -e;\
   . venv/bin/activate;\
   cd mq;\
   ls;\
-  pip install -e ./
+  pip install -e .[test]
 
 COPY --chown=user mqp-base.mk /home/user/
 COPY --chown=user python/container/zshrc /home/user/.zshrc2

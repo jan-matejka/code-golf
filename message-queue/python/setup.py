@@ -26,5 +26,5 @@ setup(
     package_dir={"": "src"},
     python_requires=">={}.{}".format(*REQUIRED_PYTHON),
     install_requires=requires,
-    tests_require=test_requirements,
+    extras_require={'test': test_requirements},
 )
