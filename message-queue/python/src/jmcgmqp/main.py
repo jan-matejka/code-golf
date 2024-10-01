@@ -10,7 +10,7 @@ import logging
 from functools import partial
 
 from algorithm import find_maximum
-from prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds
+from jmcgmqp.observer.prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds
 from jmcgmqp.runtime import Instance
 from jmcgmqp.primitives import Config, WorkerResult, Results
 from jmcgmqp import event

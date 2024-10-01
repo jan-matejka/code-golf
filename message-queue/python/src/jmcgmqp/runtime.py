@@ -22,7 +22,7 @@ class Instance:
         self.runtime = Runtime()
         self.config = Config()
         log.info(f"Config: {asdict(self.config)}")
-        from prometheus import Pusher
+        from jmcgmqp.observer.prometheus import Pusher
         self.prometheus = Pusher(self.config)
 
 @dataclass
