@@ -10,11 +10,12 @@ import logging
 from functools import partial
 
 from algorithm import find_maximum
-from jmcgmqp.observer.prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds, send_prometheus
+from jmcgmqp.observer.prometheus import test_cmd
 from jmcgmqp.runtime import Instance
 from jmcgmqp.primitives import Config, WorkerResult, Results, SampleDescription
 from jmcgmqp import event
 from jmcgmqp.observer import stdout
+from jmcgmqp.observer import prometheus
 
 log = logging.getLogger(__name__)
 
@@ -108,12 +109,12 @@ def sample(app: Instance, n: int) -> Results:
     Runs with `n` workers and returns the results.
     """
     rs = sample_workers(app, n)
-    send_prometheus(app, 'multiprocessing', 'postgres', rs)
     return rs
 
 def main():
     app = Instance()
     app.observer.subscribe(stdout.observer)
+    app.observer.subscribe(partial(prometheus.observer, app))
     if app.config.TEST_PROMETHEUS:
         test_cmd(app)
         sys.exit(1)

@@ -4,6 +4,7 @@ from prometheus_client import push_to_gateway
 
 from jmcgmqp.runtime import Runtime_labels, Instance
 from jmcgmqp.primitives import Results
+from jmcgmqp import event
 
 registry = CollectorRegistry()
 
@@ -50,31 +51,18 @@ def test_cmd(app):
     app.prometheus.push()
 
 
-def send_prometheus(app: Instance, algorithm: str, mq_system: str, rs: Results):
-    for w in rs.workers:
-        messages_total.labels(
-            worker_id=w.worker_id,
-            n_workers=len(rs.workers),
-            algorithm=algorithm,
-            mq_system=mq_system,
-            **app.runtime.metric_labels(),
-        ).set(w.messages_total)
+def observer(app: Instance, e: event.Event):
+    if isinstance(e, event.WorkerResult):
+        labels = {
+            'worker_id': e.result.worker_id,
+            'n_workers': e.result.sdesc.n_workers,
+            'algorithm': e.result.sdesc.algorithm,
+            'mq_system': e.result.sdesc.mq_system,
+        }
+        labels.update(app.runtime.metric_labels())
 
-        messages_per_second.labels(
-            worker_id=w.worker_id,
-            n_workers=len(rs.workers),
-            algorithm=algorithm,
-            mq_system=mq_system,
-            **app.runtime.metric_labels(),
-        ).set(w.messages_per_second)
+        messages_total.labels(**labels).set(e.result.messages_total)
+        messages_per_second.labels(**labels).set(e.result.messages_per_second)
+        duration_seconds.labels(**labels).set(e.result.duration_seconds)
 
-        duration_seconds.labels(
-            worker_id=w.worker_id,
-            n_workers=len(rs.workers),
-            algorithm=algorithm,
-            mq_system=mq_system,
-            **app.runtime.metric_labels(),
-        ).set(w.duration_seconds)
-
-    app.prometheus.push()
-
+        app.prometheus.push()
