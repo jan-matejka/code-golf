@@ -2,7 +2,8 @@ from prometheus_client import CollectorRegistry
 from prometheus_client import Gauge
 from prometheus_client import push_to_gateway
 
-from jmcgmqp.runtime import Runtime_labels
+from jmcgmqp.runtime import Runtime_labels, Instance
+from jmcgmqp.primitives import Results
 
 registry = CollectorRegistry()
 
@@ -47,3 +48,33 @@ def test_cmd(app):
         **app.runtime.metric_labels(),
     ).inc()
     app.prometheus.push()
+
+
+def send_prometheus(app: Instance, algorithm: str, mq_system: str, rs: Results):
+    for w in rs.workers:
+        messages_total.labels(
+            worker_id=w.worker_id,
+            n_workers=len(rs.workers),
+            algorithm=algorithm,
+            mq_system=mq_system,
+            **app.runtime.metric_labels(),
+        ).set(w.messages_total)
+
+        messages_per_second.labels(
+            worker_id=w.worker_id,
+            n_workers=len(rs.workers),
+            algorithm=algorithm,
+            mq_system=mq_system,
+            **app.runtime.metric_labels(),
+        ).set(w.messages_per_second)
+
+        duration_seconds.labels(
+            worker_id=w.worker_id,
+            n_workers=len(rs.workers),
+            algorithm=algorithm,
+            mq_system=mq_system,
+            **app.runtime.metric_labels(),
+        ).set(w.duration_seconds)
+
+    app.prometheus.push()
+

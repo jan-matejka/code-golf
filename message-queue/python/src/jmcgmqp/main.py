@@ -10,7 +10,7 @@ import logging
 from functools import partial
 
 from algorithm import find_maximum
-from jmcgmqp.observer.prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds
+from jmcgmqp.observer.prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds, send_prometheus
 from jmcgmqp.runtime import Instance
 from jmcgmqp.primitives import Config, WorkerResult, Results
 from jmcgmqp import event
@@ -94,34 +94,6 @@ def sample_workers(app: Instance, n: int):
         for p in ps:
             p.kill()
         raise
-
-def send_prometheus(app: Instance, algorithm: str, mq_system: str, rs: Results):
-    for w in rs.workers:
-        messages_total.labels(
-            worker_id=w.worker_id,
-            n_workers=len(rs.workers),
-            algorithm=algorithm,
-            mq_system=mq_system,
-            **app.runtime.metric_labels(),
-        ).set(w.messages_total)
-
-        messages_per_second.labels(
-            worker_id=w.worker_id,
-            n_workers=len(rs.workers),
-            algorithm=algorithm,
-            mq_system=mq_system,
-            **app.runtime.metric_labels(),
-        ).set(w.messages_per_second)
-
-        duration_seconds.labels(
-            worker_id=w.worker_id,
-            n_workers=len(rs.workers),
-            algorithm=algorithm,
-            mq_system=mq_system,
-            **app.runtime.metric_labels(),
-        ).set(w.duration_seconds)
-
-    app.prometheus.push()
 
 def sample(app: Instance, n: int) -> Results:
     """
