@@ -58,7 +58,7 @@ def check(error):
     if error.is_set():
         raise RuntimeError('Worker error')
 
-def sample_workers(app: Instance, n: int) -> Results:
+def sample(app: Instance, n: int) -> Results:
     """
     Run `n` workers and collect the results.
     """
@@ -115,7 +115,7 @@ def main():
         test_cmd(app)
         sys.exit(1)
 
-    max_ = find_maximum(partial(sample_workers, app), app.config.POWER)
+    max_ = find_maximum(partial(sample, app), app.config.POWER)
     app.observer.publish(event.MaximumFound(max_))
 
 if __name__ == "__main__":
