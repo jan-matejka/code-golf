@@ -13,6 +13,8 @@ from algorithm import find_maximum
 from prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds
 from jmcgmqp.runtime import Instance
 from jmcgmqp.primitives import Config, WorkerResult, Results
+from jmcgmqp import event
+from jmcgmqp.observer import stdout
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ def check(error):
         raise RuntimeError('Worker error')
 
 def sample_workers(app: Instance, n: int):
-    print(f"Starting {n} workers")
+    app.observer.publish(event.SamplingWorkers(n))
     c = app.config
     q = Queue()
     exit_flag = Event()
@@ -69,10 +71,10 @@ def sample_workers(app: Instance, n: int):
 
         b.wait()
 
-        print("Waiting")
+        app.observer.publish(event.Waiting(None))
         for i in range(c.DURATION, 0, -1):
             check(error)
-            print(i)
+            app.observer.publish(event.Waiting(i))
             time.sleep(1)
 
         exit_flag.set()
@@ -80,20 +82,18 @@ def sample_workers(app: Instance, n: int):
             p.join()
 
         check(error)
-        print("collecting results")
-        xs = [q.get() for _ in range(0, n)]
-        return Results(xs)
+        xs = []
+        for _ in range(0, n):
+            wr = q.get()
+            xs.append(wr)
+            app.observer.publish(event.WorkerResult(wr))
+        r = Results(xs)
+        app.observer.publish(event.SampleResult(r))
+        return r
     except:
         for p in ps:
             p.kill()
         raise
-
-def print_sample(rs: Results):
-    # print results
-    for r in rs.workers:
-        print(f"{r.worker_id}: {r.messages_total}")
-    print(f"Total: {rs.messages_total}")
-    print(f"Total mps: {rs.messages_per_second:.3f}\n")
 
 def send_prometheus(app: Instance, algorithm: str, mq_system: str, rs: Results):
     for w in rs.workers:
@@ -128,20 +128,18 @@ def sample(app: Instance, n: int) -> Results:
     Runs with `n` workers and returns the results.
     """
     rs = sample_workers(app, n)
-    print_sample(rs)
     send_prometheus(app, 'multiprocessing', 'postgres', rs)
     return rs
 
 def main():
     app = Instance()
+    app.observer.subscribe(stdout.observer)
     if app.config.TEST_PROMETHEUS:
         test_cmd(app)
         sys.exit(1)
 
     max_ = find_maximum(partial(sample, app), app.config.POWER)
-
-    print("\nFound maximum:")
-    print_sample(max_)
+    app.observer.publish(event.MaximumFound(max_))
 
 if __name__ == "__main__":
     try:
