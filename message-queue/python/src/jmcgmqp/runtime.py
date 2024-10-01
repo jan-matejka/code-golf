@@ -6,16 +6,19 @@ import platform
 from uuid import UUID, uuid1
 
 from jmcgmqp.primitives import Config
+from jmcgmqp.observer import Registry
 
 log = logging.getLogger(__name__)
 
 @dataclass
 class Instance:
+    observer: Registry = None
     runtime: "Runtime" = None
     config: "Config" = None
     prometheus: "prometheus.Pusher" = None
 
     def __post_init__(self):
+        self.observer = Registry()
         self.runtime = Runtime()
         self.config = Config()
         log.info(f"Config: {asdict(self.config)}")
