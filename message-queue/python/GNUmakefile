@@ -8,4 +8,4 @@ build: # Build
 .PHONY: check
 check: # Run tests
 
-	pytest ./
+	pytest --cov-report=term-missing --cov=jmcgmqp ./
