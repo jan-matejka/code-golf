@@ -1,4 +1,9 @@
 from dataclasses import dataclass
+from typing import Callable
+
+from jmcgmqp.event import Event
+
+Observer = Callable[[Event], None]
 
 @dataclass
 class Registry:
@@ -6,7 +11,7 @@ class Registry:
     def __post_init__(self):
         self.observers = []
 
-    def subscribe(self, o):
+    def subscribe(self, o: Observer):
         self.observers.append(o)
 
     def publish(self, e):
