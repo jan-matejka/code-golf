@@ -48,8 +48,9 @@ def check(error):
     if error.is_set():
         raise RuntimeError('Worker error')
 
-def sample_workers(c: Config, n: int):
+def sample_workers(app: Instance, n: int):
     print(f"Starting {n} workers")
+    c = app.config
     q = Queue()
     exit_flag = Event()
     error = Event()
@@ -126,7 +127,7 @@ def sample(app: Instance, n: int) -> Results:
     """
     Runs with `n` workers and returns the results.
     """
-    rs = sample_workers(app.config, n)
+    rs = sample_workers(app, n)
     print_sample(rs)
     send_prometheus(app, 'multiprocessing', 'postgres', rs)
     return rs
