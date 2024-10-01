@@ -58,7 +58,10 @@ def check(error):
     if error.is_set():
         raise RuntimeError('Worker error')
 
-def sample_workers(app: Instance, n: int):
+def sample_workers(app: Instance, n: int) -> Results:
+    """
+    Run `n` workers and collect the results.
+    """
     app.observer.publish(event.SamplingWorkers(n))
     c = app.config
     q = Queue()
@@ -104,13 +107,6 @@ def sample_workers(app: Instance, n: int):
             p.kill()
         raise
 
-def sample(app: Instance, n: int) -> Results:
-    """
-    Runs with `n` workers and returns the results.
-    """
-    rs = sample_workers(app, n)
-    return rs
-
 def main():
     app = Instance()
     app.observer.subscribe(stdout.observer)
@@ -119,7 +115,7 @@ def main():
         test_cmd(app)
         sys.exit(1)
 
-    max_ = find_maximum(partial(sample, app), app.config.POWER)
+    max_ = find_maximum(partial(sample_workers, app), app.config.POWER)
     app.observer.publish(event.MaximumFound(max_))
 
 if __name__ == "__main__":
