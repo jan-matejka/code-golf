@@ -5,18 +5,20 @@ import pytest
 
 from jmcgmqp import event as es
 from jmcgmqp.observer.stdout import observer
-from jmcgmqp.primitives import WorkerResult, Results
+from jmcgmqp.primitives import WorkerResult, Results, SampleDescription
+
+sdesc = SampleDescription(4, 'foo', 'bar')
 
 @pytest.mark.parametrize('event, message', (
     (es.SamplingWorkers(4), "Starting 4 workers\n"),
     (es.Waiting(None), "Waiting\n"),
     (es.Waiting(2), "2\n"),
-    (es.WorkerResult(WorkerResult(3, 10, 10**9)), "3: 10\n"),
-    (es.SampleResult( Results([WorkerResult(3, 15, 10**9)])),
+    (es.WorkerResult(WorkerResult(sdesc, 3, 10, 10**9)), "3: 10\n"),
+    (es.SampleResult(Results([WorkerResult(sdesc, 3, 15, 10**9)])),
         "Total: 15\nTotal mps: 15.000\n\n"
     ),
     (es.MaximumFound(
-        Results([WorkerResult(3, 15, 10**9)])),
+        Results([WorkerResult(sdesc, 3, 15, 10**9)])),
         "Found Maximum:\nTotal: 15\nTotal mps: 15.000\n"
     ),
 ))

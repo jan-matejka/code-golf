@@ -26,7 +26,14 @@ class Config:
             setattr(self, name, x)
 
 @dataclass
+class SampleDescription:
+    n_workers: int
+    algorithm: str
+    mq_system: str
+
+@dataclass
 class WorkerResult:
+    sdesc: SampleDescription
     worker_id: int
     messages_total: int
     duration_ns: int

@@ -12,13 +12,20 @@ from functools import partial
 from algorithm import find_maximum
 from jmcgmqp.observer.prometheus import Pusher, test_cmd, messages_total, messages_per_second, duration_seconds, send_prometheus
 from jmcgmqp.runtime import Instance
-from jmcgmqp.primitives import Config, WorkerResult, Results
+from jmcgmqp.primitives import Config, WorkerResult, Results, SampleDescription
 from jmcgmqp import event
 from jmcgmqp.observer import stdout
 
 log = logging.getLogger(__name__)
 
-def worker(worker_id: int, q: Queue, exit_flag: Event, error: Event, b: Barrier):
+def worker(
+    sdesc: SampleDescription,
+    worker_id: int,
+    q: Queue,
+    exit_flag: Event,
+    error: Event,
+    b: Barrier
+):
     try:
         #if worker_id > 4:
         #    raise RuntimeError("whatever")
@@ -42,7 +49,7 @@ def worker(worker_id: int, q: Queue, exit_flag: Event, error: Event, b: Barrier)
 
     end = time.time_ns()
 
-    r = WorkerResult(worker_id, i, end-start)
+    r = WorkerResult(sdesc, worker_id, i, end-start)
     q.put(r)
 
 
@@ -59,9 +66,10 @@ def sample_workers(app: Instance, n: int):
     b = Barrier(n+1)
     ps = []
     try:
+        sdesc = SampleDescription(n, 'multiprocessing', 'postgres')
         for i in range(1, n+1):
             check(error)
-            p = Process(target=worker, args=(i, q, exit_flag, error, b))
+            p = Process(target=worker, args=(sdesc, i, q, exit_flag, error, b))
             ps.append(p)
             try:
                 p.start()
