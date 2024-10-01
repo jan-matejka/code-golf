@@ -1,29 +1,4 @@
 from dataclasses import dataclass
-import logging
-import os
-
-log = logging.getLogger(__name__)
-
-@dataclass
-class Config:
-    _opts = (
-        ('DURATION', int, 3),
-        ('POWER', int, 0),
-        ('TEST_PROMETHEUS', int, 0),
-    )
-    DURATION: int = None
-    POWER: int = None
-    PUSHGATEWAY: str = 'localhost:9091'
-    TEST_PROMETHEUS: int = 0
-
-    def __post_init__(self):
-        for name, reader, default in self._opts:
-            x = os.environ.get(name, None)
-            if x is None:
-                x = default
-            else:
-                x = reader(x)
-            setattr(self, name, x)
 
 @dataclass
 class SampleDescription:

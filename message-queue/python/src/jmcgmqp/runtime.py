@@ -5,7 +5,7 @@ import logging
 import platform
 from uuid import UUID, uuid1
 
-from jmcgmqp.primitives import Config
+from jmcgmqp.config import Config
 from jmcgmqp.observer import Registry
 
 log = logging.getLogger(__name__)
