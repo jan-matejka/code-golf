@@ -85,6 +85,9 @@ class WorkerResult:
 
 @dataclass
 class Results:
+    """
+    Results are ordered by their messages_per_second.
+    """
     workers: [WorkerResult]
     messages_total: int = None
     duration_ns: int = None
@@ -97,3 +100,18 @@ class Results:
         self.duration_ns = sum(r.duration_ns for r in self.workers)
         self.duration_seconds = self.duration_ns * 10**-9
         self.messages_per_second = self.messages_total / self.duration_seconds
+
+    def __lt__(self, x):
+        return self.messages_per_second < x.messages_per_second
+
+    def __le__(self, x):
+        return self.messages_per_second <= x.messages_per_second
+
+    def __gt__(self, x):
+        return self.messages_per_second > x.messages_per_second
+
+    def __ge__(self, x):
+        return self.messages_per_second >= x.messages_per_second
+
+    def __eq__(self, x):
+        return self.messages_per_second == x.messages_per_second
