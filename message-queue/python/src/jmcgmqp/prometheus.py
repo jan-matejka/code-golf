@@ -2,7 +2,7 @@ from prometheus_client import CollectorRegistry
 from prometheus_client import Gauge
 from prometheus_client import push_to_gateway
 
-from primitives import Runtime_labels
+from jmcgmqp.runtime import Runtime_labels
 
 registry = CollectorRegistry()
 

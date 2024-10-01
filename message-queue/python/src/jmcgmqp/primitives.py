@@ -1,53 +1,8 @@
-from dataclasses import dataclass, asdict, fields
-from typing import Any
-import datetime
+from dataclasses import dataclass
 import logging
 import os
-import platform
-from uuid import UUID, uuid1
 
 log = logging.getLogger(__name__)
-
-@dataclass
-class Instance:
-    runtime: "Runtime" = None
-    config: "Config" = None
-    prometheus: "prometheus.Pusher" = None
-
-    def __post_init__(self):
-        self.runtime = Runtime()
-        self.config = Config()
-        log.info(f"Config: {asdict(self.config)}")
-        from prometheus import Pusher
-        self.prometheus = Pusher(self.config)
-
-@dataclass
-class Runtime:
-    ctime: datetime.datetime = None
-    uuid: UUID = None
-    lang: str = None
-    lang_version: str = None
-    runtime: str = None
-    runtime: str = None
-    os: str = None
-    kernel: str = None
-    arch: str = None
-
-    def __post_init__(self):
-        self.ctime = datetime.datetime.now()
-        self.uuid = uuid1()
-        self.lang = 'python'
-        self.lang_version = platform.python_version()
-        self.runtime = platform.python_implementation()
-        self.os = platform.system()
-        uname = platform.uname()
-        self.kernel = uname.release
-        self.arch = uname.machine
-
-    def metric_labels(self) -> dict[str, Any]:
-        return asdict(self)
-
-Runtime_labels = tuple(f.name for f in fields(Runtime))
 
 @dataclass
 class Config:
