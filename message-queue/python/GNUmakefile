@@ -8,4 +8,4 @@ build: # Build
 .PHONY: check
 check: # Run tests
 
-	pytest --cov-report=term-missing --cov=jmcgmqp ./
+	pytest --cov-report=term-missing --cov=jmcgmqp -m 'not integration' ./
