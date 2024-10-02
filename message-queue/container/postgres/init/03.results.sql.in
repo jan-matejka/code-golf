@@ -1,0 +1,32 @@
+create schema results;
+
+create table results.runtime (
+  id serial not null primary key,
+  ctime timestamp not null,
+  uuid text not null unique, /* TBD: use uuid type */
+  lang text not null,
+  lang_version text not null,
+  runtime text not null,
+  os text not null,
+  kernel text not null,
+  arch text not null,
+  unique (uuid, lang, lang_version, runtime, os, kernel, arch)
+);
+
+create table results.sample (
+  id serial not null primary key,
+  runtime_id int not null references results.runtime(id),
+  n_workers int not null,
+  algorithm text not null, /* TBD: validation table */
+  mq_system text not null, /* TBD: validation table */
+  unique (runtime_id, n_workers, algorithm, mq_system)
+);
+
+create table results.worker (
+  id serial not null primary key,
+  sample_id int not null references results.sample(id),
+  worker_id int not null,
+  messages_total int not null,
+  duration_ns bigint not null,
+  unique (sample_id, worker_id)
+);
