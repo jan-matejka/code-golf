@@ -12,6 +12,7 @@ class Config:
     POWER: int = None
     PUSHGATEWAY: str = 'localhost:9091'
     TEST_PROMETHEUS: int = 0
+    POSTGRES: str = "dbname=mq user=mq host=localhost"
 
     def __post_init__(self):
         for name, reader, default in self._opts:
