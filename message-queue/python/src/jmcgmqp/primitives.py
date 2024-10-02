@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-@dataclass
+@dataclass(frozen=True)
 class SampleDescription:
     n_workers: int
     algorithm: str

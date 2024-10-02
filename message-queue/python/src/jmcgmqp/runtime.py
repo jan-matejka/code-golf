@@ -23,7 +23,7 @@ class Instance:
         self.config.load_env()
         log.info(f"Config: {asdict(self.config)}")
 
-@dataclass
+@dataclass(frozen=True)
 class Runtime:
     ctime: datetime.datetime = None
     uuid: UUID = None
