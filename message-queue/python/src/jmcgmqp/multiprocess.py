@@ -4,10 +4,12 @@ import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 
 from jmcgmqp.runtime import Instance
+from jmcgmqp.config import Config
 from jmcgmqp.primitives import WorkerResult, Results, SampleDescription
 from jmcgmqp import event
 
 def worker(
+    config: Config,
     sdesc: SampleDescription,
     worker_id: int,
     q: Queue,
@@ -18,7 +20,7 @@ def worker(
     try:
         #if worker_id > 4:
         #    raise RuntimeError("whatever")
-        conn = psycopg.connect("dbname=mq user=mq host=localhost")
+        conn = psycopg.connect(config.POSTGRES)
         i = 0
         conn.execute("select 1")
     except:
@@ -61,7 +63,7 @@ def sample(app: Instance, n: int) -> Results:
         sdesc = SampleDescription(n, 'multiprocessing', 'postgres')
         for i in range(1, n+1):
             check(error)
-            p = Process(target=worker, args=(sdesc, i, q, exit_flag, error, b))
+            p = Process(target=worker, args=(app.config, sdesc, i, q, exit_flag, error, b))
             ps.append(p)
             try:
                 p.start()
