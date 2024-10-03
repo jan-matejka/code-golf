@@ -376,3 +376,4 @@ def test_InMemoryFileRegistry(s, r):
     p.touch()
     r.register(p)
     assert r.is_different(p) == False
+    assert r.is_different(p.relative_to(s)) == False

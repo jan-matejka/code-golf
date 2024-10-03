@@ -50,6 +50,8 @@ class FileRegistry(ABC):
     @abstractmethod
     def is_different(self, p: Path) -> bool:
         """
+        :param p: May be an absolute path in self.src, or relative to self.src or self.dst
+
         :returns: True if given `p`'s checksum is different from the one in registry.
             The checksum in registry is updated if `p`'s checksum is different or not registered.
         """
@@ -58,8 +60,19 @@ class FileRegistry(ABC):
     def register(self, p: Path) -> None:
         """
         Register the path and its checksum.
+
+        :param p: May be an absolute path in self.src, or relative to self.src or self.dst
         """
         raise NotImplementedError # pragma: nocover
+
+    def _get_both(self, p: Path) -> (Path, Path):
+        """
+        :returns: (absolute, relative)
+        """
+        if p.is_absolute():
+            return (p, p.relative_to(self.src))
+        else:
+            return (self.src / p, p)
 
 class NullFileRegistry(FileRegistry):
     def __init__(self, src=None, dst=None):
@@ -80,7 +93,8 @@ class InMemoryFileRegistry(FileRegistry):
         self._map = {}
 
     def is_different(self, p):
-        h = self._hash(p).digest()
+        p_abs, p = self._get_both(p)
+        h = self._hash(p_abs).digest()
 
         if p not in self._map:
             self._map[p] = h
@@ -97,7 +111,8 @@ class InMemoryFileRegistry(FileRegistry):
             return hashlib.file_digest(f, hashlib.sha256)
 
     def register(self, p):
-        self._map[p] = self._hash(p).digest()
+        p_abs, p = self._get_both(p)
+        self._map[p] = self._hash(p_abs).digest()
 
 @dataclass
 class RemoveTarget(Action):
