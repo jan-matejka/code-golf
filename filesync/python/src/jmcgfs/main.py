@@ -17,6 +17,12 @@ class Action(ABC):
     def execute(self):
         raise NotImplementedError # pragma: nocover
 
+class RmtreeError(Exception):
+    pass
+
+class UnlinkError(Exception):
+    pass
+
 @dataclass
 class RemoveTarget(Action):
     target: Path
@@ -26,22 +32,24 @@ class RemoveTarget(Action):
         assert isinstance(self.target, Path)
 
     def execute(self, _rmtree=shutil.rmtree, _unlink=Path.unlink):
+        """
+        :raises RmtreeError:
+        :raises UnlinkError:
+        """
         p = self.target
 
         if p.is_dir():
             try:
                 _rmtree(str(p))
             except Exception as e:
-                self._log.exception(f"rmtree failed: {p}")
-                raise
+                raise RmtreeError() from e
             else:
                 self._log.info(f"Delete tree: {p}")
         elif p.is_symlink() or p.exists():
             try:
                 _unlink(p)
             except Exception as e:
-                self._log.exception(f"unlink failed: {p}")
-                raise
+                raise UnlinkError() from e
             else:
                 self._log.info(f"Delete: {p}")
 

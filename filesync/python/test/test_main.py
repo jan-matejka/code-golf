@@ -5,7 +5,7 @@ import tempfile
 
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
-    Action
+    Action, RmtreeError, UnlinkError
 )
 
 import pytest
@@ -225,11 +225,11 @@ def test_RemoveTarget_rmtree_fails(s):
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
     a = RemoveTarget(p, _log=l)
 
-    with raises(Exception) as einfo:
-        a.execute(_rmtree=raise_fn(Exception("foo")))
+    e = Exception("foo")
+    with raises(RmtreeError) as einfo:
+        a.execute(_rmtree=raise_fn(e))
 
-    assert str(einfo.value) == "foo"
-    l.exception.assert_called_once_with(f"rmtree failed: {p}")
+    assert einfo.value.__cause__ == e
 
 def test_RemoveTarget_unlink_fails(s):
     p = (s / "foo")
@@ -239,11 +239,11 @@ def test_RemoveTarget_unlink_fails(s):
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
     a = RemoveTarget(p, _log=l)
 
-    with raises(Exception) as einfo:
-        a.execute(_unlink=raise_fn(Exception("foo")))
+    e = Exception("foo")
+    with raises(UnlinkError) as einfo:
+        a.execute(_unlink=raise_fn(e))
 
-    assert str(einfo.value) == "foo"
-    l.exception.assert_called_once_with(f"unlink failed: {p}")
+    assert einfo.value.__cause__ == e
 
 def test_MakeDir(s):
     dst = s / "a"
