@@ -163,6 +163,17 @@ def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action
             dst = r / src.relative_to(s)
             actions.append(MakeDir(dst))
 
+        codirpath = r / Path(dirpath).relative_to(s)
+        if codirpath.is_dir():
+            children = dirnames + filenames
+            missing = (
+                codirpath / x
+                for x in codirpath.iterdir()
+                if x.name not in children
+            )
+            for x in missing:
+                actions.append(RemoveTarget(x))
+
     return actions
 
 def main(argv=sys.argv, _collect=collect):

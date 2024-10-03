@@ -83,16 +83,22 @@ def test_collect(s, r):
     (s / "bar/qux/b").touch()
     (s / "bar/s").symlink_to('x')
     (s / "bar/s2").symlink_to('qux/a')
+    (r / "qux").touch()
+    (s / "baz").mkdir()
+    (r / "baz/bar").mkdir(parents=True)
 
     # Maybe dependent on the filesystem or its options but the order is significant.
     assert collect(s, r) == [
         CopyFile(s / "foo", r / "foo"),
         MakeDir(r / "bar"),
+        MakeDir(r / "baz"),
+        RemoveTarget(r / "qux"),
         Ignore(s / "bar/s", "symlink"),
         Ignore(s / "bar/s2", "symlink"),
         MakeDir(r / "bar/qux"),
         CopyFile(s / "bar/qux/b", r / "bar/qux/b"),
         CopyFile(s / "bar/qux/a", r / "bar/qux/a"),
+        RemoveTarget(r / "baz/bar"),
     ]
 
 def test_collect_disappeared(s, r):
