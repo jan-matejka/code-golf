@@ -198,12 +198,21 @@ def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action
 
     return actions
 
-def execute(actions: Iterator[Action]) -> bool:
+def execute(actions: Iterator[Action], _log=log) -> bool:
     """
     Executes given actions.
 
     :returns: True if an error occured, False otherwise
     """
+    r = False
+    for a in actions:
+        try:
+            a.execute()
+        except Exception:
+            _log.exception(f"Action failed: {a}")
+            r = True
+
+    return r
 
 def main(argv=sys.argv, _collect=collect, _execute=execute):
     p = argparse.ArgumentParser()

@@ -4,7 +4,8 @@ from pathlib import Path
 import tempfile
 
 from jmcgfs.main import (
-    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute
+    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
+    Action
 )
 
 import pytest
@@ -290,3 +291,20 @@ def test_SetAMTime(s, r):
 
 def test_SetAMTime_str():
     assert str(SetAMTime("foo", "bar")) == "SetAMTime: foo -> bar"
+
+def test_execute():
+    assert execute([]) == False
+
+    m = create_autospec(Action, spec_set=True, instance=True)
+    assert execute([m]) == False
+    m.execute.assert_called_once_with()
+
+    m.execute.reset_mock()
+    m.execute.side_effect = Exception()
+    m2 = create_autospec(Action, spec_set=True, instance=True)
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    assert execute((x for x in [m, m2]), _log=l) == True
+    m.execute.assert_called_once_with()
+    m2.execute.assert_called_once_with()
+    l.exception.assert_called_once_with(f"Action failed: {m}")
