@@ -2,11 +2,13 @@ import logging
 from pathlib import Path
 import tempfile
 
-from jmcgfs.main import main, collect, is_unsupported, CopyFile, CopyDir, Ignore
+from jmcgfs.main import (
+    main, collect, is_unsupported, CopyFile, CopyDir, Ignore, remove_symlink
+)
 
 import pytest
 from pytest import raises
-from unittest.mock import Mock, create_autospec
+from unittest.mock import Mock, create_autospec, call
 
 def test_main():
     m = Mock()
@@ -108,9 +110,12 @@ def test_CopyFile(s, r):
     src = s / "foo"
     src.touch()
     dst = r / "foo"
-    a = CopyFile(src, dst)
+
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
-    a.execute(_log=l)
+
+    a = CopyFile(src, dst, _log=l)
+    a.execute()
+
     assert dst.exists()
     l.info.assert_called_once_with(a)
 
@@ -120,3 +125,35 @@ def test_CopyFile(s, r):
 
 def test_CopyFile_str():
     assert str(CopyFile("foo", "bar")) == "CopyFile: foo -> bar"
+
+def test_CopyFile_over_symlink(s, r):
+    src = s / "foo"
+    src.touch()
+    dst = r / "foo"
+    dst.symlink_to(r / "bar")
+    (r / "bar").touch()
+
+    m = create_autospec(remove_symlink, spec_set=True)
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+
+    a = CopyFile(src, dst, _log=l)
+    a.execute()
+
+    assert dst.exists() and dst.is_file() and not dst.is_symlink()
+    assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]
+
+def test_CopyFile_over_broken_symlink(s, r):
+    src = s / "foo"
+    src.touch()
+    dst = r / "foo"
+    dst.symlink_to(r / "bar")
+    assert not dst.exists()
+
+    m = create_autospec(remove_symlink, spec_set=True)
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+
+    a = CopyFile(src, dst, _log=l)
+    a.execute()
+
+    assert dst.exists() and dst.is_file() and not dst.is_symlink()
+    assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]

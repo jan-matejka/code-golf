@@ -17,26 +17,37 @@ class Action(ABC):
     def execute(self):
         raise NotImplementedError
 
+def remove_symlink(p: Path, _log=log):
+    p.unlink()
+    _log.info(f"Delete: {p}")
+
 @dataclass
 class CopyFile(Action):
     src: Path
     dst: Path
+    _log: logging.Logger = log
 
-    def _should_copy(self):
+    def _should_copy(self, s):
         try:
             r = self.dst.stat(follow_symlinks=False)
         except FileNotFoundError:
             return True
+        else:
+            if self.dst.is_symlink():
+                remove_symlink(self.dst, _log=self._log)
+                return True
 
-        s = self.src.stat(follow_symlinks=False)
         return s.st_mtime != r.st_mtime or s.st_size != r.st_size
 
-    def execute(self, _log=log):
-        if not self._should_copy():
+    def execute(self):
+        s = self.src.stat(follow_symlinks=False)
+
+        if not self._should_copy(s):
             return
 
         shutil.copyfile(self.src, self.dst)
-        _log.info(self)
+        os.utime(str(self.dst), times=(s.st_atime, s.st_mtime))
+        self._log.info(self)
 
     def __str__(self):
         return f"CopyFile: {self.src} -> {self.dst}"
