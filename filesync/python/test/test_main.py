@@ -5,7 +5,7 @@ import tempfile
 
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
-    Action, RmtreeError, UnlinkError
+    Action, RmtreeError, UnlinkError, UtimeError, utime
 )
 
 import pytest
@@ -217,6 +217,19 @@ def test_CopyFile_enoent_src(s):
         a.execute()
     assert str(einfo.value) == f"[Errno 2] No such file or directory: {str(s)!r}"
 
+def test_CopyFile_utime_fails(s, r):
+    src = s / "foo"
+    src.touch()
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = CopyFile(src, r / "foo", _log=l)
+    # utime error is raised which will be handled by execute
+    with raises(UtimeError) as einfo:
+        a.execute(_utime=raise_fn(UtimeError()))
+
+    # but the file copy is logged
+    l.info.assert_called_once_with(a)
+
 def test_RemoveTarget_rmtree_fails(s):
     p = (s / "foo")
     p.mkdir()
@@ -308,3 +321,8 @@ def test_execute():
     m.execute.assert_called_once_with()
     m2.execute.assert_called_once_with()
     l.exception.assert_called_once_with(f"Action failed: {m}")
+
+def test_utime(s):
+    with raises(UtimeError) as einfo:
+        utime(s / "foo", times=(0, 0))
+    assert isinstance(einfo.value.__cause__, FileNotFoundError)

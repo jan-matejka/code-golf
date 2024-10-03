@@ -23,6 +23,21 @@ class RmtreeError(Exception):
 class UnlinkError(Exception):
     pass
 
+class UtimeError(Exception):
+    pass
+
+def utime(*args, **kw):
+    """
+    Calls os.utime
+
+    :raises UtimeError:
+    """
+    # can probably fail in weird ways on some file systems
+    try:
+        return os.utime(*args, **kw)
+    except Exception as e:
+        raise UtimeError() from e
+
 @dataclass
 class RemoveTarget(Action):
     target: Path
@@ -70,15 +85,15 @@ class CopyFile(Action):
 
         return s.st_mtime != r.st_mtime or s.st_size != r.st_size
 
-    def execute(self):
+    def execute(self, _utime=utime):
         s = self.src.stat(follow_symlinks=False)
 
         if not self._should_copy(s):
             return
 
         shutil.copyfile(self.src, self.dst)
-        os.utime(str(self.dst), times=(s.st_atime, s.st_mtime))
         self._log.info(self)
+        _utime(str(self.dst), times=(s.st_atime, s.st_mtime))
 
     def __str__(self):
         return f"CopyFile: {self.src} -> {self.dst}"
@@ -122,7 +137,7 @@ class SetAMTime(Action):
         if s.st_mtime == r.st_mtime:
             return
 
-        os.utime(str(self.dst), times=(s.st_atime, s.st_mtime))
+        utime(str(self.dst), times=(s.st_atime, s.st_mtime))
         self._log.info(self)
 
     def __str__(self):
