@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import tempfile
 
@@ -102,3 +103,20 @@ def test_collect_unknown(s, r):
         CopyFile(s / "bar", r / "bar"),
         Ignore(s/"foo", "unknown")
     ]
+
+def test_CopyFile(s, r):
+    src = s / "foo"
+    src.touch()
+    dst = r / "foo"
+    a = CopyFile(src, dst)
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a.execute(_log=l)
+    assert dst.exists()
+    l.info.assert_called_once_with(a)
+
+    l.info.reset_mock()
+    a.execute()
+    l.info.assert_not_called()
+
+def test_CopyFile_str():
+    assert str(CopyFile("foo", "bar")) == "CopyFile: foo -> bar"

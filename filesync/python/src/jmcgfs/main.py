@@ -1,20 +1,45 @@
 import argparse
 from collections.abc import Sequence
+from abc import abstractmethod, ABC
 from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
+import shutil
 import sys
 from typing import Optional
 
+log = logging.getLogger(__name__)
+
 @dataclass
-class Action:
-    pass
+class Action(ABC):
+    @abstractmethod
+    def execute(self):
+        raise NotImplementedError
 
 @dataclass
 class CopyFile(Action):
     src: Path
     dst: Path
+
+    def _should_copy(self):
+        try:
+            r = self.dst.stat(follow_symlinks=False)
+        except FileNotFoundError:
+            return True
+
+        s = self.src.stat(follow_symlinks=False)
+        return s.st_mtime != r.st_mtime or s.st_size != r.st_size
+
+    def execute(self, _log=log):
+        if not self._should_copy():
+            return
+
+        shutil.copyfile(self.src, self.dst)
+        _log.info(self)
+
+    def __str__(self):
+        return f"CopyFile: {self.src} -> {self.dst}"
 
 @dataclass
 class CopyDir(Action):
@@ -92,7 +117,6 @@ def main(argv=sys.argv, _collect=collect):
     p.add_argument("-i", "--interval", help="seconds", type=int, required=True)
     args = p.parse_args(argv[1:])
 
-    log = logging.getLogger(__name__)
     if args.logfile:
         logging.basicConfig(filename=args.logfile, level=logging.INFO)
     else:
