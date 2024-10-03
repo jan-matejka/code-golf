@@ -230,6 +230,15 @@ def test_CopyFile_utime_fails(s, r):
     # but the file copy is logged
     l.info.assert_called_once_with(a)
 
+def test_Ignore():
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = Ignore(Path("foo"), "reason", _log=l)
+    a.execute()
+    l.info.assert_called_once_with(a)
+
+def test_Ignore_str():
+    assert str(Ignore(Path("foo"), "reasons")) == "Ignore: foo because reasons"
+
 def test_RemoveTarget_rmtree_fails(s):
     p = (s / "foo")
     p.mkdir()

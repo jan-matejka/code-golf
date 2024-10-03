@@ -147,6 +147,13 @@ class SetAMTime(Action):
 class Ignore(Action):
     src: Path
     reason: str
+    _log: logging.Logger = log
+
+    def execute(self):
+        self._log.info(self)
+
+    def __str__(self):
+        return f"Ignore: {self.src} because {self.reason}"
 
 def _check_dir(p: Path, name: str) -> None:
     """
