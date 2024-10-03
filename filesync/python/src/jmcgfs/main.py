@@ -74,6 +74,13 @@ class FileRegistry(ABC):
         else:
             return (self.src / p, p)
 
+    def _hash(self, p: Path):
+        """
+        :returns: hashlib hash object
+        """
+        with p.open("rb") as f:
+            return hashlib.file_digest(f, hashlib.sha256)
+
 class NullFileRegistry(FileRegistry):
     def __init__(self, src=None, dst=None):
         super().__init__(src, dst)
@@ -106,13 +113,39 @@ class InMemoryFileRegistry(FileRegistry):
 
         return False
 
-    def _hash(self, p):
-        with p.open("rb") as f:
-            return hashlib.file_digest(f, hashlib.sha256)
-
     def register(self, p):
         p_abs, p = self._get_both(p)
         self._map[p] = self._hash(p_abs).digest()
+
+class InReplicaFileRegistry(FileRegistry):
+    """
+    Maintains a checksum file alongside the replicated file.
+    """
+    _suffix = ".sha256sum"
+
+    def _read_replica_checksum(self, p: Path) -> Optional[str]:
+        try:
+            ctx = open(str(self.dst / p) + self._suffix)
+        except Exception:
+            return None
+        else:
+            with ctx as f:
+                return f.read(64)
+
+    def is_different(self, p):
+        p_abs, p = self._get_both(p)
+        r_sum = self._read_replica_checksum(p)
+        if not r_sum:
+            return True
+
+        s_sum = self._hash(p_abs).hexdigest()
+        return r_sum != s_sum
+
+    def register(self, p):
+        p_abs, p = self._get_both(p)
+        with open(str(self.dst / p) + self._suffix, "w") as f:
+            # this format can be verified by sha256sum
+            f.write(f"{self._hash(p_abs).hexdigest()}  {p_abs.name}")
 
 @dataclass
 class RemoveTarget(Action):

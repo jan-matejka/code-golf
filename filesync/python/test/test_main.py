@@ -6,7 +6,7 @@ import tempfile
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
     Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
-    InMemoryFileRegistry
+    InMemoryFileRegistry, InReplicaFileRegistry
 )
 
 import pytest
@@ -377,3 +377,12 @@ def test_InMemoryFileRegistry(s, r):
     r.register(p)
     assert r.is_different(p) == False
     assert r.is_different(p.relative_to(s)) == False
+
+def test_InReplicaFileRegistry(s, r):
+    p = s / "foo"
+    p.touch()
+    r = InReplicaFileRegistry(s, r)
+    assert r.is_different(p) == True
+    assert r.is_different(p) == True
+    r.register(p)
+    assert r.is_different(p) == False
