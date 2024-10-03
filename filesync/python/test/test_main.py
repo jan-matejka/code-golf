@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 import tempfile
 
@@ -246,3 +247,22 @@ def test_MakeDir_over_file(s):
     a.execute()
     assert dst.is_dir()
     assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]
+
+def test_SetAMTime(s, r):
+    src = s / "foo"
+    src.mkdir()
+    dst = r / "foo"
+    dst.mkdir()
+    os.utime(str(dst), times=(0, 0))
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = SetAMTime(src, dst, _log=l)
+    a.execute()
+    l.info.assert_called_once_with(a)
+
+    l.info.reset_mock()
+    a.execute()
+    l.info.assert_not_called()
+
+def test_SetAMTime_str():
+    assert str(SetAMTime("foo", "bar")) == "SetAMTime: foo -> bar"

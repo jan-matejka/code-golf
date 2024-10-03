@@ -108,6 +108,18 @@ class SetAMTime(Action):
     dst: Path
     _log: logging.Logger = log
 
+    def execute(self):
+        s = self.src.stat(follow_symlinks=False)
+        r = self.dst.stat(follow_symlinks=False)
+        if s.st_mtime == r.st_mtime:
+            return
+
+        os.utime(str(self.dst), times=(s.st_atime, s.st_mtime))
+        self._log.info(self)
+
+    def __str__(self):
+        return f"SetAMTime: {self.src} -> {self.dst}"
+
 @dataclass
 class Ignore(Action):
     src: Path
