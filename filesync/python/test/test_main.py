@@ -359,6 +359,7 @@ def test_NullFileRegistry():
     r = NullFileRegistry()
     r = NullFileRegistry(None, None)
     assert r.is_different(None) == False
+    r.register(None)
 
 def test_InMemoryFileRegistry(s, r):
     p = s / "foo"
@@ -369,4 +370,9 @@ def test_InMemoryFileRegistry(s, r):
     with p.open("w") as f:
         f.write("foo")
     assert r.is_different(p) == True
+    assert r.is_different(p) == False
+
+    p = s / "bar"
+    p.touch()
+    r.register(p)
     assert r.is_different(p) == False

@@ -55,12 +55,21 @@ class FileRegistry(ABC):
         """
         raise NotImplementedError # pragma: nocover
 
+    def register(self, p: Path) -> None:
+        """
+        Register the path and its checksum.
+        """
+        raise NotImplementedError # pragma: nocover
+
 class NullFileRegistry(FileRegistry):
     def __init__(self, src=None, dst=None):
         super().__init__(src, dst)
 
     def is_different(self, p):
         return False
+
+    def register(self, p):
+        ...
 
 class InMemoryFileRegistry(FileRegistry):
     """
@@ -71,8 +80,7 @@ class InMemoryFileRegistry(FileRegistry):
         self._map = {}
 
     def is_different(self, p):
-        with p.open("rb") as f:
-            h = hashlib.file_digest(f, hashlib.sha256).digest()
+        h = self._hash(p).digest()
 
         if p not in self._map:
             self._map[p] = h
@@ -83,6 +91,13 @@ class InMemoryFileRegistry(FileRegistry):
             return True
 
         return False
+
+    def _hash(self, p):
+        with p.open("rb") as f:
+            return hashlib.file_digest(f, hashlib.sha256)
+
+    def register(self, p):
+        self._map[p] = self._hash(p).digest()
 
 @dataclass
 class RemoveTarget(Action):
@@ -130,7 +145,12 @@ class CopyFile(Action):
             if not self.dst.is_file() or self.dst.is_symlink():
                 RemoveTarget(self.dst, _log=self._log).execute()
 
-        return s.st_mtime != r.st_mtime or s.st_size != r.st_size
+        is_diff = s.st_mtime != r.st_mtime or s.st_size != r.st_size
+        if is_diff:
+            self.registry.register(self.src)
+            return True
+
+        return self.registry.is_different(self.src)
 
     def execute(self, _utime=utime):
         s = self.src.stat(follow_symlinks=False)
