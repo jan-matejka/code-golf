@@ -76,9 +76,31 @@ class CopyFile(Action):
         return f"CopyFile: {self.src} -> {self.dst}"
 
 @dataclass
-class CopyDir(Action):
-    src: Path
+class MakeDir(Action):
     dst: Path
+    _log: logging.Logger = log
+
+    def _should_make(self) -> bool:
+        try:
+            r = self.dst.stat(follow_symlinks=False)
+        except FileNotFoundError:
+            return True
+        else:
+            if not self.dst.is_dir():
+                RemoveTarget(self.dst, _log=self._log).execute()
+                return True
+
+        return False
+
+    def execute(self):
+        if not self._should_make():
+            return
+
+        self.dst.mkdir()
+        self._log.info(self)
+
+    def __str__(self):
+        return f"MakeDir: {self.dst}"
 
 @dataclass
 class Ignore(Action):
@@ -139,7 +161,7 @@ def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action
         for x in dirnames:
             src = Path(dirpath) / x
             dst = r / src.relative_to(s)
-            actions.append(CopyDir(src, dst))
+            actions.append(MakeDir(dst))
 
     return actions
 

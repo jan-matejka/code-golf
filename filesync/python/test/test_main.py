@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 
 from jmcgfs.main import (
-    main, collect, is_unsupported, CopyFile, CopyDir, Ignore, RemoveTarget
+    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget
 )
 
 import pytest
@@ -87,10 +87,10 @@ def test_collect(s, r):
     # Maybe dependent on the filesystem or its options but the order is significant.
     assert collect(s, r) == [
         CopyFile(s / "foo", r / "foo"),
-        CopyDir(s / "bar", r / "bar"),
+        MakeDir(r / "bar"),
         Ignore(s / "bar/s", "symlink"),
         Ignore(s / "bar/s2", "symlink"),
-        CopyDir(s / "bar/qux", r / "bar/qux"),
+        MakeDir(r / "bar/qux"),
         CopyFile(s / "bar/qux/b", r / "bar/qux/b"),
         CopyFile(s / "bar/qux/a", r / "bar/qux/a"),
     ]
@@ -209,3 +209,31 @@ def test_RemoveTarget_unlink_fails(s):
 
     assert str(einfo.value) == "foo"
     l.exception.assert_called_once_with(f"unlink failed: {p}")
+
+def test_MakeDir(s):
+    dst = s / "a"
+
+    assert not dst.is_dir()
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = MakeDir(dst, _log=l)
+    a.execute()
+    assert dst.is_dir()
+    l.info.assert_called_once_with(a)
+
+    l.reset_mock()
+    a.execute()
+    l.info.assert_not_called()
+
+def test_MakeDir_str():
+    assert str(MakeDir(Path("foo"))) == "MakeDir: foo"
+
+def test_MakeDir_over_file(s):
+    dst = s / "a"
+    dst.touch()
+
+    assert not dst.is_dir() and dst.is_file()
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = MakeDir(dst, _log=l)
+    a.execute()
+    assert dst.is_dir()
+    assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]
