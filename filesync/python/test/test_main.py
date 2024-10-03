@@ -5,7 +5,7 @@ import tempfile
 
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
-    Action, RmtreeError, UnlinkError, UtimeError, utime
+    Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry
 )
 
 import pytest
@@ -19,22 +19,38 @@ def test_main():
     actions = Mock()
     m_collect = create_autospec(collect, spec_set=True, return_value=actions)
     m_execute = create_autospec(execute, spec_set=True)
+    m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
+    m_registry_f = create_autospec(
+        FileRegistry, spec_set=True, instance=False, return_value=m_registry
+    )
 
     main(
         argv="0 -s a -r b -i 5".split(" "),
         _collect=m_collect,
-        _execute=m_execute
+        _execute=m_execute,
+        _registry=m_registry_f,
     )
 
-    m_collect.assert_called_once_with(Path("a"), Path("b"))
+    m_collect.assert_called_once_with(
+        Path("a").absolute(), Path("b").absolute(), m_registry
+    )
     m_execute.assert_called_once_with(actions)
 
 def test_main_with_log():
     # this test just triggers branch coverage
     m = Mock()
     m2 = Mock()
-    main(argv="0 -s a -r b -i 5 -l log".split(" "), _collect=m, _execute=m2)
-    m.assert_called_once_with(Path("a"), Path("b"))
+    m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
+    m_registry_f = create_autospec(
+        FileRegistry, spec_set=True, instance=False, return_value=m_registry
+    )
+    main(
+        argv="0 -s a -r b -i 5 -l log".split(" "),
+        _collect=m,
+        _execute=m2,
+        _registry=m_registry_f,
+    )
+    m.assert_called_once_with(Path("a").absolute(), Path("b").absolute(), m_registry)
 
 @pytest.mark.parametrize("rv, expect_rc", ((True, 1), (False, 0)))
 def test_main_return_value(rv, expect_rc):
@@ -69,27 +85,27 @@ def r(tmpdir):
 def test_collect_raises_enoent_s(s):
     p = s / "foo"
     with raises(RuntimeError) as e:
-        collect(p, s)
+        collect(p, s, NullFileRegistry())
     assert str(e.value) == f"does not exist: source: {p}"
 
 def test_collect_raises_enoent_r(s):
     p = s / "foo"
     with raises(RuntimeError) as e:
-        collect(s, p)
+        collect(s, p, NullFileRegistry())
     assert str(e.value) == f"does not exist: replica: {p}"
 
 def test_collect_raises_not_dir_s(s):
     p = s / "foo"
     p.touch()
     with raises(RuntimeError) as e:
-        collect(p, s)
+        collect(p, s, NullFileRegistry())
     assert str(e.value) == f"not a directory: source: {p}"
 
 def test_collect_raises_not_dir_r(s):
     p = s / "foo"
     p.touch()
     with raises(RuntimeError) as e:
-        collect(s, p)
+        collect(s, p, NullFileRegistry())
     assert str(e.value) == f"not a directory: replica: {p}"
 
 unsupported = "symlink block_device char_device fifo socket mount".split(" ")
@@ -114,8 +130,9 @@ def test_collect(s, r):
     (r / "baz/bar").mkdir(parents=True)
 
     # Maybe dependent on the filesystem or its options but the order is significant.
-    assert collect(s, r) == [
-        CopyFile(s / "foo", r / "foo"),
+    reg = NullFileRegistry()
+    assert collect(s, r, reg) == [
+        CopyFile(s / "foo", r / "foo", reg),
         MakeDir(r / "bar"),
         MakeDir(r / "baz"),
         RemoveTarget(r / "qux"),
@@ -123,8 +140,8 @@ def test_collect(s, r):
         Ignore(s / "bar/s2", "symlink"),
         MakeDir(r / "bar/qux"),
         SetAMTime(s / "bar", r / "bar"),
-        CopyFile(s / "bar/qux/b", r / "bar/qux/b"),
-        CopyFile(s / "bar/qux/a", r / "bar/qux/a"),
+        CopyFile(s / "bar/qux/b", r / "bar/qux/b", reg),
+        CopyFile(s / "bar/qux/a", r / "bar/qux/a", reg),
         SetAMTime(s / "bar/qux", r / "bar/qux"),
         RemoveTarget(r / "baz/bar"),
         SetAMTime(s / "baz", r / "baz"),
@@ -132,15 +149,16 @@ def test_collect(s, r):
 
 def test_collect_disappeared(s, r):
     (s / "foo").symlink_to("bar")
-    assert collect(s, r, _is_unsupported=lambda _: None) == [
+    assert collect(s, r, NullFileRegistry(), _is_unsupported=lambda _: None) == [
         Ignore(s/"foo", "file no longer exists")
     ]
 
 def test_collect_unknown(s, r):
     (s / "foo").symlink_to("bar")
     (s / "bar").touch()
-    assert collect(s, r, _is_unsupported=lambda _: None) == [
-        CopyFile(s / "bar", r / "bar"),
+    reg = NullFileRegistry()
+    assert collect(s, r, reg, _is_unsupported=lambda _: None) == [
+        CopyFile(s / "bar", r / "bar", reg),
         Ignore(s/"foo", "unknown")
     ]
 
@@ -151,7 +169,7 @@ def test_CopyFile(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, _log=l)
+    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists()
@@ -162,7 +180,7 @@ def test_CopyFile(s, r):
     l.info.assert_not_called()
 
 def test_CopyFile_str():
-    assert str(CopyFile("foo", "bar")) == "CopyFile: foo -> bar"
+    assert str(CopyFile("foo", "bar", NullFileRegistry())) == "CopyFile: foo -> bar"
 
 def test_CopyFile_over_symlink(s, r):
     src = s / "foo"
@@ -173,7 +191,7 @@ def test_CopyFile_over_symlink(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, _log=l)
+    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -188,7 +206,7 @@ def test_CopyFile_over_broken_symlink(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, _log=l)
+    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -202,7 +220,7 @@ def test_CopyFile_over_directory(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, _log=l)
+    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -212,7 +230,7 @@ def test_CopyFile_enoent_src(s):
     # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
     # working directory.
     s = s / "foo"
-    a = CopyFile(s, s / "bar")
+    a = CopyFile(s, s / "bar", NullFileRegistry())
     with raises(FileNotFoundError) as einfo:
         a.execute()
     assert str(einfo.value) == f"[Errno 2] No such file or directory: {str(s)!r}"
@@ -222,7 +240,7 @@ def test_CopyFile_utime_fails(s, r):
     src.touch()
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
-    a = CopyFile(src, r / "foo", _log=l)
+    a = CopyFile(src, r / "foo", NullFileRegistry(), _log=l)
     # utime error is raised which will be handled by execute
     with raises(UtimeError) as einfo:
         a.execute(_utime=raise_fn(UtimeError()))
@@ -335,3 +353,8 @@ def test_utime(s):
     with raises(UtimeError) as einfo:
         utime(s / "foo", times=(0, 0))
     assert isinstance(einfo.value.__cause__, FileNotFoundError)
+
+def test_NullFileRegistry():
+    r = NullFileRegistry()
+    r = NullFileRegistry(None, None)
+    assert r.is_different(None) == False

@@ -38,6 +38,29 @@ def utime(*args, **kw):
     except Exception as e:
         raise UtimeError() from e
 
+class FileRegistry(ABC):
+    src: Path
+    dst: Path
+
+    def __init__(self, src: Path, dst: Path):
+        self.src = src
+        self.dst = dst
+
+    @abstractmethod
+    def is_different(self, p: Path) -> bool:
+        """
+        :returns: True if given `p`'s checksum is different from the one in registry.
+            The checksum in registry is updated if `p`'s checksum is different or not registered.
+        """
+        raise NotImplementedError # pragma: nocover
+
+class NullFileRegistry(FileRegistry):
+    def __init__(self, src=None, dst=None):
+        super().__init__(src, dst)
+
+    def is_different(self, p):
+        return False
+
 @dataclass
 class RemoveTarget(Action):
     target: Path
@@ -72,6 +95,7 @@ class RemoveTarget(Action):
 class CopyFile(Action):
     src: Path
     dst: Path
+    registry: FileRegistry
     _log: logging.Logger = log
 
     def _should_copy(self, s):
@@ -183,12 +207,11 @@ def is_unsupported(p: Path) -> Optional[str]:
         return "mount"
     return None
 
-def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action]:
+def collect(
+    s: Path, r: Path, registry: FileRegistry,_is_unsupported=is_unsupported
+) -> Sequence[Action]:
     _check_dir(s, "source")
     _check_dir(r, "replica")
-
-    s = s.absolute()
-    r = r.absolute()
 
     actions = []
     for dirpath, dirnames, filenames in os.walk(str(s)):
@@ -196,7 +219,7 @@ def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action
             src = Path(dirpath) / x
             if src.is_file() and not src.is_symlink():
                 dst = r / src.relative_to(s)
-                actions.append(CopyFile(src, dst))
+                actions.append(CopyFile(src, dst, registry))
             else:
                 typ = _is_unsupported(src)
                 if not typ:
@@ -244,7 +267,7 @@ def execute(actions: Iterator[Action], _log=log) -> bool:
 
     return r
 
-def main(argv=sys.argv, _collect=collect, _execute=execute):
+def main(argv=sys.argv, _collect=collect, _execute=execute, _registry=NullFileRegistry):
     p = argparse.ArgumentParser()
     p.add_argument("-s", "--source", help="Directory path", type=Path, required=True)
     p.add_argument("-r", "--replica", help="Directory path", type=Path, required=True)
@@ -257,7 +280,11 @@ def main(argv=sys.argv, _collect=collect, _execute=execute):
     else:
         logging.basicConfig(level=logging.INFO)
 
-    actions = _collect(args.source, args.replica)
+    s = args.source.absolute()
+    r = args.replica.absolute()
+
+    registry = _registry(s, r)
+    actions = _collect(s, r, registry)
     r = _execute(actions)
     return 1 if r else 0
 
