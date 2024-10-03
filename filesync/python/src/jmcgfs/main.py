@@ -103,6 +103,12 @@ class MakeDir(Action):
         return f"MakeDir: {self.dst}"
 
 @dataclass
+class SetAMTime(Action):
+    src: Path
+    dst: Path
+    _log: logging.Logger = log
+
+@dataclass
 class Ignore(Action):
     src: Path
     reason: str
@@ -173,6 +179,10 @@ def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action
             )
             for x in missing:
                 actions.append(RemoveTarget(x))
+
+        p = Path(dirpath)
+        if p != s:
+            actions.append(SetAMTime(p, r / p.relative_to(s)))
 
     return actions
 

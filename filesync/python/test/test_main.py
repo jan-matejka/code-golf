@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 
 from jmcgfs.main import (
-    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget
+    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime
 )
 
 import pytest
@@ -96,9 +96,12 @@ def test_collect(s, r):
         Ignore(s / "bar/s", "symlink"),
         Ignore(s / "bar/s2", "symlink"),
         MakeDir(r / "bar/qux"),
+        SetAMTime(s / "bar", r / "bar"),
         CopyFile(s / "bar/qux/b", r / "bar/qux/b"),
         CopyFile(s / "bar/qux/a", r / "bar/qux/a"),
+        SetAMTime(s / "bar/qux", r / "bar/qux"),
         RemoveTarget(r / "baz/bar"),
+        SetAMTime(s / "baz", r / "baz"),
     ]
 
 def test_collect_disappeared(s, r):
