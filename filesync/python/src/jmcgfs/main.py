@@ -1,10 +1,15 @@
 import argparse
+from collections.abc import Sequence
 import logging
 from pathlib import Path
 import sys
 
-def collect(s: Path, r: Path):
+
+class Action:
     pass
+
+def collect(s: Path, r: Path) -> Sequence[Action]:
+    return []
 
 def main(argv=sys.argv, _collect=collect):
     p = argparse.ArgumentParser()
