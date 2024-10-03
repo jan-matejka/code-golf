@@ -15,11 +15,35 @@ log = logging.getLogger(__name__)
 class Action(ABC):
     @abstractmethod
     def execute(self):
-        raise NotImplementedError
+        raise NotImplementedError # pragma: nocover
 
-def remove_symlink(p: Path, _log=log):
-    p.unlink()
-    _log.info(f"Delete: {p}")
+@dataclass
+class RemoveTarget(Action):
+    target: Path
+    _log: logging.Logger = log
+
+    def __post_init__(self):
+        assert isinstance(self.target, Path)
+
+    def execute(self, _rmtree=shutil.rmtree, _unlink=Path.unlink):
+        p = self.target
+
+        if p.is_dir():
+            try:
+                _rmtree(str(p))
+            except Exception as e:
+                self._log.exception(f"rmtree failed: {p}")
+                raise
+            else:
+                self._log.info(f"Delete tree: {p}")
+        elif p.is_symlink() or p.exists():
+            try:
+                _unlink(p)
+            except Exception as e:
+                self._log.exception(f"unlink failed: {p}")
+                raise
+            else:
+                self._log.info(f"Delete: {p}")
 
 @dataclass
 class CopyFile(Action):
@@ -33,9 +57,8 @@ class CopyFile(Action):
         except FileNotFoundError:
             return True
         else:
-            if self.dst.is_symlink():
-                remove_symlink(self.dst, _log=self._log)
-                return True
+            if not self.dst.is_file() or self.dst.is_symlink():
+                RemoveTarget(self.dst, _log=self._log).execute()
 
         return s.st_mtime != r.st_mtime or s.st_size != r.st_size
 

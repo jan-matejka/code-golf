@@ -3,12 +3,15 @@ from pathlib import Path
 import tempfile
 
 from jmcgfs.main import (
-    main, collect, is_unsupported, CopyFile, CopyDir, Ignore, remove_symlink
+    main, collect, is_unsupported, CopyFile, CopyDir, Ignore, RemoveTarget
 )
 
 import pytest
 from pytest import raises
 from unittest.mock import Mock, create_autospec, call
+
+def raise_fn(e):
+    return Mock(side_effect=e)
 
 def test_main():
     m = Mock()
@@ -133,7 +136,6 @@ def test_CopyFile_over_symlink(s, r):
     dst.symlink_to(r / "bar")
     (r / "bar").touch()
 
-    m = create_autospec(remove_symlink, spec_set=True)
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
     a = CopyFile(src, dst, _log=l)
@@ -149,7 +151,6 @@ def test_CopyFile_over_broken_symlink(s, r):
     dst.symlink_to(r / "bar")
     assert not dst.exists()
 
-    m = create_autospec(remove_symlink, spec_set=True)
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
     a = CopyFile(src, dst, _log=l)
@@ -157,3 +158,54 @@ def test_CopyFile_over_broken_symlink(s, r):
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
     assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]
+
+def test_CopyFile_over_directory(s, r):
+    src = s / "foo"
+    src.touch()
+    dst = r / "foo"
+    dst.mkdir()
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+
+    a = CopyFile(src, dst, _log=l)
+    a.execute()
+
+    assert dst.exists() and dst.is_file() and not dst.is_symlink()
+    assert l.info.call_args_list == [call(f"Delete tree: {dst}"), call(a)]
+
+def test_CopyFile_enoent_src(s):
+    # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
+    # working directory.
+    s = s / "foo"
+    a = CopyFile(s, s / "bar")
+    with raises(FileNotFoundError) as einfo:
+        a.execute()
+    assert str(einfo.value) == f"[Errno 2] No such file or directory: {str(s)!r}"
+
+def test_RemoveTarget_rmtree_fails(s):
+    p = (s / "foo")
+    p.mkdir()
+
+    assert p.is_dir()
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = RemoveTarget(p, _log=l)
+
+    with raises(Exception) as einfo:
+        a.execute(_rmtree=raise_fn(Exception("foo")))
+
+    assert str(einfo.value) == "foo"
+    l.exception.assert_called_once_with(f"rmtree failed: {p}")
+
+def test_RemoveTarget_unlink_fails(s):
+    p = (s / "foo")
+    p.touch()
+
+    assert p.is_file()
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    a = RemoveTarget(p, _log=l)
+
+    with raises(Exception) as einfo:
+        a.execute(_unlink=raise_fn(Exception("foo")))
+
+    assert str(einfo.value) == "foo"
+    l.exception.assert_called_once_with(f"unlink failed: {p}")
