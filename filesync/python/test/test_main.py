@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 
 from jmcgfs.main import (
-    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime
+    main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute
 )
 
 import pytest
@@ -15,13 +15,37 @@ def raise_fn(e):
     return Mock(side_effect=e)
 
 def test_main():
+    actions = Mock()
+    m_collect = create_autospec(collect, spec_set=True, return_value=actions)
+    m_execute = create_autospec(execute, spec_set=True)
+
+    main(
+        argv="0 -s a -r b -i 5".split(" "),
+        _collect=m_collect,
+        _execute=m_execute
+    )
+
+    m_collect.assert_called_once_with(Path("a"), Path("b"))
+    m_execute.assert_called_once_with(actions)
+
+def test_main_with_log():
+    # this test just triggers branch coverage
     m = Mock()
-    main(argv="0 -s a -r b -i 5".split(" "), _collect=m)
+    m2 = Mock()
+    main(argv="0 -s a -r b -i 5 -l log".split(" "), _collect=m, _execute=m2)
     m.assert_called_once_with(Path("a"), Path("b"))
 
-    m.reset_mock()
-    main(argv="0 -s a -r b -i 5 -l log".split(" "), _collect=m)
-    m.assert_called_once_with(Path("a"), Path("b"))
+@pytest.mark.parametrize("rv, expect_rc", ((True, 1), (False, 0)))
+def test_main_return_value(rv, expect_rc):
+    m_collect = Mock()
+    m_execute = Mock(return_value=rv)
+
+    rc = main(
+        argv="0 -s a -r b -i 5".split(" "),
+        _collect=m_collect,
+        _execute=m_execute
+    )
+    assert rc == expect_rc
 
 @pytest.fixture(name="tmpdir")
 def _tmpdir():

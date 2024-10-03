@@ -1,5 +1,5 @@
 import argparse
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterator
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 import logging
@@ -198,7 +198,14 @@ def collect(s: Path, r: Path, _is_unsupported=is_unsupported) -> Sequence[Action
 
     return actions
 
-def main(argv=sys.argv, _collect=collect):
+def execute(actions: Iterator[Action]) -> bool:
+    """
+    Executes given actions.
+
+    :returns: True if an error occured, False otherwise
+    """
+
+def main(argv=sys.argv, _collect=collect, _execute=execute):
     p = argparse.ArgumentParser()
     p.add_argument("-s", "--source", help="Directory path", type=Path, required=True)
     p.add_argument("-r", "--replica", help="Directory path", type=Path, required=True)
@@ -211,7 +218,9 @@ def main(argv=sys.argv, _collect=collect):
     else:
         logging.basicConfig(level=logging.INFO)
 
-    _collect(args.source, args.replica)
+    actions = _collect(args.source, args.replica)
+    r = _execute(actions)
+    return 1 if r else 0
 
 if __name__ == "__main__": # pragma: nocover
-    main()
+    sys.exit(main())
