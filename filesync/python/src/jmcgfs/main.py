@@ -53,7 +53,6 @@ class FileRegistry(ABC):
         :param p: May be an absolute path in self.src, or relative to self.src or self.dst
 
         :returns: True if given `p`'s checksum is different from the one in registry.
-            The checksum in registry is updated if `p`'s checksum is different or not registered.
         """
         raise NotImplementedError # pragma: nocover
 
@@ -104,11 +103,9 @@ class InMemoryFileRegistry(FileRegistry):
         h = self._hash(p_abs).digest()
 
         if p not in self._map:
-            self._map[p] = h
             return True
 
         if self._map[p] != h:
-            self._map[p] = h
             return True
 
         return False
@@ -195,7 +192,6 @@ class CopyFile(Action):
 
         is_diff = s.st_mtime != r.st_mtime or s.st_size != r.st_size
         if is_diff:
-            self.registry.register(self.src)
             return True
 
         return self.registry.is_different(self.src)
@@ -207,6 +203,7 @@ class CopyFile(Action):
             return
 
         shutil.copyfile(self.src, self.dst)
+        self.registry.register(self.src)
         self._log.info(self)
         _utime(str(self.dst), times=(s.st_atime, s.st_mtime))
 

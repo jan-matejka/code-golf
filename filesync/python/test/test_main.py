@@ -366,11 +366,12 @@ def test_InMemoryFileRegistry(s, r):
     p.touch()
     r = InMemoryFileRegistry(s, r)
     assert r.is_different(p) == True
+    assert r.is_different(p) == True
+    r.register(p)
     assert r.is_different(p) == False
     with p.open("w") as f:
         f.write("foo")
     assert r.is_different(p) == True
-    assert r.is_different(p) == False
 
     p = s / "bar"
     p.touch()
