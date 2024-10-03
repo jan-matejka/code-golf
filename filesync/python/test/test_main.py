@@ -5,7 +5,8 @@ import tempfile
 
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
-    Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry
+    Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
+    InMemoryFileRegistry
 )
 
 import pytest
@@ -358,3 +359,14 @@ def test_NullFileRegistry():
     r = NullFileRegistry()
     r = NullFileRegistry(None, None)
     assert r.is_different(None) == False
+
+def test_InMemoryFileRegistry(s, r):
+    p = s / "foo"
+    p.touch()
+    r = InMemoryFileRegistry(s, r)
+    assert r.is_different(p) == True
+    assert r.is_different(p) == False
+    with p.open("w") as f:
+        f.write("foo")
+    assert r.is_different(p) == True
+    assert r.is_different(p) == False

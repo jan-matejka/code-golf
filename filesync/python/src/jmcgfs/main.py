@@ -2,6 +2,7 @@ import argparse
 from collections.abc import Sequence, Iterator
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
+import hashlib
 import logging
 import os
 from pathlib import Path
@@ -59,6 +60,28 @@ class NullFileRegistry(FileRegistry):
         super().__init__(src, dst)
 
     def is_different(self, p):
+        return False
+
+class InMemoryFileRegistry(FileRegistry):
+    """
+    Maintains a hash registry of copied replicas in memory.
+    """
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self._map = {}
+
+    def is_different(self, p):
+        with p.open("rb") as f:
+            h = hashlib.file_digest(f, hashlib.sha256).digest()
+
+        if p not in self._map:
+            self._map[p] = h
+            return True
+
+        if self._map[p] != h:
+            self._map[p] = h
+            return True
+
         return False
 
 @dataclass
