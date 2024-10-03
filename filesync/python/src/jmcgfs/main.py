@@ -8,7 +8,18 @@ import sys
 class Action:
     pass
 
+def _check_dir(p: Path, name: str) -> None:
+    """
+    :raises RuntimeError: when p does not exists or is not a directory
+    """
+    if not p.exists():
+        raise RuntimeError(f"does not exist: {name}: {p}")
+    if not p.is_dir():
+        raise RuntimeError(f"not a directory: {name}: {p}")
+
 def collect(s: Path, r: Path) -> Sequence[Action]:
+    _check_dir(s, "source")
+    _check_dir(r, "replica")
     return []
 
 def main(argv=sys.argv, _collect=collect):

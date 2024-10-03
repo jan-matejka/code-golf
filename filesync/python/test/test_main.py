@@ -4,6 +4,7 @@ import tempfile
 from jmcgfs.main import main, collect
 
 import pytest
+from pytest import raises
 from unittest.mock import Mock
 
 def test_main():
@@ -25,6 +26,39 @@ def _tmpdir():
     for d in dirs:
         d.cleanup()
 
-def test_collect(tmpdir):
-    s, r = tmpdir(), tmpdir()
+@pytest.fixture
+def s(tmpdir):
+    return tmpdir()
+
+@pytest.fixture
+def r(tmpdir):
+    return tmpdir()
+
+def test_collect_raises_enoent_s(s):
+    p = s / "foo"
+    with raises(RuntimeError) as e:
+        collect(p, s)
+    assert str(e.value) == f"does not exist: source: {p}"
+
+def test_collect_raises_enoent_r(s):
+    p = s / "foo"
+    with raises(RuntimeError) as e:
+        collect(s, p)
+    assert str(e.value) == f"does not exist: replica: {p}"
+
+def test_collect_raises_not_dir_s(s):
+    p = s / "foo"
+    p.touch()
+    with raises(RuntimeError) as e:
+        collect(p, s)
+    assert str(e.value) == f"not a directory: source: {p}"
+
+def test_collect_raises_not_dir_r(s):
+    p = s / "foo"
+    p.touch()
+    with raises(RuntimeError) as e:
+        collect(s, p)
+    assert str(e.value) == f"not a directory: replica: {p}"
+
+def test_collect(s, r):
     assert collect(s, r) == []
