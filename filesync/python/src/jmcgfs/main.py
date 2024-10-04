@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import tempfile
 from typing import Optional
 
 log = logging.getLogger(__name__)
@@ -39,6 +40,53 @@ def utime(*args, **kw):
     except Exception as e:
         raise UtimeError() from e
 
+@dataclass
+class AtomicHandleABC(ABC):
+    @abstractmethod
+    def commit(self):
+        """
+        Finish the operation `self` was returned from.
+        """
+        raise NotImplementedError # pragma: nocover
+
+@dataclass
+class AtomicHandle(AtomicHandleABC):
+    """
+    Handle returned by `atomic_copy` and `atomic_write` to limit exposure to failures when writing
+    multiple related files.
+    """
+    tmp: Path
+    dst: Path
+
+    def commit(self):
+        self.tmp.rename(self.dst)
+
+class NullAtomicHandle(AtomicHandleABC):
+    def commit(self):
+        ...
+
+def atomic_copy(src: Path, dst: Path) -> AtomicHandle:
+    """
+    Copy file atomically from `src` to `dst`.
+    """
+    with tempfile.NamedTemporaryFile(
+        "w", dir=dst.parent, prefix=f".{src.name}", delete=False
+    ) as f:
+        shutil.copyfile(src, f.name)
+        return AtomicHandle(Path(f.name), dst)
+
+def atomic_write(dst: Path, data: str) -> AtomicHandle:
+    """
+    Write `data` atomically into `dst`.
+    """
+    assert isinstance(dst, Path)
+    with tempfile.NamedTemporaryFile(
+        "w", dir=dst.parent, prefix=f".{dst.name}", delete=False
+    ) as f:
+        f.write(data)
+        f.flush()
+        return AtomicHandle(Path(f.name), dst)
+
 class FileRegistry(ABC):
     src: Path
     dst: Path
@@ -56,11 +104,12 @@ class FileRegistry(ABC):
         """
         raise NotImplementedError # pragma: nocover
 
-    def register(self, p: Path) -> None:
+    def register(self, p: Path) -> AtomicHandleABC:
         """
         Register the path and its checksum.
 
         :param p: May be an absolute path in self.src, or relative to self.src or self.dst
+        :returns: Handle to finish the operation.
         """
         raise NotImplementedError # pragma: nocover
 
@@ -88,12 +137,21 @@ class NullFileRegistry(FileRegistry):
         return False
 
     def register(self, p):
-        ...
+        return NullAtomicHandle()
 
 class InMemoryFileRegistry(FileRegistry):
     """
     Maintains a hash registry of copied replicas in memory.
     """
+    @dataclass
+    class Handle(AtomicHandleABC):
+        map: dict
+        path: Path
+        digest: bytes
+
+        def commit(self):
+            self.map[self.path] = self.digest
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self._map = {}
@@ -112,7 +170,7 @@ class InMemoryFileRegistry(FileRegistry):
 
     def register(self, p):
         p_abs, p = self._get_both(p)
-        self._map[p] = self._hash(p_abs).digest()
+        return self.Handle(self._map, p, self._hash(p_abs).digest())
 
 class InReplicaFileRegistry(FileRegistry):
     """
@@ -140,9 +198,11 @@ class InReplicaFileRegistry(FileRegistry):
 
     def register(self, p):
         p_abs, p = self._get_both(p)
-        with open(str(self.dst / p) + self._suffix, "w") as f:
+        return atomic_write(
+            Path(str(self.dst / p) + self._suffix),
             # this format can be verified by sha256sum
-            f.write(f"{self._hash(p_abs).hexdigest()}  {p_abs.name}")
+            f"{self._hash(p_abs).hexdigest()}  {p_abs.name}",
+        )
 
 @dataclass
 class RemoveTarget(Action):
@@ -202,8 +262,10 @@ class CopyFile(Action):
         if not self._should_copy(s):
             return
 
-        shutil.copyfile(self.src, self.dst)
-        self.registry.register(self.src)
+        file_h = atomic_copy(self.src, self.dst)
+        csum_h = self.registry.register(self.src)
+        file_h.commit()
+        csum_h.commit()
         self._log.info(self)
         _utime(str(self.dst), times=(s.st_atime, s.st_mtime))
 

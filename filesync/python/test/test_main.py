@@ -367,7 +367,9 @@ def test_InMemoryFileRegistry(s, r):
     r = InMemoryFileRegistry(s, r)
     assert r.is_different(p) == True
     assert r.is_different(p) == True
-    r.register(p)
+    h = r.register(p)
+    assert r.is_different(p) == True
+    h.commit()
     assert r.is_different(p) == False
     with p.open("w") as f:
         f.write("foo")
@@ -375,7 +377,7 @@ def test_InMemoryFileRegistry(s, r):
 
     p = s / "bar"
     p.touch()
-    r.register(p)
+    r.register(p).commit()
     assert r.is_different(p) == False
     assert r.is_different(p.relative_to(s)) == False
 
@@ -385,5 +387,7 @@ def test_InReplicaFileRegistry(s, r):
     r = InReplicaFileRegistry(s, r)
     assert r.is_different(p) == True
     assert r.is_different(p) == True
-    r.register(p)
+    h = r.register(p)
+    assert r.is_different(p) == True
+    h.commit()
     assert r.is_different(p) == False
