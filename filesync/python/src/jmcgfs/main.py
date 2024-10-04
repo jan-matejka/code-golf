@@ -2,13 +2,17 @@ import argparse
 from collections.abc import Sequence, Iterator
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
+from datetime import datetime
 import hashlib
 import logging
 import os
 from pathlib import Path
 import shutil
 import sys
+from queue import Queue
 import tempfile
+import threading
+import time
 from typing import Optional
 
 log = logging.getLogger(__name__)
@@ -476,10 +480,37 @@ def run_once(
     actions = _collect(s, r, registry)
     return _execute(actions)
 
+def run(
+    interval: int,
+    s: Path,
+    r: Path,
+    registry: FileRegistry,
+    stop: Queue,
+    _run_once=run_once,
+    _log=log,
+    _sleep=time.sleep,
+    _now=datetime.now,
+):
+    t = None
+    while stop.empty():
+        t = threading.Thread(target=_run_once, args=(s, r, registry))
+        t.start()
+        _sleep(interval)
+        if t.is_alive():
+            start = _now()
+            _log.info("Waiting for previous run to finish")
+            t.join()
+            end = _now()
+            _log.info(f"Delta since interval passed: {end-start}")
+        else:
+            t.join()
+
 def main(
     argv=sys.argv,
     _run_once=run_once,
+    _run=run,
     _registry=replica_registry_map,
+    _stop=Queue(),
 ):
     def posint(x):
         x = int(x)
@@ -509,8 +540,11 @@ def main(
     r = args.replica.absolute()
     registry = _registry[args.replica_hash](s, r)
 
-    rs = _run_once(s, r, registry)
-    return 1 if rs else 0
+    if args.interval == 0:
+        rs = _run_once(s, r, registry)
+        return 1 if rs else 0
+    else:
+        _run(args.interval, s, r, registry, _stop)
 
 if __name__ == "__main__": # pragma: nocover
     sys.exit(main())

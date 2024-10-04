@@ -1,17 +1,20 @@
+from datetime import datetime
 import logging
 import os
 from pathlib import Path
 import tempfile
+from queue import Queue
+import time
 
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
     Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
-    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath, replica_registry_map, run_once
+    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath, replica_registry_map, run_once, run
 )
 
 import pytest
 from pytest import raises
-from unittest.mock import Mock, create_autospec, call
+from unittest.mock import Mock, create_autospec, call, MagicMock
 
 def raise_fn(e):
     return Mock(side_effect=e)
@@ -76,10 +79,30 @@ def test_main_with_log():
 def test_main_negative_interval():
     # fixme: make this cleaner by checking just the argparser
     main("0 -s a -r b".split(" "), _run_once=Mock())
-    main("0 -s a -r b -i 1".split(" "), _run_once=Mock())
+    main("0 -s a -r b -i 1".split(" "), _run_once=Mock(), _run=Mock())
     with raises(SystemExit) as einfo:
         main("0 -s a -r b -i -1".split(" "))
     assert einfo.value.args[0] == 2
+
+def test_main_interval():
+    m_run = create_autospec(run, spec_set=True)
+    m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
+    registry_map = {
+        'none': create_autospec(
+            FileRegistry, spec_set=True, instance=False, return_value=m_registry
+        )
+    }
+    stop = Mock()
+    main(
+        "0 -s a -r b -i 4".split(" "),
+        _run_once=Mock(),
+        _run=m_run,
+        _registry=registry_map,
+        _stop=stop
+    )
+    m_run.assert_called_once_with(
+        4, Path("a").absolute(), Path("b").absolute(), m_registry, stop
+    )
 
 @pytest.mark.parametrize('reg', ('none', 'memory', 'replica-file'))
 def test_main_replica_registry(reg):
@@ -103,6 +126,44 @@ def test_main_replica_registry(reg):
 
     s, r = Path("s").absolute(), Path("r").absolute()
     m_run_once.assert_called_once_with(s, r, registry[reg](s, r))
+
+@pytest.mark.parametrize('exceed', (True, False))
+def test_run(exceed):
+    s = Mock()
+    r = Mock()
+    reg = Mock()
+    stop = Queue()
+    m_sleep = create_autospec(time.sleep, spec_set=True)
+    m_start = MagicMock()
+    m_end = MagicMock()
+    m_now = create_autospec(
+        datetime.now, spec_set=True, side_effect=[m_start, m_end]
+    )
+    def m_run_once(s, r, reg):
+        # hm, now I miss twisted.internet.task.Clock
+        if exceed:
+            time.sleep(0.1)
+        stop.put(None)
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+    run(
+        0.01,
+        s,
+        r,
+        reg,
+        stop,
+        _log=l,
+        _sleep=m_sleep,
+        _now=m_now,
+        _run_once=m_run_once,
+    )
+    if exceed:
+        assert l.info.call_args_list == [
+            call("Waiting for previous run to finish"),
+            call(f"Delta since interval passed: {m_end-m_start}"),
+        ]
+    else:
+        l.info.assert_not_called()
 
 @pytest.fixture(name="tmpdir")
 def _tmpdir():
