@@ -65,14 +65,14 @@ class NullAtomicHandle(AtomicHandleABC):
     def commit(self):
         ...
 
-def atomic_copy(src: Path, dst: Path) -> AtomicHandle:
+def atomic_copy(src: "MemoPath", dst: Path) -> AtomicHandle:
     """
     Copy file atomically from `src` to `dst`.
     """
     with tempfile.NamedTemporaryFile(
         "w", dir=dst.parent, prefix=f".{src.name}", delete=False
     ) as f:
-        shutil.copyfile(src, f.name)
+        shutil.copyfile(src.path, f.name)
         return AtomicHandle(Path(f.name), dst)
 
 def atomic_write(dst: Path, data: str) -> AtomicHandle:
@@ -87,47 +87,75 @@ def atomic_write(dst: Path, data: str) -> AtomicHandle:
         f.flush()
         return AtomicHandle(Path(f.name), dst)
 
+class MemoPath:
+    """
+    Partial implemention of `Path` with memoization.
+    """
+    path: Path
+    __hash = None
+
+    def __init__(self, path: Path, _hash=None):
+        self.path = path
+        self.__hash = _hash
+
+    def __getattr__(self, name):
+        return getattr(self.path, name)
+
+    def __repr__(self):
+        return f"MemoPath({self.path!r})"
+
+    def __truediv__(self, x):
+        raise NotImplementedError
+
+    def __floordiv__(self, x):
+        raise NotImplementedError
+
+    def __eq__(self, x):
+        return isinstance(x, MemoPath) and self.path == x.path
+
+    def __ne__(self, x):
+        if not isinstance(x, MemoPath):
+            return True
+        return self.path != x.path
+
+    def __hash__(self):
+        raise NotImplementedError
+
+    def checksum(self):
+        """
+        :returns: hashlib hash object. The hash object is calculated once per `self` instance.
+        """
+        if not self.__hash:
+            with self.path.open("rb") as f:
+                self.__hash = hashlib.file_digest(f, hashlib.sha256)
+        return self.__hash
+
 class FileRegistry(ABC):
-    src: Path
+    src: MemoPath
     dst: Path
 
-    def __init__(self, src: Path, dst: Path):
+    def __init__(self, src: MemoPath, dst: Path):
         self.src = src
         self.dst = dst
 
     @abstractmethod
-    def is_different(self, p: Path) -> bool:
+    def is_different(self, p: MemoPath) -> bool:
         """
-        :param p: May be an absolute path in self.src, or relative to self.src or self.dst
+        :param p: Must be an absolute path in self.src.
 
         :returns: True if given `p`'s checksum is different from the one in registry.
         """
         raise NotImplementedError # pragma: nocover
 
-    def register(self, p: Path) -> AtomicHandleABC:
+    def register(self, p: MemoPath) -> AtomicHandleABC:
         """
         Register the path and its checksum.
 
-        :param p: May be an absolute path in self.src, or relative to self.src or self.dst
+        :param p: Must be an absolute path in self.src.
+
         :returns: Handle to finish the operation.
         """
         raise NotImplementedError # pragma: nocover
-
-    def _get_both(self, p: Path) -> (Path, Path):
-        """
-        :returns: (absolute, relative)
-        """
-        if p.is_absolute():
-            return (p, p.relative_to(self.src))
-        else:
-            return (self.src / p, p)
-
-    def _hash(self, p: Path):
-        """
-        :returns: hashlib hash object
-        """
-        with p.open("rb") as f:
-            return hashlib.file_digest(f, hashlib.sha256)
 
 class NullFileRegistry(FileRegistry):
     def __init__(self, src=None, dst=None):
@@ -157,20 +185,25 @@ class InMemoryFileRegistry(FileRegistry):
         self._map = {}
 
     def is_different(self, p):
-        p_abs, p = self._get_both(p)
-        h = self._hash(p_abs).digest()
+        assert p.is_absolute()
+        p_abs = p
+        p = p_abs.relative_to(self.src)
 
         if p not in self._map:
             return True
 
+        h = p_abs.checksum().digest()
         if self._map[p] != h:
             return True
 
         return False
 
     def register(self, p):
-        p_abs, p = self._get_both(p)
-        return self.Handle(self._map, p, self._hash(p_abs).digest())
+        return self.Handle(
+            self._map,
+            p.relative_to(self.src),
+            p.checksum().digest()
+        )
 
 class InReplicaFileRegistry(FileRegistry):
     """
@@ -188,20 +221,24 @@ class InReplicaFileRegistry(FileRegistry):
                 return f.read(64)
 
     def is_different(self, p):
-        p_abs, p = self._get_both(p)
+        assert p.is_absolute()
+        p_abs = p
+        p = p.relative_to(self.src)
         r_sum = self._read_replica_checksum(p)
         if not r_sum:
             return True
 
-        s_sum = self._hash(p_abs).hexdigest()
+        s_sum = p_abs.checksum().hexdigest()
         return r_sum != s_sum
 
     def register(self, p):
-        p_abs, p = self._get_both(p)
+        assert p.is_absolute()
+        p_abs = p
+        p = p.relative_to(self.src)
         return atomic_write(
             Path(str(self.dst / p) + self._suffix),
             # this format can be verified by sha256sum
-            f"{self._hash(p_abs).hexdigest()}  {p_abs.name}",
+            f"{p_abs.checksum().hexdigest()}  {p_abs.name}",
         )
 
 @dataclass
@@ -236,10 +273,13 @@ class RemoveTarget(Action):
 
 @dataclass
 class CopyFile(Action):
-    src: Path
+    src: MemoPath
     dst: Path
     registry: FileRegistry
     _log: logging.Logger = log
+
+    def __post_init__(self):
+        assert isinstance(self.src, MemoPath)
 
     def _should_copy(self, s):
         try:
@@ -369,7 +409,7 @@ def collect(
             src = Path(dirpath) / x
             if src.is_file() and not src.is_symlink():
                 dst = r / src.relative_to(s)
-                actions.append(CopyFile(src, dst, registry))
+                actions.append(CopyFile(MemoPath(src), dst, registry))
             else:
                 typ = _is_unsupported(src)
                 if not typ:

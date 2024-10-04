@@ -6,7 +6,7 @@ import tempfile
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
     Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
-    InMemoryFileRegistry, InReplicaFileRegistry
+    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath
 )
 
 import pytest
@@ -133,7 +133,7 @@ def test_collect(s, r):
     # Maybe dependent on the filesystem or its options but the order is significant.
     reg = NullFileRegistry()
     assert collect(s, r, reg) == [
-        CopyFile(s / "foo", r / "foo", reg),
+        CopyFile(MemoPath(s / "foo"), r / "foo", reg),
         MakeDir(r / "bar"),
         MakeDir(r / "baz"),
         RemoveTarget(r / "qux"),
@@ -141,8 +141,8 @@ def test_collect(s, r):
         Ignore(s / "bar/s2", "symlink"),
         MakeDir(r / "bar/qux"),
         SetAMTime(s / "bar", r / "bar"),
-        CopyFile(s / "bar/qux/b", r / "bar/qux/b", reg),
-        CopyFile(s / "bar/qux/a", r / "bar/qux/a", reg),
+        CopyFile(MemoPath(s / "bar/qux/b"), r / "bar/qux/b", reg),
+        CopyFile(MemoPath(s / "bar/qux/a"), r / "bar/qux/a", reg),
         SetAMTime(s / "bar/qux", r / "bar/qux"),
         RemoveTarget(r / "baz/bar"),
         SetAMTime(s / "baz", r / "baz"),
@@ -159,7 +159,7 @@ def test_collect_unknown(s, r):
     (s / "bar").touch()
     reg = NullFileRegistry()
     assert collect(s, r, reg, _is_unsupported=lambda _: None) == [
-        CopyFile(s / "bar", r / "bar", reg),
+        CopyFile(MemoPath(s / "bar"), r / "bar", reg),
         Ignore(s/"foo", "unknown")
     ]
 
@@ -170,7 +170,7 @@ def test_CopyFile(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists()
@@ -181,7 +181,7 @@ def test_CopyFile(s, r):
     l.info.assert_not_called()
 
 def test_CopyFile_str():
-    assert str(CopyFile("foo", "bar", NullFileRegistry())) == "CopyFile: foo -> bar"
+    assert str(CopyFile(MemoPath("foo"), "bar", NullFileRegistry())) == "CopyFile: MemoPath('foo') -> bar"
 
 def test_CopyFile_over_symlink(s, r):
     src = s / "foo"
@@ -192,7 +192,7 @@ def test_CopyFile_over_symlink(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -207,7 +207,7 @@ def test_CopyFile_over_broken_symlink(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -221,7 +221,7 @@ def test_CopyFile_over_directory(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(src, dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -231,7 +231,7 @@ def test_CopyFile_enoent_src(s):
     # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
     # working directory.
     s = s / "foo"
-    a = CopyFile(s, s / "bar", NullFileRegistry())
+    a = CopyFile(MemoPath(s), s / "bar", NullFileRegistry())
     with raises(FileNotFoundError) as einfo:
         a.execute()
     assert str(einfo.value) == f"[Errno 2] No such file or directory: {str(s)!r}"
@@ -241,7 +241,7 @@ def test_CopyFile_utime_fails(s, r):
     src.touch()
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
-    a = CopyFile(src, r / "foo", NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), r / "foo", NullFileRegistry(), _log=l)
     # utime error is raised which will be handled by execute
     with raises(UtimeError) as einfo:
         a.execute(_utime=raise_fn(UtimeError()))
@@ -364,6 +364,7 @@ def test_NullFileRegistry():
 def test_InMemoryFileRegistry(s, r):
     p = s / "foo"
     p.touch()
+    p = MemoPath(p)
     r = InMemoryFileRegistry(s, r)
     assert r.is_different(p) == True
     assert r.is_different(p) == True
@@ -373,16 +374,16 @@ def test_InMemoryFileRegistry(s, r):
     assert r.is_different(p) == False
     with p.open("w") as f:
         f.write("foo")
-    assert r.is_different(p) == True
+    assert r.is_different(p) == False # memoized
+    assert r.is_different(MemoPath(p.path)) == True
 
-    p = s / "bar"
+    p = MemoPath(s / "bar")
     p.touch()
     r.register(p).commit()
     assert r.is_different(p) == False
-    assert r.is_different(p.relative_to(s)) == False
 
 def test_InReplicaFileRegistry(s, r):
-    p = s / "foo"
+    p = MemoPath(s / "foo")
     p.touch()
     r = InReplicaFileRegistry(s, r)
     assert r.is_different(p) == True
@@ -391,3 +392,31 @@ def test_InReplicaFileRegistry(s, r):
     assert r.is_different(p) == True
     h.commit()
     assert r.is_different(p) == False
+
+def test_MemoPath_repr():
+    p = Path("foo")
+    assert repr(MemoPath(p)) == f'MemoPath({p!r})'
+
+def test_MemoPath_truediv():
+    # there is no reason MemoPath should implement division
+    with raises(NotImplementedError):
+        MemoPath(None) / "foo"
+
+def test_MemoPath_floordiv():
+    # there is no reason MemoPath should implement true division
+    with raises(NotImplementedError):
+        MemoPath(None) // "foo"
+
+def test_MemoPath_hash():
+    # I'm not sure yet about this one, so far not needed.
+    with raises(NotImplementedError):
+        hash(MemoPath(None))
+
+def test_MemoPath_eq():
+    x = MemoPath("foo")
+    y = MemoPath("bar")
+    assert x != y
+    z = MemoPath("foo")
+    assert x == z
+    assert x != None
+    assert not x == None
