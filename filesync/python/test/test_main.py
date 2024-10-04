@@ -186,27 +186,27 @@ def r(tmpdir):
 def test_collect_raises_enoent_s(s):
     p = s / "foo"
     with raises(RuntimeError) as e:
-        collect(p, s, NullFileRegistry())
+        list(collect(p, s, NullFileRegistry()))
     assert str(e.value) == f"does not exist: source: {p}"
 
 def test_collect_raises_enoent_r(s):
     p = s / "foo"
     with raises(RuntimeError) as e:
-        collect(s, p, NullFileRegistry())
+        list(collect(s, p, NullFileRegistry()))
     assert str(e.value) == f"does not exist: replica: {p}"
 
 def test_collect_raises_not_dir_s(s):
     p = s / "foo"
     p.touch()
     with raises(RuntimeError) as e:
-        collect(p, s, NullFileRegistry())
+        list(collect(p, s, NullFileRegistry()))
     assert str(e.value) == f"not a directory: source: {p}"
 
 def test_collect_raises_not_dir_r(s):
     p = s / "foo"
     p.touch()
     with raises(RuntimeError) as e:
-        collect(s, p, NullFileRegistry())
+        list(collect(s, p, NullFileRegistry()))
     assert str(e.value) == f"not a directory: replica: {p}"
 
 unsupported = "symlink block_device char_device fifo socket mount".split(" ")
@@ -232,7 +232,7 @@ def test_collect(s, r):
 
     # Maybe dependent on the filesystem or its options but the order is significant.
     reg = NullFileRegistry()
-    assert collect(s, r, reg) == [
+    assert list(collect(s, r, reg)) == [
         CopyFile(MemoPath(s / "foo"), r / "foo", reg),
         MakeDir(r / "bar"),
         MakeDir(r / "baz"),
@@ -250,7 +250,7 @@ def test_collect(s, r):
 
 def test_collect_disappeared(s, r):
     (s / "foo").symlink_to("bar")
-    assert collect(s, r, NullFileRegistry(), _is_unsupported=lambda _: None) == [
+    assert list(collect(s, r, NullFileRegistry(), _is_unsupported=lambda _: None)) == [
         Ignore(s/"foo", "file no longer exists")
     ]
 
@@ -258,7 +258,7 @@ def test_collect_unknown(s, r):
     (s / "foo").symlink_to("bar")
     (s / "bar").touch()
     reg = NullFileRegistry()
-    assert collect(s, r, reg, _is_unsupported=lambda _: None) == [
+    assert list(collect(s, r, reg, _is_unsupported=lambda _: None)) == [
         CopyFile(MemoPath(s / "bar"), r / "bar", reg),
         Ignore(s/"foo", "unknown")
     ]

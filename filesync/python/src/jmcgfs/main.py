@@ -1,5 +1,5 @@
 import argparse
-from collections.abc import Sequence, Iterator
+from collections.abc import Generator, Iterator
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
@@ -403,17 +403,16 @@ def is_unsupported(p: Path) -> Optional[str]:
 
 def collect(
     s: Path, r: Path, registry: FileRegistry,_is_unsupported=is_unsupported
-) -> Sequence[Action]:
+) -> Generator[Action]:
     _check_dir(s, "source")
     _check_dir(r, "replica")
 
-    actions = []
     for dirpath, dirnames, filenames in os.walk(str(s)):
         for x in filenames:
             src = Path(dirpath) / x
             if src.is_file() and not src.is_symlink():
                 dst = r / src.relative_to(s)
-                actions.append(CopyFile(MemoPath(src), dst, registry))
+                yield CopyFile(MemoPath(src), dst, registry)
             else:
                 typ = _is_unsupported(src)
                 if not typ:
@@ -421,12 +420,12 @@ def collect(
                         typ = "file no longer exists"
                     else:
                         typ = "unknown"
-                actions.append(Ignore(src, typ))
+                yield Ignore(src, typ)
 
         for x in dirnames:
             src = Path(dirpath) / x
             dst = r / src.relative_to(s)
-            actions.append(MakeDir(dst))
+            yield MakeDir(dst)
 
         codirpath = r / Path(dirpath).relative_to(s)
         if codirpath.is_dir():
@@ -437,13 +436,11 @@ def collect(
                 if x.name not in children
             )
             for x in missing:
-                actions.append(RemoveTarget(x))
+                yield RemoveTarget(x)
 
         p = Path(dirpath)
         if p != s:
-            actions.append(SetAMTime(p, r / p.relative_to(s)))
-
-    return actions
+            yield SetAMTime(p, r / p.relative_to(s))
 
 def execute(actions: Iterator[Action], _log=log) -> bool:
     """
