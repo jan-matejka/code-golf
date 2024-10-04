@@ -6,7 +6,7 @@ import tempfile
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
     Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
-    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath, replica_registry_map
+    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath, replica_registry_map, run_once
 )
 
 import pytest
@@ -16,10 +16,29 @@ from unittest.mock import Mock, create_autospec, call
 def raise_fn(e):
     return Mock(side_effect=e)
 
-def test_main():
+def test_run_once():
     actions = Mock()
+    rv = object();
     m_collect = create_autospec(collect, spec_set=True, return_value=actions)
-    m_execute = create_autospec(execute, spec_set=True)
+    m_execute = create_autospec(execute, spec_set=True, return_value=rv)
+    m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
+
+    assert rv is run_once(
+        Path("a"),
+        Path("b"),
+        m_registry,
+        _collect=m_collect,
+        _execute=m_execute,
+    )
+
+    m_collect.assert_called_once_with(
+        Path("a"), Path("b"), m_registry
+    )
+    m_execute.assert_called_once_with(actions)
+
+@pytest.mark.parametrize("rv, expect_rc", ((True, 1), (False, 0)))
+def test_main(rv, expect_rc):
+    m_run_once = create_autospec(run_once, return_value=rv)
     m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
     registry_map = {
         'none': create_autospec(
@@ -27,22 +46,20 @@ def test_main():
         )
     }
 
-    main(
+    rc = main(
         argv="0 -s a -r b".split(" "),
-        _collect=m_collect,
-        _execute=m_execute,
+        _run_once=m_run_once,
         _registry=registry_map,
     )
+    assert rc == expect_rc
 
-    m_collect.assert_called_once_with(
+    m_run_once.assert_called_once_with(
         Path("a").absolute(), Path("b").absolute(), m_registry
     )
-    m_execute.assert_called_once_with(actions)
 
 def test_main_with_log():
     # this test just triggers branch coverage
     m = Mock()
-    m2 = Mock()
     m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
     registry_map = {
         'none': create_autospec(
@@ -51,8 +68,7 @@ def test_main_with_log():
     }
     main(
         argv="0 -s a -r b -l log".split(" "),
-        _collect=m,
-        _execute=m2,
+        _run_once=m,
         _registry=registry_map,
     )
     m.assert_called_once_with(Path("a").absolute(), Path("b").absolute(), m_registry)
@@ -63,13 +79,11 @@ def test_main_replica_registry(reg):
         n: create_autospec(impl, spec_set=True)
         for n, impl in replica_registry_map.items()
     }
-    m = Mock()
-    m2 = Mock()
+    m_run_once = Mock()
     main(
         argv=f"0 -s s -r r --replica-hash {reg}".split(" "),
         _registry=registry,
-        _collect=m,
-        _execute=m2,
+        _run_once=m_run_once,
     )
     registry[reg].assert_called_once_with(
         Path("s").absolute(), Path("r").absolute()
@@ -79,17 +93,8 @@ def test_main_replica_registry(reg):
             continue
         m.assert_not_called()
 
-@pytest.mark.parametrize("rv, expect_rc", ((True, 1), (False, 0)))
-def test_main_return_value(rv, expect_rc):
-    m_collect = Mock()
-    m_execute = Mock(return_value=rv)
-
-    rc = main(
-        argv="0 -s a -r b".split(" "),
-        _collect=m_collect,
-        _execute=m_execute
-    )
-    assert rc == expect_rc
+    s, r = Path("s").absolute(), Path("r").absolute()
+    m_run_once.assert_called_once_with(s, r, registry[reg](s, r))
 
 @pytest.fixture(name="tmpdir")
 def _tmpdir():

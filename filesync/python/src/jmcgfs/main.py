@@ -463,10 +463,22 @@ replica_registry_map = {
     'replica-file': InReplicaFileRegistry,
 }
 
-def main(
-    argv=sys.argv,
+def run_once(
+    s: Path,
+    r: Path,
+    registry: FileRegistry,
     _collect=collect,
     _execute=execute,
+) -> bool:
+    """
+    :returns: True if an error occured, False otherwise
+    """
+    actions = _collect(s, r, registry)
+    return _execute(actions)
+
+def main(
+    argv=sys.argv,
+    _run_once=run_once,
     _registry=replica_registry_map,
 ):
     p = argparse.ArgumentParser()
@@ -489,11 +501,9 @@ def main(
 
     s = args.source.absolute()
     r = args.replica.absolute()
-
     registry = _registry[args.replica_hash](s, r)
-    actions = _collect(s, r, registry)
-    r = _execute(actions)
-    return 1 if r else 0
+    rs = _run_once(s, r, registry)
+    return 1 if rs else 0
 
 if __name__ == "__main__": # pragma: nocover
     sys.exit(main())
