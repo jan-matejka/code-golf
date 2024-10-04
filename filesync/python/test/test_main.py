@@ -73,6 +73,14 @@ def test_main_with_log():
     )
     m.assert_called_once_with(Path("a").absolute(), Path("b").absolute(), m_registry)
 
+def test_main_negative_interval():
+    # fixme: make this cleaner by checking just the argparser
+    main("0 -s a -r b".split(" "), _run_once=Mock())
+    main("0 -s a -r b -i 1".split(" "), _run_once=Mock())
+    with raises(SystemExit) as einfo:
+        main("0 -s a -r b -i -1".split(" "))
+    assert einfo.value.args[0] == 2
+
 @pytest.mark.parametrize('reg', ('none', 'memory', 'replica-file'))
 def test_main_replica_registry(reg):
     registry = {

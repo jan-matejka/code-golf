@@ -481,11 +481,17 @@ def main(
     _run_once=run_once,
     _registry=replica_registry_map,
 ):
+    def posint(x):
+        x = int(x)
+        if x < 0:
+            raise ValueError("Must be non-negative integere")
+        return x
+
     p = argparse.ArgumentParser()
     p.add_argument("-s", "--source", help="Directory path", type=Path, required=True)
     p.add_argument("-r", "--replica", help="Directory path", type=Path, required=True)
     p.add_argument("-l", "--logfile", help="Logfile", type=Path, required=False)
-    p.add_argument("-i", "--interval", help="seconds", type=int, default=0)
+    p.add_argument("-i", "--interval", help="seconds", type=posint, default=0)
     p.add_argument(
         "--replica-hash",
         type=str,
@@ -502,6 +508,7 @@ def main(
     s = args.source.absolute()
     r = args.replica.absolute()
     registry = _registry[args.replica_hash](s, r)
+
     rs = _run_once(s, r, registry)
     return 1 if rs else 0
 
