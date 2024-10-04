@@ -457,12 +457,29 @@ def execute(actions: Iterator[Action], _log=log) -> bool:
 
     return r
 
-def main(argv=sys.argv, _collect=collect, _execute=execute, _registry=NullFileRegistry):
+replica_registry_map = {
+    'none': NullFileRegistry,
+    'memory': InMemoryFileRegistry,
+    'replica-file': InReplicaFileRegistry,
+}
+
+def main(
+    argv=sys.argv,
+    _collect=collect,
+    _execute=execute,
+    _registry=replica_registry_map,
+):
     p = argparse.ArgumentParser()
     p.add_argument("-s", "--source", help="Directory path", type=Path, required=True)
     p.add_argument("-r", "--replica", help="Directory path", type=Path, required=True)
     p.add_argument("-l", "--logfile", help="Logfile", type=Path, required=False)
     p.add_argument("-i", "--interval", help="seconds", type=int, required=True)
+    p.add_argument(
+        "--replica-hash",
+        type=str,
+        choices=replica_registry_map.keys(),
+        default='none',
+    )
     args = p.parse_args(argv[1:])
 
     if args.logfile:
@@ -473,7 +490,7 @@ def main(argv=sys.argv, _collect=collect, _execute=execute, _registry=NullFileRe
     s = args.source.absolute()
     r = args.replica.absolute()
 
-    registry = _registry(s, r)
+    registry = _registry[args.replica_hash](s, r)
     actions = _collect(s, r, registry)
     r = _execute(actions)
     return 1 if r else 0

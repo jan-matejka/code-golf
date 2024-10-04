@@ -6,7 +6,7 @@ import tempfile
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
     Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
-    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath
+    InMemoryFileRegistry, InReplicaFileRegistry, MemoPath, replica_registry_map
 )
 
 import pytest
@@ -21,15 +21,17 @@ def test_main():
     m_collect = create_autospec(collect, spec_set=True, return_value=actions)
     m_execute = create_autospec(execute, spec_set=True)
     m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
-    m_registry_f = create_autospec(
-        FileRegistry, spec_set=True, instance=False, return_value=m_registry
-    )
+    registry_map = {
+        'none': create_autospec(
+            FileRegistry, spec_set=True, instance=False, return_value=m_registry
+        )
+    }
 
     main(
         argv="0 -s a -r b -i 5".split(" "),
         _collect=m_collect,
         _execute=m_execute,
-        _registry=m_registry_f,
+        _registry=registry_map,
     )
 
     m_collect.assert_called_once_with(
@@ -42,16 +44,40 @@ def test_main_with_log():
     m = Mock()
     m2 = Mock()
     m_registry = create_autospec(FileRegistry, spec_set=True, instance=True)
-    m_registry_f = create_autospec(
-        FileRegistry, spec_set=True, instance=False, return_value=m_registry
-    )
+    registry_map = {
+        'none': create_autospec(
+            FileRegistry, spec_set=True, instance=False, return_value=m_registry
+        )
+    }
     main(
         argv="0 -s a -r b -i 5 -l log".split(" "),
         _collect=m,
         _execute=m2,
-        _registry=m_registry_f,
+        _registry=registry_map,
     )
     m.assert_called_once_with(Path("a").absolute(), Path("b").absolute(), m_registry)
+
+@pytest.mark.parametrize('reg', ('none', 'memory', 'replica-file'))
+def test_main_replica_registry(reg):
+    registry = {
+        n: create_autospec(impl, spec_set=True)
+        for n, impl in replica_registry_map.items()
+    }
+    m = Mock()
+    m2 = Mock()
+    main(
+        argv=f"0 -s s -r r -i 5 --replica-hash {reg}".split(" "),
+        _registry=registry,
+        _collect=m,
+        _execute=m2,
+    )
+    registry[reg].assert_called_once_with(
+        Path("s").absolute(), Path("r").absolute()
+    )
+    for k, m in registry.items():
+        if k == reg:
+            continue
+        m.assert_not_called()
 
 @pytest.mark.parametrize("rv, expect_rc", ((True, 1), (False, 0)))
 def test_main_return_value(rv, expect_rc):
