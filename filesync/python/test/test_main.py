@@ -28,7 +28,7 @@ def test_main():
     }
 
     main(
-        argv="0 -s a -r b -i 5".split(" "),
+        argv="0 -s a -r b".split(" "),
         _collect=m_collect,
         _execute=m_execute,
         _registry=registry_map,
@@ -50,7 +50,7 @@ def test_main_with_log():
         )
     }
     main(
-        argv="0 -s a -r b -i 5 -l log".split(" "),
+        argv="0 -s a -r b -l log".split(" "),
         _collect=m,
         _execute=m2,
         _registry=registry_map,
@@ -66,7 +66,7 @@ def test_main_replica_registry(reg):
     m = Mock()
     m2 = Mock()
     main(
-        argv=f"0 -s s -r r -i 5 --replica-hash {reg}".split(" "),
+        argv=f"0 -s s -r r --replica-hash {reg}".split(" "),
         _registry=registry,
         _collect=m,
         _execute=m2,
@@ -85,7 +85,7 @@ def test_main_return_value(rv, expect_rc):
     m_execute = Mock(return_value=rv)
 
     rc = main(
-        argv="0 -s a -r b -i 5".split(" "),
+        argv="0 -s a -r b".split(" "),
         _collect=m_collect,
         _execute=m_execute
     )
