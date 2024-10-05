@@ -32,18 +32,6 @@ class UnlinkError(Exception):
 class UtimeError(Exception):
     pass
 
-def utime(*args, **kw):
-    """
-    Calls os.utime
-
-    :raises UtimeError:
-    """
-    # can probably fail in weird ways on some file systems
-    try:
-        return os.utime(*args, **kw)
-    except Exception as e:
-        raise UtimeError() from e
-
 @dataclass
 class AtomicHandleABC(ABC):
     @abstractmethod
@@ -100,9 +88,11 @@ class MemoPath:
     path: Path
     __hash = None
     __stat = None
+    _utime = None
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, _utime=os.utime):
         self.path = path
+        self._utime = _utime
 
     def __getattr__(self, name):
         return getattr(self.path, name)
@@ -141,6 +131,17 @@ class MemoPath:
         if not self.__stat:
             self.__stat = self.path.stat(follow_symlinks=follow_symlinks)
         return self.__stat
+
+    def utime(self, *args, **kw):
+        """
+        Calls os.utime
+
+        :raises UtimeError:
+        """
+        try:
+            self._utime(self.path, *args, **kw)
+        except Exception as e:
+            raise UtimeError() from e
 
 class FileRegistry(ABC):
     src: MemoPath
@@ -309,7 +310,7 @@ class CopyFile(Action):
 
         return self.registry.is_different(self.src)
 
-    def execute(self, _utime=utime):
+    def execute(self):
         s = self.src.stat(follow_symlinks=False)
 
         if not self._should_copy(s):
@@ -320,7 +321,7 @@ class CopyFile(Action):
         file_h.commit()
         csum_h.commit()
         self._log.info(self)
-        _utime(str(self.dst.path), times=(s.st_atime, s.st_mtime))
+        self.dst.utime(times=(s.st_atime, s.st_mtime))
 
     def __str__(self):
         return f"CopyFile: {self.src} -> {self.dst}"
@@ -364,7 +365,7 @@ class SetAMTime(Action):
         if s.st_mtime == r.st_mtime:
             return
 
-        utime(str(self.dst), times=(s.st_atime, s.st_mtime))
+        MemoPath(self.dst).utime(times=(s.st_atime, s.st_mtime))
         self._log.info(self)
 
     def __str__(self):

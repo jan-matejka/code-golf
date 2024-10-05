@@ -8,7 +8,7 @@ import time
 
 from jmcgfs.main import (
     main, collect, is_unsupported, CopyFile, MakeDir, Ignore, RemoveTarget, SetAMTime, execute,
-    Action, RmtreeError, UnlinkError, UtimeError, utime, NullFileRegistry, FileRegistry,
+    Action, RmtreeError, UnlinkError, UtimeError, NullFileRegistry, FileRegistry,
     InMemoryFileRegistry, InReplicaFileRegistry, MemoPath, replica_registry_map, run_once, run
 )
 
@@ -344,10 +344,15 @@ def test_CopyFile_utime_fails(s, r):
     src.touch()
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
-    a = CopyFile(MemoPath(src), MemoPath(r / "foo"), NullFileRegistry(), _log=l)
+    a = CopyFile(
+        MemoPath(src),
+        MemoPath(r / "foo", _utime=raise_fn(UtimeError())),
+        NullFileRegistry(),
+        _log=l,
+    )
     # utime error is raised which will be handled by execute
     with raises(UtimeError) as einfo:
-        a.execute(_utime=raise_fn(UtimeError()))
+        a.execute()
 
     # but the file copy is logged
     l.info.assert_called_once_with(a)
@@ -453,9 +458,9 @@ def test_execute():
     m2.execute.assert_called_once_with()
     l.exception.assert_called_once_with(f"Action failed: {m}")
 
-def test_utime(s):
+def test_MemoPath_utime(s):
     with raises(UtimeError) as einfo:
-        utime(s / "foo", times=(0, 0))
+        MemoPath(s / "foo").utime(times=(0, 0))
     assert isinstance(einfo.value.__cause__, FileNotFoundError)
 
 def test_NullFileRegistry():
