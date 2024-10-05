@@ -89,6 +89,7 @@ class MemoPath:
     __csum = None
     __stat = None
     _utime = None
+    _suffix = ".sha256sum"
 
     def __init__(self, path: Path, _utime=os.utime):
         self.path = path
@@ -125,6 +126,7 @@ class MemoPath:
             self.__csum = Checksum(
                 self,
                 csum.hexdigest(),
+                datetime.now().timestamp()
             )
         return self.__csum
 
@@ -147,23 +149,74 @@ class MemoPath:
         except Exception as e:
             raise UtimeError() from e
 
+    def read_checksum(self) -> Optional[str]:
+        p = Path(str(self.path) + self._suffix)
+        try:
+            ctx = p.open()
+            stat = p.stat()
+        except Exception:
+            return None
+        else:
+            with ctx as f:
+                csum = f.read(64)
+                return Checksum(self, csum, stat.st_mtime)
+
+    def write_checksum(self) -> AtomicHandle:
+        return atomic_write(
+            Path(str(self.path) + self._suffix),
+            # this format can be verified by sha256sum
+            f"{self.checksum().hexdigest}  {self.name}",
+        )
+
+    def is_checksum(self):
+        """
+        :returns: True if the path suffix matches suffix used for checksum files
+        """
+        return self.path.suffix == self._suffix
+
+    def mtime(self):
+        if not self.__stat:
+            self.stat(follow_symlinks=False)
+        return self.__stat.st_mtime
+
+MTime = float | int
+
+@dataclass
+class ChecksumDiffABC(ABC):
+    ...
+
+@dataclass
+class OldChecksum(ChecksumDiffABC):
+    """
+    File is newer than checksum file
+    """
+    path_mtime: MTime
+    csum_mtime: MTime
+
 @dataclass
 class Checksum:
     path: MemoPath
     hexdigest: str
+    mtime: MTime
+
+    def mtime_diff(self) -> Optional[OldChecksum]:
+        p_mtime = self.path.mtime()
+        if p_mtime > self.mtime:
+            return OldChecksum(p_mtime, self.mtime)
 
     def __eq__(self, x):
         if not isinstance(x, Checksum):
             return False
 
-        assert self.path == x.path, "{self.path} != {x.path}; not valid in my program"
+        # Ignore path since we want to compare absolute source with absolute replica.
+        # It even makes more sense since we are comparing two checksum objects so what we really
+        # want to know is if the checksums are the same.
         return self.hexdigest == x.hexdigest
 
     def __ne__(self, x):
         if not isinstance(x, Checksum):
             return True
 
-        assert self.path == x.path, "{self.path} != {x.path}; not valid in my program"
         return self.hexdigest != x.hexdigest
 
 class FileRegistry(ABC):
@@ -175,11 +228,9 @@ class FileRegistry(ABC):
         self.dst = dst
 
     @abstractmethod
-    def is_different(self, p: MemoPath) -> bool:
+    def checksum(self, p: MemoPath) -> Optional[Checksum]:
         """
         :param p: Must be an absolute path in self.src.
-
-        :returns: True if given `p`'s checksum is different from the one in registry.
         """
         raise NotImplementedError # pragma: nocover
 
@@ -193,19 +244,19 @@ class FileRegistry(ABC):
         """
         raise NotImplementedError # pragma: nocover
 
-class NullFileRegistry(FileRegistry):
-    def __init__(self, src=None, dst=None):
-        super().__init__(src, dst)
+    @abstractmethod
+    def is_checksum_file(self, p: MemoPath) -> bool:
+        """
+        :param p: path
 
-    def is_different(self, p):
-        return False
-
-    def register(self, p):
-        return NullAtomicHandle()
+        :returns: True if the path suffix matches suffix used for checksum files and `self` uses
+            checksum files.
+        """
+        raise NotImplementedError # pragma: nocover
 
 class InMemoryFileRegistry(FileRegistry):
     """
-    Maintains a hash registry of copied replicas in memory.
+    Maintains a `Checksum` registry of source files in memory.
     """
     @dataclass
     class Handle(AtomicHandleABC):
@@ -220,19 +271,15 @@ class InMemoryFileRegistry(FileRegistry):
         super().__init__(*args, **kw)
         self._map = {}
 
-    def is_different(self, p):
-        assert p.is_absolute()
+    def checksum(self, p):
+        assert isinstance(p, MemoPath)
         p_abs = p
         p = p_abs.relative_to(self.src)
 
         if p not in self._map:
-            return True
+            return None
 
-        h = p_abs.checksum()
-        if self._map[p] != h:
-            return True
-
-        return False
+        return self._map[p]
 
     def register(self, p):
         return self.Handle(
@@ -241,41 +288,24 @@ class InMemoryFileRegistry(FileRegistry):
             p.checksum()
         )
 
-class InReplicaFileRegistry(FileRegistry):
+    def is_checksum_file(self, p):
+        return False
+
+class ChecksumFileFileRegistry(FileRegistry):
     """
     Maintains a checksum file alongside the replicated file.
     """
-    _suffix = ".sha256sum"
-
-    def _read_replica_checksum(self, p: Path) -> Optional[str]:
-        try:
-            ctx = open(str(self.dst / p) + self._suffix)
-        except Exception:
-            return None
-        else:
-            with ctx as f:
-                return f.read(64)
-
-    def is_different(self, p):
-        assert p.is_absolute()
-        p_abs = p
-        p = p.relative_to(self.src)
-        r_sum = self._read_replica_checksum(p)
-        if not r_sum:
-            return True
-
-        s_sum = p_abs.checksum().hexdigest
-        return r_sum != s_sum
+    def checksum(self, p):
+        assert isinstance(p, MemoPath)
+        return p.read_checksum()
 
     def register(self, p):
-        assert p.is_absolute()
-        p_abs = p
-        p = p.relative_to(self.src)
-        return atomic_write(
-            Path(str(self.dst / p) + self._suffix),
-            # this format can be verified by sha256sum
-            f"{p_abs.checksum().hexdigest}  {p_abs.name}",
-        )
+        assert isinstance(p, MemoPath)
+        return p.write_checksum()
+
+    def is_checksum_file(self, p):
+        assert isinstance(p, MemoPath)
+        return p.is_checksum()
 
 @dataclass
 class RemoveTarget(Action):
@@ -308,15 +338,165 @@ class RemoveTarget(Action):
                 self._log.info(f"Delete: {p}")
 
 @dataclass
+class ChecksumDiff(ChecksumDiffABC):
+    """
+    Difference between source and remote checksum files
+    """
+    s_csum: str
+    r_csum: str
+
+@dataclass
+class NoChecksum(ChecksumDiffABC):
+    """
+    Checksum file missing or corrupted
+    """
+
+@dataclass
+class SRWrap(ChecksumDiffABC):
+    """
+    Wraps a ChecksumDiff that can be from either the source or the replica.
+    """
+    diff: ChecksumDiffABC
+
+    def __post_init__(self):
+        assert self.diff and isinstance(self.diff, ChecksumDiffABC), f"{self.diff!r}"
+
+@dataclass
+class Source(SRWrap):
+    """
+    Difference between source file and source checksum
+    """
+
+@dataclass
+class Replica(SRWrap):
+    """
+    Difference between remote file and remote checksum
+    """
+
+@dataclass
+class ChecksumDiffer(ABC):
+    @abstractmethod
+    def diff(self, s: MemoPath, r: MemoPath) -> Optional[ChecksumDiff]:
+        """
+        :returns: ChecksumDiff if difference found. Otherwise None.
+        """
+
+    def _diff(self, p: MemoPath, r: FileRegistry):
+        csum = r.checksum(p)
+        if not csum:
+            return (NoChecksum(), None)
+
+        diff = csum.mtime_diff()
+        if diff:
+            return (diff, None)
+
+        return (None, csum)
+
+    @abstractmethod
+    def register(
+        self,
+        s: MemoPath,
+        r: MemoPath
+    ) -> tuple[AtomicHandleABC, AtomicHandleABC]:
+        raise NotImplementedError # pragma: no cover
+
+    @abstractmethod
+    def is_checksum_file(self, p: MemoPath) -> bool:
+        """
+        :param p: source path
+
+        :returns: True if the path suffix matches suffix used for checksum files and relevant
+            source registry is in use.
+        """
+        raise NotImplementedError # pragma: nocover
+
+class InvalidRegistries(ValueError):
+    def __init__(self, s, r):
+        self.s = s
+        self.r = r
+        super().__init__("Invalid registry combination: s={s!r} r={r!r}")
+
+class ChecksumDifferFactory:
+    @classmethod
+    def new(
+        self,
+        s_registry: Optional[FileRegistry],
+        r_registry: Optional[FileRegistry],
+    ) -> Optional[ChecksumDiffer]:
+        """
+        :raises: InvalidRegistries
+        """
+        if not s_registry:
+            if r_registry:
+                raise InvalidRegistries(s_registry, r_registry)
+            return None
+
+        if s_registry and r_registry:
+            return ChecksumDifferBoth(s_registry, r_registry)
+
+        return ChecksumDifferSource(s_registry)
+
+@dataclass
+class ChecksumDifferSource(ChecksumDiffer):
+    s_registry: FileRegistry
+
+    def __post_init__(self):
+        assert isinstance(self.s_registry, FileRegistry)
+
+    def diff(self, s, r):
+        diff, _ = self._diff(s, self.s_registry)
+        if diff is None:
+            return None
+        return Source(diff)
+
+    def register(self, s, r):
+        return (self.s_registry.register(s), NullAtomicHandle())
+
+    def is_checksum_file(self, p):
+        assert isinstance(p, MemoPath)
+        return self.s_registry.is_checksum_file(p)
+
+@dataclass
+class ChecksumDifferBoth(ChecksumDiffer):
+    s_registry: FileRegistry
+    r_registry: FileRegistry
+
+    def __post_init__(self):
+        assert isinstance(self.s_registry, FileRegistry)
+        assert isinstance(self.r_registry, FileRegistry)
+
+    def diff(self, src, dst):
+        diff, s_csum = self._diff(src, self.s_registry)
+        if diff:
+            return Source(diff)
+
+        diff, r_csum = self._diff(dst, self.r_registry)
+        if diff:
+            return Replica(diff)
+
+        if s_csum != r_csum:
+            return ChecksumDiff(s_csum, r_csum)
+
+        return None
+
+    def register(self, s, r):
+        return (self.s_registry.register(s), self.r_registry.register(r))
+
+    def is_checksum_file(self, p):
+        assert isinstance(p, MemoPath)
+        return self.s_registry.is_checksum_file(p)
+
+@dataclass
 class CopyFile(Action):
     src: MemoPath
     dst: MemoPath
-    registry: FileRegistry
+    differ: Optional[ChecksumDiffer]
     _log: logging.Logger = log
 
     def __post_init__(self):
         assert isinstance(self.src, MemoPath)
         assert isinstance(self.dst, MemoPath)
+        assert not self.differ or isinstance(self.differ, ChecksumDiffer)
 
     def _should_copy(self, s):
         try:
@@ -331,7 +511,10 @@ class CopyFile(Action):
         if is_diff:
             return True
 
-        return self.registry.is_different(self.src)
+        if not self.differ:
+            return False
+
+        return self.differ.diff(self.src, self.dst)
 
     def execute(self):
         s = self.src.stat(follow_symlinks=False)
@@ -340,10 +523,13 @@ class CopyFile(Action):
             return
 
         file_h = atomic_copy(self.src, self.dst)
-        csum_h = self.registry.register(self.src)
+        if self.differ:
+            s_csum_h, r_csum_h = self.differ.register(self.src, self.dst)
         file_h.commit()
-        csum_h.commit()
         self._log.info(self)
+        if self.differ:
+            s_csum_h.commit()
+            r_csum_h.commit()
         self.dst.utime(times=(s.st_atime, s.st_mtime))
 
     def __str__(self):
@@ -439,8 +625,13 @@ def is_unsupported(p: Path) -> Optional[str]:
     return None
 
 def collect(
-    s: Path, r: Path, registry: FileRegistry,_is_unsupported=is_unsupported
+    s: Path,
+    r: Path,
+    differ: Optional[ChecksumDiffer],
+    _is_unsupported=is_unsupported,
 ) -> Generator[Action]:
+    assert not differ or isinstance(differ, ChecksumDiffer)
+
     _check_dir(s, "source")
     _check_dir(r, "replica")
 
@@ -448,8 +639,12 @@ def collect(
         for x in filenames:
             src = Path(dirpath) / x
             if src.is_file() and not src.is_symlink():
-                dst = r / src.relative_to(s)
-                yield CopyFile(MemoPath(src), MemoPath(dst), registry)
+                src = MemoPath(src)
+                if differ and differ.is_checksum_file(src):
+                    yield Ignore(src, "checksum file")
+                else:
+                    dst = r / src.relative_to(s)
+                    yield CopyFile(src, MemoPath(dst), differ)
             else:
                 typ = _is_unsupported(src)
                 if not typ:
@@ -496,29 +691,29 @@ def execute(actions: Iterator[Action], _log=log) -> bool:
     return r
 
 replica_registry_map = {
-    'none': NullFileRegistry,
+    'none': lambda *_: None,
     'memory': InMemoryFileRegistry,
-    'replica-file': InReplicaFileRegistry,
+    'file': ChecksumFileFileRegistry,
 }
 
 def run_once(
     s: Path,
     r: Path,
-    registry: FileRegistry,
+    differ: ChecksumDiffer,
     _collect=collect,
     _execute=execute,
 ) -> bool:
     """
     :returns: True if an error occured, False otherwise
     """
-    actions = _collect(s, r, registry)
+    actions = _collect(s, r, differ)
     return _execute(actions)
 
 def run(
     interval: int,
     s: Path,
     r: Path,
-    registry: FileRegistry,
+    differ: ChecksumDiffer,
     stop: Queue,
     _run_once=run_once,
     _log=log,
@@ -527,7 +722,7 @@ def run(
 ):
     t = None
     while stop.empty():
-        t = threading.Thread(target=_run_once, args=(s, r, registry))
+        t = threading.Thread(target=_run_once, args=(s, r, differ))
         t.start()
         _sleep(interval)
         if t.is_alive():
@@ -544,6 +739,7 @@ def main(
     _run_once=run_once,
     _run=run,
     _registry=replica_registry_map,
+    _differ_factory=ChecksumDifferFactory,
     _stop=Queue(),
 ):
     def posint(x):
@@ -560,8 +756,25 @@ def main(
     p.add_argument(
         "--replica-hash",
         type=str,
+        choices=[k for k in replica_registry_map.keys() if k != "memory"],
+        default='none',
+        help=(
+            "none - does nothing; "
+            "file - maintains a checksum file alongside the replica"
+        )
+    )
+    p.add_argument(
+        "--source-hash",
+        type=str,
         choices=replica_registry_map.keys(),
         default='none',
+        help=(
+            'none - does noting, relies only on files mtime and size to trigger replication.; '
+            'memory - maintains the checksums in memory '
+            'and recalculates based on file and checksum mtime;'
+            'file - maintains checksum file alongside the original, '
+            'recalculates based on mtime changes'
+        )
     )
     args = p.parse_args(argv[1:])
 
@@ -572,13 +785,15 @@ def main(
 
     s = args.source.absolute()
     r = args.replica.absolute()
-    registry = _registry[args.replica_hash](s, r)
+    s_registry = _registry[args.source_hash](s, r)
+    r_registry = _registry[args.replica_hash](s, r)
+    differ = _differ_factory.new(s_registry, r_registry)
 
     if args.interval == 0:
-        rs = _run_once(s, r, registry)
+        rs = _run_once(s, r, differ)
         return 1 if rs else 0
     else:
-        _run(args.interval, s, r, registry, _stop)
+        _run(args.interval, s, r, differ, _stop)
 
 if __name__ == "__main__": # pragma: nocover
     sys.exit(main())
