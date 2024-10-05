@@ -69,15 +69,17 @@ class NullAtomicHandle(AtomicHandleABC):
     def commit(self):
         ...
 
-def atomic_copy(src: "MemoPath", dst: Path) -> AtomicHandle:
+def atomic_copy(src: "MemoPath", dst: "MemoPath") -> AtomicHandle:
     """
     Copy file atomically from `src` to `dst`.
     """
+    assert isinstance(src, MemoPath)
+    assert isinstance(dst, MemoPath)
     with tempfile.NamedTemporaryFile(
         "w", dir=dst.parent, prefix=f".{src.name}", delete=False
     ) as f:
         shutil.copyfile(src.path, f.name)
-        return AtomicHandle(Path(f.name), dst)
+        return AtomicHandle(Path(f.name), dst.path)
 
 def atomic_write(dst: Path, data: str) -> AtomicHandle:
     """
@@ -313,7 +315,7 @@ class CopyFile(Action):
         if not self._should_copy(s):
             return
 
-        file_h = atomic_copy(self.src, self.dst.path)
+        file_h = atomic_copy(self.src, self.dst)
         csum_h = self.registry.register(self.src)
         file_h.commit()
         csum_h.commit()
