@@ -97,6 +97,7 @@ class MemoPath:
     """
     path: Path
     __hash = None
+    __stat = None
 
     def __init__(self, path: Path, _hash=None):
         self.path = path
@@ -133,6 +134,12 @@ class MemoPath:
             with self.path.open("rb") as f:
                 self.__hash = hashlib.file_digest(f, hashlib.sha256)
         return self.__hash
+
+    def stat(self, follow_symlinks=True):
+        assert not follow_symlinks, "we never use this"
+        if not self.__stat:
+            self.__stat = self.path.stat(follow_symlinks=follow_symlinks)
+        return self.__stat
 
 class FileRegistry(ABC):
     src: MemoPath
