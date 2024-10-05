@@ -138,6 +138,8 @@ class MemoPath:
 
         :raises UtimeError:
         """
+        self.__stat = None
+
         try:
             self._utime(self.path, *args, **kw)
         except Exception as e:
