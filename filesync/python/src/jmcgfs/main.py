@@ -99,9 +99,8 @@ class MemoPath:
     __hash = None
     __stat = None
 
-    def __init__(self, path: Path, _hash=None):
+    def __init__(self, path: Path):
         self.path = path
-        self.__hash = _hash
 
     def __getattr__(self, name):
         return getattr(self.path, name)
