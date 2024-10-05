@@ -240,12 +240,12 @@ def test_collect(s, r):
         Ignore(s / "bar/s", "symlink"),
         Ignore(s / "bar/s2", "symlink"),
         MakeDir(r / "bar/qux"),
-        SetAMTime(s / "bar", r / "bar"),
+        SetAMTime(MemoPath(s / "bar"), MemoPath(r / "bar")),
         CopyFile(MemoPath(s / "bar/qux/b"), MemoPath(r / "bar/qux/b"), reg),
         CopyFile(MemoPath(s / "bar/qux/a"), MemoPath(r / "bar/qux/a"), reg),
-        SetAMTime(s / "bar/qux", r / "bar/qux"),
+        SetAMTime(MemoPath(s / "bar/qux"), MemoPath(r / "bar/qux")),
         RemoveTarget(r / "baz/bar"),
-        SetAMTime(s / "baz", r / "baz"),
+        SetAMTime(MemoPath(s / "baz"), MemoPath(r / "baz")),
     ]
 
 def test_collect_disappeared(s, r):
@@ -430,7 +430,7 @@ def test_SetAMTime(s, r):
     os.utime(str(dst), times=(0, 0))
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
-    a = SetAMTime(src, dst, _log=l)
+    a = SetAMTime(MemoPath(src), MemoPath(dst), _log=l)
     a.execute()
     l.info.assert_called_once_with(a)
 
@@ -439,7 +439,9 @@ def test_SetAMTime(s, r):
     l.info.assert_not_called()
 
 def test_SetAMTime_str():
-    assert str(SetAMTime("foo", "bar")) == "SetAMTime: foo -> bar"
+    s = MemoPath("foo")
+    r = MemoPath("bar")
+    assert (str(SetAMTime(s, r)) == f"SetAMTime: {s!r} -> {r!r}")
 
 def test_execute():
     assert execute([]) == False

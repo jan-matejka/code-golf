@@ -357,9 +357,13 @@ class MakeDir(Action):
 
 @dataclass
 class SetAMTime(Action):
-    src: Path
-    dst: Path
+    src: MemoPath
+    dst: MemoPath
     _log: logging.Logger = log
+
+    def __post_init__(self):
+        assert isinstance(self.src, MemoPath)
+        assert isinstance(self.dst, MemoPath)
 
     def execute(self):
         s = self.src.stat(follow_symlinks=False)
@@ -367,7 +371,7 @@ class SetAMTime(Action):
         if s.st_mtime == r.st_mtime:
             return
 
-        MemoPath(self.dst).utime(times=(s.st_atime, s.st_mtime))
+        self.dst.utime(times=(s.st_atime, s.st_mtime))
         self._log.info(self)
 
     def __str__(self):
@@ -452,7 +456,7 @@ def collect(
 
         p = Path(dirpath)
         if p != s:
-            yield SetAMTime(p, r / p.relative_to(s))
+            yield SetAMTime(MemoPath(p), MemoPath(r / p.relative_to(s)))
 
 def execute(actions: Iterator[Action], _log=log) -> bool:
     """
