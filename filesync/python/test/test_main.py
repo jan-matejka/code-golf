@@ -233,7 +233,7 @@ def test_collect(s, r):
     # Maybe dependent on the filesystem or its options but the order is significant.
     reg = NullFileRegistry()
     assert list(collect(s, r, reg)) == [
-        CopyFile(MemoPath(s / "foo"), r / "foo", reg),
+        CopyFile(MemoPath(s / "foo"), MemoPath(r / "foo"), reg),
         MakeDir(r / "bar"),
         MakeDir(r / "baz"),
         RemoveTarget(r / "qux"),
@@ -241,8 +241,8 @@ def test_collect(s, r):
         Ignore(s / "bar/s2", "symlink"),
         MakeDir(r / "bar/qux"),
         SetAMTime(s / "bar", r / "bar"),
-        CopyFile(MemoPath(s / "bar/qux/b"), r / "bar/qux/b", reg),
-        CopyFile(MemoPath(s / "bar/qux/a"), r / "bar/qux/a", reg),
+        CopyFile(MemoPath(s / "bar/qux/b"), MemoPath(r / "bar/qux/b"), reg),
+        CopyFile(MemoPath(s / "bar/qux/a"), MemoPath(r / "bar/qux/a"), reg),
         SetAMTime(s / "bar/qux", r / "bar/qux"),
         RemoveTarget(r / "baz/bar"),
         SetAMTime(s / "baz", r / "baz"),
@@ -259,7 +259,7 @@ def test_collect_unknown(s, r):
     (s / "bar").touch()
     reg = NullFileRegistry()
     assert list(collect(s, r, reg, _is_unsupported=lambda _: None)) == [
-        CopyFile(MemoPath(s / "bar"), r / "bar", reg),
+        CopyFile(MemoPath(s / "bar"), MemoPath(r / "bar"), reg),
         Ignore(s/"foo", "unknown")
     ]
 
@@ -270,7 +270,7 @@ def test_CopyFile(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), MemoPath(dst), NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists()
@@ -281,7 +281,10 @@ def test_CopyFile(s, r):
     l.info.assert_not_called()
 
 def test_CopyFile_str():
-    assert str(CopyFile(MemoPath("foo"), "bar", NullFileRegistry())) == "CopyFile: MemoPath('foo') -> bar"
+    assert (
+        str(CopyFile(MemoPath("foo"), MemoPath("bar"), NullFileRegistry()))
+        == "CopyFile: MemoPath('foo') -> MemoPath('bar')"
+    )
 
 def test_CopyFile_over_symlink(s, r):
     src = s / "foo"
@@ -292,7 +295,7 @@ def test_CopyFile_over_symlink(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), MemoPath(dst), NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -307,7 +310,7 @@ def test_CopyFile_over_broken_symlink(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), MemoPath(dst), NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -321,7 +324,7 @@ def test_CopyFile_over_directory(s, r):
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
-    a = CopyFile(MemoPath(src), dst, NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), MemoPath(dst), NullFileRegistry(), _log=l)
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
@@ -331,7 +334,7 @@ def test_CopyFile_enoent_src(s):
     # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
     # working directory.
     s = s / "foo"
-    a = CopyFile(MemoPath(s), s / "bar", NullFileRegistry())
+    a = CopyFile(MemoPath(s), MemoPath(s / "bar"), NullFileRegistry())
     with raises(FileNotFoundError) as einfo:
         a.execute()
     assert str(einfo.value) == f"[Errno 2] No such file or directory: {str(s)!r}"
@@ -341,7 +344,7 @@ def test_CopyFile_utime_fails(s, r):
     src.touch()
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
-    a = CopyFile(MemoPath(src), r / "foo", NullFileRegistry(), _log=l)
+    a = CopyFile(MemoPath(src), MemoPath(r / "foo"), NullFileRegistry(), _log=l)
     # utime error is raised which will be handled by execute
     with raises(UtimeError) as einfo:
         a.execute(_utime=raise_fn(UtimeError()))

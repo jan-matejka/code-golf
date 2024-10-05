@@ -284,12 +284,13 @@ class RemoveTarget(Action):
 @dataclass
 class CopyFile(Action):
     src: MemoPath
-    dst: Path
+    dst: MemoPath
     registry: FileRegistry
     _log: logging.Logger = log
 
     def __post_init__(self):
         assert isinstance(self.src, MemoPath)
+        assert isinstance(self.dst, MemoPath)
 
     def _should_copy(self, s):
         try:
@@ -298,7 +299,7 @@ class CopyFile(Action):
             return True
         else:
             if not self.dst.is_file() or self.dst.is_symlink():
-                RemoveTarget(self.dst, _log=self._log).execute()
+                RemoveTarget(self.dst.path, _log=self._log).execute()
 
         is_diff = s.st_mtime != r.st_mtime or s.st_size != r.st_size
         if is_diff:
@@ -312,12 +313,12 @@ class CopyFile(Action):
         if not self._should_copy(s):
             return
 
-        file_h = atomic_copy(self.src, self.dst)
+        file_h = atomic_copy(self.src, self.dst.path)
         csum_h = self.registry.register(self.src)
         file_h.commit()
         csum_h.commit()
         self._log.info(self)
-        _utime(str(self.dst), times=(s.st_atime, s.st_mtime))
+        _utime(str(self.dst.path), times=(s.st_atime, s.st_mtime))
 
     def __str__(self):
         return f"CopyFile: {self.src} -> {self.dst}"
@@ -418,7 +419,7 @@ def collect(
             src = Path(dirpath) / x
             if src.is_file() and not src.is_symlink():
                 dst = r / src.relative_to(s)
-                yield CopyFile(MemoPath(src), dst, registry)
+                yield CopyFile(MemoPath(src), MemoPath(dst), registry)
             else:
                 typ = _is_unsupported(src)
                 if not typ:
