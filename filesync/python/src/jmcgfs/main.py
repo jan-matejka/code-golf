@@ -86,7 +86,7 @@ class MemoPath:
     Partial implemention of `Path` with memoization.
     """
     path: Path
-    __hash = None
+    __csum = None
     __stat = None
     _utime = None
 
@@ -117,14 +117,16 @@ class MemoPath:
     def __hash__(self):
         raise NotImplementedError
 
-    def checksum(self):
-        """
-        :returns: hashlib hash object. The hash object is calculated once per `self` instance.
-        """
-        if not self.__hash:
+    def checksum(self) -> "Checksum":
+        if not self.__csum:
             with self.path.open("rb") as f:
-                self.__hash = hashlib.file_digest(f, hashlib.sha256)
-        return self.__hash
+                csum = hashlib.file_digest(f, hashlib.sha256)
+
+            self.__csum = Checksum(
+                self,
+                csum.hexdigest(),
+            )
+        return self.__csum
 
     def stat(self, follow_symlinks=True):
         assert not follow_symlinks, "we never use this"
@@ -144,6 +146,25 @@ class MemoPath:
             self._utime(self.path, *args, **kw)
         except Exception as e:
             raise UtimeError() from e
+
+@dataclass
+class Checksum:
+    path: MemoPath
+    hexdigest: str
+
+    def __eq__(self, x):
+        if not isinstance(x, Checksum):
+            return False
+
+        assert self.path == x.path, "{self.path} != {x.path}; not valid in my program"
+        return self.hexdigest == x.hexdigest
+
+    def __ne__(self, x):
+        if not isinstance(x, Checksum):
+            return True
+
+        assert self.path == x.path, "{self.path} != {x.path}; not valid in my program"
+        return self.hexdigest != x.hexdigest
 
 class FileRegistry(ABC):
     src: MemoPath
@@ -207,7 +228,7 @@ class InMemoryFileRegistry(FileRegistry):
         if p not in self._map:
             return True
 
-        h = p_abs.checksum().digest()
+        h = p_abs.checksum()
         if self._map[p] != h:
             return True
 
@@ -217,7 +238,7 @@ class InMemoryFileRegistry(FileRegistry):
         return self.Handle(
             self._map,
             p.relative_to(self.src),
-            p.checksum().digest()
+            p.checksum()
         )
 
 class InReplicaFileRegistry(FileRegistry):
@@ -243,7 +264,7 @@ class InReplicaFileRegistry(FileRegistry):
         if not r_sum:
             return True
 
-        s_sum = p_abs.checksum().hexdigest()
+        s_sum = p_abs.checksum().hexdigest
         return r_sum != s_sum
 
     def register(self, p):
@@ -253,7 +274,7 @@ class InReplicaFileRegistry(FileRegistry):
         return atomic_write(
             Path(str(self.dst / p) + self._suffix),
             # this format can be verified by sha256sum
-            f"{p_abs.checksum().hexdigest()}  {p_abs.name}",
+            f"{p_abs.checksum().hexdigest}  {p_abs.name}",
         )
 
 @dataclass

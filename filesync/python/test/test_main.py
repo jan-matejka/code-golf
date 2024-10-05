@@ -530,3 +530,16 @@ def test_MemoPath_eq():
     assert x == z
     assert x != None
     assert not x == None
+
+def test_Checksum(s):
+    x = MemoPath(s / "foo")
+    x.touch()
+    y = MemoPath(s / "foo")
+    csum = y.checksum()
+    assert x.checksum() == csum
+    assert csum != None
+    assert not csum == None
+    with x.open("w") as f:
+        f.write("foo")
+    assert csum is y.checksum() # still memoized
+    assert MemoPath(s / "foo").checksum() != csum
