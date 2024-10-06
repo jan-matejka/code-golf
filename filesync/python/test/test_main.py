@@ -407,6 +407,21 @@ def test_CopyFile_over_directory(s, r):
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
     assert l.info.call_args_list == [call(f"Delete tree: {dst}"), call(a)]
 
+def test_CopyFile_mtime_diff(s, r):
+    src = MemoPath(s / "foo")
+    src.touch()
+    dst = MemoPath(r / "foo")
+    dst.touch()
+    dst.utime(times=(0, 0))
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+
+    a = CopyFile(src, dst, None, _log=l)
+    a.execute()
+
+    assert dst.exists() and dst.is_file() and not dst.is_symlink()
+    assert l.info.call_args_list == [call(a)]
+
 def test_CopyFile_enoent_src(s):
     # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
     # working directory.
@@ -561,9 +576,14 @@ def test_execute():
     l.exception.assert_called_once_with(f"Action failed: {m}")
 
 def test_MemoPath_utime(s):
+    p = MemoPath(s / "foo")
     with raises(UtimeError) as einfo:
-        MemoPath(s / "foo").utime(times=(0, 0))
+        p.utime(times=(0, 0))
     assert isinstance(einfo.value.__cause__, FileNotFoundError)
+
+    p.touch()
+    p.utime(times=(0, 0))
+    assert p.mtime() == 0
 
 def test_MemoPath_mtime(s):
     p = MemoPath(s / "foo")

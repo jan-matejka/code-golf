@@ -213,6 +213,27 @@ class TypeDiff:
 
         if x_type != y_type:
             return TypeDiff((x, x_type), (y, y_type))
+
+@dataclass
+class MTimeDiff:
+    x: tuple[MemoPath, MTime]
+    y: tuple[MemoPath, MTime]
+
+    def __post_init__(self):
+        assert isinstance(self.x[0], MemoPath)
+        assert isinstance(self.y[0], MemoPath)
+
+    @classmethod
+    def new(cls, x: MemoPath, y: MemoPath) -> Optional['MTimeDiff']:
+        assert isinstance(x, MemoPath)
+        assert isinstance(y, MemoPath)
+
+        x_mtime = x.mtime()
+        y_mtime = y.mtime()
+
+        if x_mtime != y_mtime:
+            return MTimeDiff((x, x_mtime), (y, y_mtime))
+
         return None
 
 @dataclass
@@ -531,7 +552,11 @@ class CopyFile(Action):
             RemoveTarget(self.dst.path, _log=self._log).execute()
             return True
 
-        is_diff = s.st_mtime != r.st_mtime or s.st_size != r.st_size
+        diff = MTimeDiff.new(self.src, self.dst)
+        if diff:
+            return True
+
+        is_diff = s.st_size != r.st_size
         if is_diff:
             return True
 
