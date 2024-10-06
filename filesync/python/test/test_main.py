@@ -123,17 +123,21 @@ def test_main_interval():
         stop,
     )
 
+valid_registries = (
+    (("none", "none"), nullcontext()),
+    (("memory", "file"), nullcontext()),
+    (("memory", "none"), nullcontext()),
+    (("file",   "file"), nullcontext()),
+    (("file",   "none"), nullcontext()),
+)
+invalid_registries = (
+    (("none", "file"), raises(InvalidRegistries)),
+    (("none", "memory"), raises(SystemExit)),
+)
+
 @pytest.mark.parametrize(
     'regs, ctx',
-    (
-        (("none", "none"), nullcontext()),
-        (("memory", "file"), nullcontext()),
-        (("memory", "none"), nullcontext()),
-        (("file",   "file"), nullcontext()),
-        (("file",   "none"), nullcontext()),
-        (("none", "file"), raises(InvalidRegistries)),
-        (("none", "memory"), raises(SystemExit)),
-    ),
+    valid_registries + invalid_registries,
     ids=str
 )
 def test_main_replica_registry(regs, ctx):
@@ -799,3 +803,20 @@ def test_ChecksumDifferBoth_register(s, r):
 def test_NullAtomicHandle():
     h = NullAtomicHandle()
     h.commit()
+
+
+@pytest.mark.parametrize('regs', valid_registries, ids=str)
+def test_run_once_smoketest(s, r, regs):
+    # TBD: make real end-to-end checks
+    (s_reg, r_reg), _ = regs
+
+    s_reg = replica_registry_map[s_reg](s, r)
+    r_reg = replica_registry_map[r_reg](s, r)
+    differ = ChecksumDifferFactory.new(s_reg, r_reg)
+
+    (s / "foo").mkdir()
+    (s / "foo/bar").mkdir()
+    (s / "foo/bar/qux").touch()
+    (s / "bar").symlink_to("qux")
+
+    run_once(s, r, differ)
