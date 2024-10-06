@@ -196,12 +196,8 @@ class OldChecksum(ChecksumDiffABC):
 
 @dataclass
 class FileStatDiff(ABC):
-    x: tuple[MemoPath, Any]
-    y: tuple[MemoPath, Any]
-
-    def __post_init__(self):
-        assert isinstance(self.x[0], MemoPath)
-        assert isinstance(self.y[0], MemoPath)
+    source: Any
+    replica: Any
 
     @classmethod
     def new(
@@ -218,7 +214,7 @@ class FileStatDiff(ABC):
         y_attr = _attr(y.stat(follow_symlinks=False))
 
         if x_attr != y_attr:
-            return _type((x, x_attr), (y, y_attr))
+            return _type(x_attr, y_attr)
 
 @dataclass
 class TypeDiff(FileStatDiff):
