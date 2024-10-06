@@ -218,9 +218,20 @@ class FileStatDiff(ABC):
 
 @dataclass
 class TypeDiff(FileStatDiff):
+    """
+    Contains standard characters identifying the filetype. Refer to stat._filemode_table for the
+        exact map.
+    """
+    @staticmethod
+    def _attr(s):
+        for bit, char in stat._filemode_table[0]:
+            if s.st_mode & bit == bit:
+                return char
+        raise RuntimeError() # pragma: nocover
+
     @classmethod
     def new(cls, x, y):
-        return FileStatDiff.new(x, y, lambda s: stat.S_IFMT(s.st_mode), cls)
+        return FileStatDiff.new(x, y, cls._attr, cls)
 
 @dataclass
 class MTimeDiff(FileStatDiff):
