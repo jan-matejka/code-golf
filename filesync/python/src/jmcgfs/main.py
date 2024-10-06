@@ -1,5 +1,5 @@
 import argparse
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterator, Callable
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from datetime import datetime
@@ -14,7 +14,7 @@ from queue import Queue
 import tempfile
 import threading
 import time
-from typing import Optional
+from typing import Optional, Any
 
 log = logging.getLogger(__name__)
 
@@ -195,46 +195,42 @@ class OldChecksum(ChecksumDiffABC):
     csum_mtime: MTime
 
 @dataclass
-class TypeDiff:
-    x: tuple[MemoPath, int]
-    y: tuple[MemoPath, int] | None
+class FileStatDiff(ABC):
+    x: tuple[MemoPath, Any]
+    y: tuple[MemoPath, Any]
 
     def __post_init__(self):
         assert isinstance(self.x[0], MemoPath)
         assert isinstance(self.y[0], MemoPath)
 
     @classmethod
-    def new(cls, x: MemoPath, y: MemoPath) -> Optional['TypeDiff']:
+    def new(
+        cls,
+        x: MemoPath,
+        y: MemoPath,
+        _attr: Callable[[os.stat_result],Any],
+        _type: type['FileStatDiff'],
+    ) -> Optional['FileStatDiff']:
         assert isinstance(x, MemoPath)
         assert isinstance(y, MemoPath)
 
-        x_type = stat.S_IFMT(x.stat(follow_symlinks=False).st_mode)
-        y_type = stat.S_IFMT(y.stat(follow_symlinks=False).st_mode)
+        x_attr = _attr(x.stat(follow_symlinks=False))
+        y_attr = _attr(y.stat(follow_symlinks=False))
 
-        if x_type != y_type:
-            return TypeDiff((x, x_type), (y, y_type))
+        if x_attr != y_attr:
+            return _type((x, x_attr), (y, y_attr))
 
 @dataclass
-class MTimeDiff:
-    x: tuple[MemoPath, MTime]
-    y: tuple[MemoPath, MTime]
-
-    def __post_init__(self):
-        assert isinstance(self.x[0], MemoPath)
-        assert isinstance(self.y[0], MemoPath)
-
+class TypeDiff(FileStatDiff):
     @classmethod
-    def new(cls, x: MemoPath, y: MemoPath) -> Optional['MTimeDiff']:
-        assert isinstance(x, MemoPath)
-        assert isinstance(y, MemoPath)
+    def new(cls, x, y):
+        return FileStatDiff.new(x, y, lambda s: stat.S_IFMT(s.st_mode), cls)
 
-        x_mtime = x.mtime()
-        y_mtime = y.mtime()
-
-        if x_mtime != y_mtime:
-            return MTimeDiff((x, x_mtime), (y, y_mtime))
-
-        return None
+@dataclass
+class MTimeDiff(FileStatDiff):
+    @classmethod
+    def new(cls, x, y):
+        return FileStatDiff.new(x, y, lambda s: s.st_mtime, cls)
 
 @dataclass
 class Checksum:
@@ -530,19 +526,10 @@ class ChecksumDifferBoth(ChecksumDiffer):
         return self.s_registry.is_checksum_file(p)
 
 @dataclass
-class SizeDiff:
-    x: tuple[MemoPath, int]
-    y: tuple[MemoPath, int]
-
+class SizeDiff(FileStatDiff):
     @classmethod
-    def new(cls, x: MemoPath, y: MemoPath) -> Optional['SizeDiff']:
-        x_size = x.stat(follow_symlinks=False).st_size
-        y_size = y.stat(follow_symlinks=False).st_size
-
-        if x_size != y_size:
-            return SizeDiff((x, x_size), (y, y_size))
-
-        return None
+    def new(cls, x, y):
+        return FileStatDiff.new(x, y, lambda s: s.st_size, cls)
 
 @dataclass
 class CopyFile(Action):
