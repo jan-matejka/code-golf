@@ -550,41 +550,45 @@ class CopyFile(Action):
         assert isinstance(self.dst, MemoPath)
         assert not self.differ or isinstance(self.differ, ChecksumDiffer)
 
-    def _should_copy(self, s):
+    def _should_copy(self, s) -> str | FileStatDiff | ChecksumDiffABC | None:
+        """
+        :returns: reason for copy.
+        """
         try:
             r = self.dst.stat(follow_symlinks=False)
         except FileNotFoundError:
-            return True
+            return f"replica does not exist"
 
         diff = TypeDiff.new(self.src, self.dst)
         if diff:
             RemoveTarget(self.dst.path, _log=self._log).execute()
-            return True
+            return diff
 
         diff = MTimeDiff.new(self.src, self.dst)
         if diff:
-            return True
+            return diff
 
         diff = SizeDiff.new(self.src, self.dst)
         if diff:
-            return True
+            return diff
 
         if not self.differ:
-            return False
+            return None
 
         return self.differ.diff(self.src, self.dst)
 
     def execute(self):
         s = self.src.stat(follow_symlinks=False)
 
-        if not self._should_copy(s):
+        reason = self._should_copy(s)
+        if not reason:
             return
 
         file_h = atomic_copy(self.src, self.dst)
         if self.differ:
             s_csum_h, r_csum_h = self.differ.register(self.src, self.dst)
         file_h.commit()
-        self._log.info(self)
+        self._log.info(f"{self} because {reason}")
         if self.differ:
             s_csum_h.commit()
             r_csum_h.commit()

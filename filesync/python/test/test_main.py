@@ -13,7 +13,8 @@ from jmcgfs.main import (
     InMemoryFileRegistry, ChecksumFileFileRegistry, MemoPath, replica_registry_map, run_once, run,
     ChecksumDifferFactory, ChecksumDifferSource, ChecksumDifferBoth,
     Source, Replica, NoChecksum, OldChecksum, Checksum, ChecksumDiff,
-    NullAtomicHandle, ChecksumDiffer, AtomicHandleABC, InvalidRegistries
+    NullAtomicHandle, ChecksumDiffer, AtomicHandleABC, InvalidRegistries,
+    TypeDiff, MTimeDiff, SizeDiff,
 )
 
 import pytest
@@ -351,7 +352,7 @@ def test_CopyFile(s, r):
     a.execute()
 
     assert dst.exists()
-    l.info.assert_called_once_with(a)
+    l.info.assert_called_once_with(f"{a} because replica does not exist")
 
     l.info.reset_mock()
     a.execute()
@@ -376,7 +377,10 @@ def test_CopyFile_over_symlink(s, r):
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
-    assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]
+    assert l.info.call_args_list == [
+        call(f"Delete: {dst}"),
+        call(f"{a} because {TypeDiff('-', 'l')}")
+    ]
 
 def test_CopyFile_over_broken_symlink(s, r):
     src = s / "foo"
@@ -391,7 +395,10 @@ def test_CopyFile_over_broken_symlink(s, r):
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
-    assert l.info.call_args_list == [call(f"Delete: {dst}"), call(a)]
+    assert l.info.call_args_list == [
+        call(f"Delete: {dst}"),
+        call(f"{a} because {TypeDiff('-', 'l')}")
+    ]
 
 def test_CopyFile_over_directory(s, r):
     src = s / "foo"
@@ -405,7 +412,10 @@ def test_CopyFile_over_directory(s, r):
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
-    assert l.info.call_args_list == [call(f"Delete tree: {dst}"), call(a)]
+    assert l.info.call_args_list == [
+        call(f"Delete tree: {dst}"),
+        call(f"{a} because {TypeDiff('-', 'd')}")
+    ]
 
 def test_CopyFile_mtime_diff(s, r):
     src = MemoPath(s / "foo")
@@ -413,6 +423,7 @@ def test_CopyFile_mtime_diff(s, r):
     dst = MemoPath(r / "foo")
     dst.touch()
     dst.utime(times=(0, 0))
+    dst = MemoPath(r / "foo")
 
     l = create_autospec(logging.Logger, spec_set=True, instance=True)
 
@@ -420,7 +431,9 @@ def test_CopyFile_mtime_diff(s, r):
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
-    assert l.info.call_args_list == [call(a)]
+    assert l.info.call_args_list == [
+        call(f"{a} because {MTimeDiff(src.mtime(), 0.0)}")
+    ]
 
 def test_CopyFile_size_diff(s, r):
     src = MemoPath(s / "foo")
@@ -435,7 +448,9 @@ def test_CopyFile_size_diff(s, r):
     a.execute()
 
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
-    assert l.info.call_args_list == [call(a)]
+    assert l.info.call_args_list == [
+        call(f"{a} because {SizeDiff(0, 3)}")
+    ]
 
 def test_CopyFile_enoent_src(s):
     # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
@@ -462,7 +477,7 @@ def test_CopyFile_utime_fails(s, r):
         a.execute()
 
     # but the file copy is logged
-    l.info.assert_called_once_with(a)
+    l.info.assert_called_once_with(f"{a} because replica does not exist")
 
 @pytest.mark.parametrize('rv', (None,) + diff_results, ids=str)
 def test_CopyFile_checksum_differ(s, r, rv):
@@ -482,7 +497,7 @@ def test_CopyFile_checksum_differ(s, r, rv):
     if not rv:
         l.info.assert_not_called()
     else:
-        l.info.assert_called_once_with(a)
+        l.info.assert_called_once_with(f"{a} because {rv}")
         differ.register.assert_called_once_with(src, dst)
         s_handle.commit.assert_called_once_with()
         r_handle.commit.assert_called_once_with()
