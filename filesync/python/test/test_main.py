@@ -422,6 +422,21 @@ def test_CopyFile_mtime_diff(s, r):
     assert dst.exists() and dst.is_file() and not dst.is_symlink()
     assert l.info.call_args_list == [call(a)]
 
+def test_CopyFile_size_diff(s, r):
+    src = MemoPath(s / "foo")
+    src.touch()
+    dst = MemoPath(r / "foo")
+    with dst.open("w") as f:
+        f.write("foo")
+
+    l = create_autospec(logging.Logger, spec_set=True, instance=True)
+
+    a = CopyFile(src, dst, None, _log=l)
+    a.execute()
+
+    assert dst.exists() and dst.is_file() and not dst.is_symlink()
+    assert l.info.call_args_list == [call(a)]
+
 def test_CopyFile_enoent_src(s):
     # Point to tempdir, otherwise this starts mysteriously failing when `foo` happens to exist in
     # working directory.

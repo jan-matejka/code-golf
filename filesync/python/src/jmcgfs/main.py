@@ -530,6 +530,21 @@ class ChecksumDifferBoth(ChecksumDiffer):
         return self.s_registry.is_checksum_file(p)
 
 @dataclass
+class SizeDiff:
+    x: tuple[MemoPath, int]
+    y: tuple[MemoPath, int]
+
+    @classmethod
+    def new(cls, x: MemoPath, y: MemoPath) -> Optional['SizeDiff']:
+        x_size = x.stat(follow_symlinks=False).st_size
+        y_size = y.stat(follow_symlinks=False).st_size
+
+        if x_size != y_size:
+            return SizeDiff((x, x_size), (y, y_size))
+
+        return None
+
+@dataclass
 class CopyFile(Action):
     src: MemoPath
     dst: MemoPath
@@ -556,8 +571,8 @@ class CopyFile(Action):
         if diff:
             return True
 
-        is_diff = s.st_size != r.st_size
-        if is_diff:
+        diff = SizeDiff.new(self.src, self.dst)
+        if diff:
             return True
 
         if not self.differ:
