@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import stat
 from queue import Queue
 import tempfile
 import threading
@@ -192,6 +193,27 @@ class OldChecksum(ChecksumDiffABC):
     """
     path_mtime: MTime
     csum_mtime: MTime
+
+@dataclass
+class TypeDiff:
+    x: tuple[MemoPath, int]
+    y: tuple[MemoPath, int] | None
+
+    def __post_init__(self):
+        assert isinstance(self.x[0], MemoPath)
+        assert isinstance(self.y[0], MemoPath)
+
+    @classmethod
+    def new(cls, x: MemoPath, y: MemoPath) -> Optional['TypeDiff']:
+        assert isinstance(x, MemoPath)
+        assert isinstance(y, MemoPath)
+
+        x_type = stat.S_IFMT(x.stat(follow_symlinks=False).st_mode)
+        y_type = stat.S_IFMT(y.stat(follow_symlinks=False).st_mode)
+
+        if x_type != y_type:
+            return TypeDiff((x, x_type), (y, y_type))
+        return None
 
 @dataclass
 class Checksum:
@@ -503,9 +525,11 @@ class CopyFile(Action):
             r = self.dst.stat(follow_symlinks=False)
         except FileNotFoundError:
             return True
-        else:
-            if not self.dst.is_file() or self.dst.is_symlink():
-                RemoveTarget(self.dst.path, _log=self._log).execute()
+
+        diff = TypeDiff.new(self.src, self.dst)
+        if diff:
+            RemoveTarget(self.dst.path, _log=self._log).execute()
+            return True
 
         is_diff = s.st_mtime != r.st_mtime or s.st_size != r.st_size
         if is_diff:
