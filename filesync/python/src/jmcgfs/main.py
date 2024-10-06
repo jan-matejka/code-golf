@@ -93,10 +93,14 @@ class MemoPath:
     _suffix = ".sha256sum"
 
     def __init__(self, path: Path, _utime=os.utime):
+        # TBD: Hold the path by filedescriptor to prevent races.
+        # The races are all over and probably mostly harmless except for the ones with checksum
+        # files, which is quite serious.
         self.path = path
         self._utime = _utime
 
     def __getattr__(self, name):
+        # TBD: remove this footgun in favor of explicitly unwrapping to path where needed.
         return getattr(self.path, name)
 
     def __repr__(self):
@@ -163,6 +167,7 @@ class MemoPath:
                 return Checksum(self, csum, stat.st_mtime)
 
     def write_checksum(self) -> AtomicHandle:
+        # TBD: add option to use adler32/crc32
         return atomic_write(
             Path(str(self.path) + self._suffix),
             # this format can be verified by sha256sum
@@ -421,6 +426,8 @@ class Replica(SRWrap):
 
 @dataclass
 class ChecksumDiffer(ABC):
+    # TBD: the register and is_checksum_file methods do not make sense here.
+    # The differ was just convenient to get to registries. Needs refactor.
     @abstractmethod
     def diff(self, s: MemoPath, r: MemoPath) -> Optional[ChecksumDiff]:
         """
@@ -540,6 +547,9 @@ class SizeDiff(FileStatDiff):
 
 @dataclass
 class CopyFile(Action):
+    # TBD: split into separate detection action. The implementation probably overlaps with
+    #   execute() parallelization.
+    # TBD: skip the FileStatDiff checks if parent has unchanged mtime
     src: MemoPath
     dst: MemoPath
     differ: Optional[ChecksumDiffer]
@@ -578,6 +588,13 @@ class CopyFile(Action):
         return self.differ.diff(self.src, self.dst)
 
     def execute(self):
+        # TBD: copy mode
+        # TBD: copy extended attributes
+        # Note: shutil.copystat is not very usable for this as we want to show the diffs that
+        # trigger the action.
+        # Also the copystat looks a lot like it only copies the extended attribute
+        # from source to destination and does not delete the extra ones.
+        # TBD: log the stat changes as well and check them even if checksum differ finds no diff.
         s = self.src.stat(follow_symlinks=False)
 
         reason = self._should_copy(s)
@@ -673,6 +690,7 @@ def is_unsupported(p: Path) -> Optional[str]:
         file type.
     """
     if p.is_symlink():
+        # TBD: support symlinks
         return "symlink"
     if p.is_block_device():
         return "block_device"
@@ -692,6 +710,7 @@ def collect(
     differ: Optional[ChecksumDiffer],
     _is_unsupported=is_unsupported,
 ) -> Generator[Action]:
+    # TBD: add actions to set stat on directories
     assert not differ or isinstance(differ, ChecksumDiffer)
 
     _check_dir(s, "source")
@@ -742,6 +761,7 @@ def execute(actions: Iterator[Action], _log=log) -> bool:
 
     :returns: True if an error occured, False otherwise
     """
+    # TBD: parallelize the action execution
     r = False
     for a in actions:
         try:
