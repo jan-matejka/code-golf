@@ -10,6 +10,7 @@ from jmcgmqp.runtime import Instance
 from jmcgmqp import event, multiprocess as mp
 from jmcgmqp.observer import stdout
 from jmcgmqp.observer import prometheus
+from jmcgmqp.observer import postgres
 
 log = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ def main():
     app = Instance()
     app.observer.subscribe(stdout.observer)
     app.observer.subscribe(partial(prometheus.observer, app))
+    app.observer.subscribe(postgres.Observer(app))
     if app.config.TEST_PROMETHEUS:
         test_cmd(app)
         sys.exit(1)

@@ -18,32 +18,35 @@ class Instance:
 
     def __post_init__(self):
         self.observer = Registry()
-        self.runtime = Runtime()
+        self.runtime = Runtime.new()
         self.config = Config()
+        self.config.load_env()
         log.info(f"Config: {asdict(self.config)}")
 
-@dataclass
+@dataclass(frozen=True)
 class Runtime:
     ctime: datetime.datetime = None
     uuid: UUID = None
     lang: str = None
     lang_version: str = None
     runtime: str = None
-    runtime: str = None
     os: str = None
     kernel: str = None
     arch: str = None
 
-    def __post_init__(self):
-        self.ctime = datetime.datetime.now()
-        self.uuid = uuid1()
-        self.lang = 'python'
-        self.lang_version = platform.python_version()
-        self.runtime = platform.python_implementation()
-        self.os = platform.system()
+    @classmethod
+    def new(cls):
         uname = platform.uname()
-        self.kernel = uname.release
-        self.arch = uname.machine
+        return cls(
+            datetime.datetime.now(),
+            uuid1(),
+            'python',
+            platform.python_version(),
+            platform.python_implementation(),
+            platform.system(),
+            uname.release,
+            uname.machine,
+        )
 
     def metric_labels(self) -> dict[str, Any]:
         return asdict(self)
