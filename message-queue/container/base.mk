@@ -25,6 +25,11 @@ rm: ## Delete container
 
 	podman rm $(NAME)
 
+.PHONY: stop
+stop: ## Stop running container
+
+	podman stop $(NAME)
+
 .PHONY: logs
 logs: ## Show container logs
 
