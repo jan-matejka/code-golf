@@ -29,7 +29,6 @@ class Runtime:
     lang: str = None
     lang_version: str = None
     runtime: str = None
-    runtime: str = None
     os: str = None
     kernel: str = None
     arch: str = None
