@@ -13,14 +13,14 @@ containers=$(shell find ./container -maxdepth 1 -mindepth 1 -type d | grep -v ba
 .PHONY: build
 build: ## TBD, probably recurse into container/ and <lang>/ or container/<lang>
 
-.PHONY: pod ## Create the pod
-pod:
+.PHONY: pod
+pod: ## Create the pod
 
 	podman pod create $(PORTS) mq
 	printf "%s\n" $(containers) | xargs -I% -n1 make -C % podrun
 
-.PHONY: rm ## Remove the pod
-pod-rm:
+.PHONY: rm
+pod-rm: ## Remove the pod
 
 	podman pod stop mq
 	podman pod rm mq
