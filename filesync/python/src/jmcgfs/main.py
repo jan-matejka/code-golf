@@ -124,6 +124,8 @@ class MemoPath:
         raise NotImplementedError
 
     def checksum(self) -> "Checksum":
+        # Note: functools.cache is not usable here because it is globally scoped while we are
+        # scoping the cache to the instance.
         if not self.__csum:
             with self.path.open("rb") as f:
                 csum = hashlib.file_digest(f, hashlib.sha256)
