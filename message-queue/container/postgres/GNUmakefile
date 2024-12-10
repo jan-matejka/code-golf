@@ -7,3 +7,9 @@ RUN_NAME := mq-postgres
 RUN_ARGS := -v $(realpath postgresql.conf):/etc/postgres/postgresql.conf
 RUN_ARGS += -v $(realpath init):/docker-entrypoint-initdb.d/
 RUN_INSIDE_ARGS := -c 'config_file=/etc/postgres/postgresql.conf'
+
+
+.PHONY: psql
+psql:  # Run psql
+
+	PSQLRC=./.psqlrc psql -h localhost -U mq
