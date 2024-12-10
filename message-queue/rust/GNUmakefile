@@ -1,6 +1,6 @@
 .DEFAULT_TARGET := build
 
 .PHONY: build
-build:
+build: ## Build
 
 	cargo build

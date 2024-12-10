@@ -1,12 +1,12 @@
 include ../mqp-base.mk
 
 .PHONY: build
-build: # Build
+build: ## Build
 
 	# NOOP
 
 .PHONY: check
-check: # Run unit tests tests
+check: ## Run unit tests tests
 
 	pytest --cov-report=term-missing --cov=jmcgmqp -m 'not integration' ./
 

@@ -8,7 +8,7 @@ CXXOPTS+=-o main
 sources := $(wildcard src/*)
 
 .PHONY: build
-build: main
+build: main ##  Build
 
 main: $(sources)
 	g++ src/main.cpp $(CXXOPTS)
