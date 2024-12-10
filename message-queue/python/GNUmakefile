@@ -6,6 +6,11 @@ build: # Build
 	# NOOP
 
 .PHONY: check
-check: # Run tests
+check: # Run unit tests tests
+
+	pytest --cov-report=term-missing --cov=jmcgmqp -m 'not integration' ./
+
+.PHONY: check-full
+check-full: ## Run all the tests
 
 	pytest --cov-report=term-missing --cov=jmcgmqp -m 'not integration' ./
