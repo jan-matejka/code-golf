@@ -1,3 +1,5 @@
+include ../mqp-base.mk
+
 .PHONY: all
 all: format build
 

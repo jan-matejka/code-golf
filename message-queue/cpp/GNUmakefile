@@ -1,3 +1,5 @@
+include ../mqp-base.mk
+
 CXXOPTS =-g -std=c++23
 CXXOPTS+=-lpqxx
 # prometheus-cpp-dev on debian
