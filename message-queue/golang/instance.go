@@ -31,14 +31,14 @@ func NewInstance() (*Instance, error) {
 }
 
 type Runtime struct {
-	ctime        time.Time
-	uuid         uuid.UUID
-	lang         string
-	lang_version string
-	runtime      string
-	os           string
-	kernel       string
-	arch         string
+	Ctime        time.Time
+	Uuid         uuid.UUID
+	Lang         string
+	Lang_version string
+	Runtime      string
+	Os           string
+	Kernel       string
+	Arch         string
 }
 
 func NewRuntime() (*Runtime, error) {
@@ -68,14 +68,14 @@ func NewRuntime() (*Runtime, error) {
 
 func (r Runtime) Map() map[string]string {
 	return map[string]string{
-		"ctime":        r.ctime.Format(time.RFC3339),
-		"uuid":         r.uuid.String(),
-		"lang":         r.lang,
-		"lang_version": r.lang_version,
-		"runtime":      r.runtime,
-		"os":           r.os,
-		"kernel":       r.kernel,
-		"arch":         r.arch,
+		"ctime":        r.Ctime.Format(time.RFC3339),
+		"uuid":         r.Uuid.String(),
+		"lang":         r.Lang,
+		"lang_version": r.Lang_version,
+		"runtime":      r.Runtime,
+		"os":           r.Os,
+		"kernel":       r.Kernel,
+		"arch":         r.Arch,
 	}
 }
 
