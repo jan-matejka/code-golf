@@ -7,6 +7,7 @@ import "time"
 import "sync"
 
 import "github.com/jan-matejka/code-golf/message-queue/golang"
+import "github.com/jan-matejka/code-golf/message-queue/golang/observer"
 
 import "github.com/jackc/pgx/v4/pgxpool"
 
@@ -104,13 +105,19 @@ func main() {
 	}
 	defer pool.Close()
 
+	pgm, err := postgres.NewPgMetrics("postgres://mq@localhost/mq?pool_max_conns=2048")
+	if err != nil {
+		die("Unable to connect to postgres metrics: %v\n", err)
+	}
+
 	sample := func(workers int) *golang.Results {
 		r := sample_workers(app, workers, pool)
-		golang.PushMetrics(
-			app,
-			golang.SampleDesc{workers, "channels", "postgres"},
-			r,
-		)
+		sampleDesc := golang.SampleDesc{workers, "channels", "postgres"}
+		golang.PushMetrics(app, sampleDesc, r)
+		err := pgm.Push(context.Background(), app.Runtime, sampleDesc, r)
+		if err != nil {
+			die("%v", err)
+		}
 		return r
 	}
 

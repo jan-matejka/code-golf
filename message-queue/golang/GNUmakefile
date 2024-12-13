@@ -14,8 +14,10 @@ format:  ## Format code
 
 	go fmt
 	go fmt cmd/main.go
+	cd observer && go fmt
 
 .PHONY: check
-check:
+check: ## Run tests
 
 	go test
+	cd observer && go test
