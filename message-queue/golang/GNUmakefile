@@ -14,3 +14,8 @@ format:  ## Format code
 
 	go fmt
 	go fmt cmd/main.go
+
+.PHONY: check
+check:
+
+	go test

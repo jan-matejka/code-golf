@@ -104,45 +104,23 @@ func main() {
 	}
 	defer pool.Close()
 
-	var workers int
-	var prev *golang.Results
-	var i int
-	for ; ; i++ {
-		workers = 1 << i
+	sample := func(workers int) *golang.Results {
 		r := sample_workers(app, workers, pool)
 		golang.PushMetrics(
 			app,
 			golang.SampleDesc{workers, "channels", "postgres"},
 			r,
 		)
-		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
-			i--
-			break
-		} else {
-			prev = r
-		}
+		return r
 	}
 
-	for workers = 1<<i + 1; workers < 1<<(i+1); workers++ {
-		r := sample_workers(app, workers, pool)
-		golang.PushMetrics(
-			app,
-			golang.SampleDesc{workers, "channels", "postgres"},
-			r,
-		)
-		if prev != nil && prev.MessagesPerSecond >= r.MessagesPerSecond {
-			break
-		} else {
-			prev = r
-		}
-	}
-
-	if prev == nil {
+	r := golang.FindMaximum(sample)
+	if r == nil {
 		die("No successful run")
 	}
 
 	fmt.Printf("Found maximum:\n")
-	prev.Print()
+	r.Print()
 
 	os.Exit(0)
 }
