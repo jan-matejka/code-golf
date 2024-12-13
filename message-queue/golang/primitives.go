@@ -46,7 +46,7 @@ func (rs *Results) Add(r *WorkerResult) {
 	rs.DurationNs += r.DurationNs
 
 	rs.DurationSeconds = float64(rs.DurationNs) * math.Pow10(-9)
-	rs.MessagesPerSecond = float64(rs.MessagesTotal) / r.DurationSeconds
+	rs.MessagesPerSecond = float64(rs.MessagesTotal) / rs.DurationSeconds
 }
 
 func (rs *Results) Print() {
