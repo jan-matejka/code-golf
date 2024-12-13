@@ -35,6 +35,11 @@ logs: ## Show container logs
 
 	podman logs -f $(NAME)
 
+.PHONY: exec
+exec: ## Exec into container
+
+	podman exec -it $(NAME) bash
+
 .PHONY: help
 help: ## Print help
 
