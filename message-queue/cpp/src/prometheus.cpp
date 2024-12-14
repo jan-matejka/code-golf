@@ -1,34 +1,7 @@
 #ifndef PROMETHEUS_CPP
 #define PROMETHEUS_CPP
-#include <string>
-#include <memory>
 
-#include <prometheus/gauge.h>
-#include <prometheus/registry.h>
-#include <prometheus/gateway.h>
-
-#include <boost/predef.h>
-#include "./log.cpp"
-#include "./config.cpp"
-#include "./runtime.cpp"
-#include "./primitives.cpp"
-
-using namespace std;
-using namespace prometheus;
-
-void PushTestMetric(Instance& app) {
-  INFO("Testing push to prometheus");
-  INFO(string(app.runtime));
-
-  auto labels = mk_labels(
-    app,
-    WorkerResult(0, 42, chrono::seconds(1)),
-    SampleDesc(4, "threading", "postgres")
-  );
-  app.prometheus.test_metric.Add(labels).Increment();
-
-  app.prometheus.Push();
-}
+#include "./prometheus.hpp"
 
 Gateway mk_gateway(const Config& c) {
   auto job_name = string("mq-producer");
@@ -38,8 +11,6 @@ Gateway mk_gateway(const Config& c) {
     job_name
   );
 }
-
-#include "prometheus.hpp"
 
 Prometheus::Prometheus(const Config &c)
 : registry(std::make_shared<Registry>())

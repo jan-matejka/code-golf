@@ -1,1 +1,1 @@
-let g:ale_cpp_gcc_options='-std=c++23 -Wall -D O_VERBOSE=0'
+let g:ale_cpp_gcc_options='-g -c -std=c++23 -Wall -D O_VERBOSE=0'

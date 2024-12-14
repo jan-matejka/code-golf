@@ -1,59 +1,17 @@
 #ifndef RUNTIME_CPP
 #define RUNTIME_CPP
 
-#include <ctime>
-#include <errno.h>
-#include <string.h>
-#include <sys/utsname.h>
+#include "./runtime.hpp"
 
-#include <chrono>
-
-#include <boost/predef.h>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-
-#include <prometheus/labels.h>
-
-#include "./log.cpp"
-#include "./config.cpp"
-#include "./prometheus.hpp"
-#include "./primitives.cpp"
-
-using namespace std;
-
-class Runtime {
-public:
-  const chrono::time_point<chrono::system_clock> ctime;
-  const boost::uuids::uuid uuid;
-  const string lang;
-  const string lang_version;
-  const string runtime;
-  const string os;
-  const string kernel;
-  const string arch;
-  Runtime();
-  map<string,string> Map() const;
-
-  string ctime_string() const {
-    // TBD: this is a mess without <format>, figure out later
-    time_t _ctime = chrono::system_clock::to_time_t(ctime);
-    auto _ctime2 = localtime(&_ctime);
-    char buff[32];
-    strftime(data(buff), 32, "%F %T", _ctime2);
-    auto s = string(buff);
-    return s;
-  }
-
-  operator std::string() const {
-    stringstream ss;
-    ss << "Runtime:";
-    for(const auto& [k, v] : Map()) {
-      ss << " " << k << "=" << v;
-    }
-    return ss.str();
-  }
-};
+string Runtime::ctime_string() const {
+  // TBD: this is a mess without <format>, figure out later
+  time_t _ctime = chrono::system_clock::to_time_t(ctime);
+  auto _ctime2 = localtime(&_ctime);
+  char buff[32];
+  strftime(data(buff), 32, "%F %T", _ctime2);
+  auto s = string(buff);
+  return s;
+}
 
 string _ver(int major, int minor, int patch) {
   ostringstream ss;
@@ -108,14 +66,6 @@ map<string,string> Runtime::Map() const {
   return xs;
 }
 
-class Instance {
-public:
-  Config config;
-  Runtime runtime;
-  Prometheus prometheus;
-  Instance();
-};
-
 Instance::Instance() : prometheus(Prometheus(config)) {}
 
 prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc) {
@@ -123,6 +73,20 @@ prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const 
   labels.merge(sdesc.Map());
   labels.insert(pair{"worker_id", to_string(wr.WorkerId)});
   return labels;
+}
+
+void PushTestMetric(Instance& app) {
+  INFO("Testing push to prometheus");
+  INFO(string(app.runtime));
+
+  auto labels = mk_labels(
+    app,
+    WorkerResult(0, 42, chrono::seconds(1)),
+    SampleDesc(4, "threading", "postgres")
+  );
+  app.prometheus.test_metric.Add(labels).Increment();
+
+  app.prometheus.Push();
 }
 
 #endif
