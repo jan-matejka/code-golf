@@ -1,6 +1,6 @@
 # Base GNU makefile for building individual implementations and
 # their container images and container.
-.DEFAULT_TARGET = build
+.DEFAULT_GOAL = build
 CONTAINERFILE := Containerfile
 COMMON_NAME := mq-producer
 NAME := $(shell basename $(CURDIR))
