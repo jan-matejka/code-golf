@@ -66,12 +66,13 @@ impl Results {
             messages += w.messages_total;
             duration += w.duration;
         }
+        let n = workers.len() as f64;
         return Self{
             workers: workers,
             messages_total: messages,
             duration: duration,
             messages_per_second:
-                messages as f64 / duration.as_secs_f64(),
+                n * messages as f64 / duration.as_secs_f64(),
         };
     }
 }
@@ -144,4 +145,32 @@ fn insert(c: &mut pg::Client, i: u64) -> Result<(),Box<dyn error::Error>> {
     let i_sql = i.to_string();
     c.execute("insert into queue (data) values ($1)", &[&i_sql])?;
     return Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn messages_per_second() {
+        let mut ws = Vec::<WorkerResult>::new();
+        ws.push(WorkerResult::new(1, 10, Duration::new(1, 0)));
+        ws.push(WorkerResult::new(2, 10, Duration::new(1, 0)));
+        let rs = Results::new(ws);
+        assert_eq!(rs.messages_per_second, 20.0);
+
+        let mut ws = Vec::<WorkerResult>::new();
+        ws.push(WorkerResult::new(1, 10, Duration::new(1, 0)));
+        ws.push(WorkerResult::new(2, 10, Duration::new(1, 0)));
+        ws.push(WorkerResult::new(3, 10, Duration::new(1, 0)));
+        ws.push(WorkerResult::new(4, 10, Duration::new(1, 0)));
+        let rs = Results::new(ws);
+        assert_eq!(rs.messages_per_second, 40.0);
+
+        let mut ws = Vec::<WorkerResult>::new();
+        ws.push(WorkerResult::new(1, 10, Duration::new(1, 0)));
+        ws.push(WorkerResult::new(2, 20, Duration::new(2, 0)));
+        let rs = Results::new(ws);
+        assert_eq!(rs.messages_per_second, 20.0);
+    }
 }
