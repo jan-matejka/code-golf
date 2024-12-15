@@ -13,10 +13,10 @@ Build
 
 3.  ``cd <lang> && make && make check`` to build message producers.
 
-    c++, go, and rust can be built localy on debian stable.
+    c++, go, can be built localy on debian stable.
 
-    python and haskell are containerized to be built with ``make image`` and ran inside ``make
-    container``.
+    python, rust and haskell are containerized to be built with ``make image`` and ran inside
+    ``make container``.
 
     Refer to ``make help`` for more.
 
