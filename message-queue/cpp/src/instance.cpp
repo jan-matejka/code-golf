@@ -1,6 +1,8 @@
 #include "./instance.hpp"
 
-Instance::Instance() : prometheus(Prometheus(config)) {}
+Instance::Instance()
+: prometheus(Prometheus(config)), pg(Postgres(config))
+{}
 
 prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc) {
   Labels labels = app.runtime.Map();

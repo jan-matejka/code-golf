@@ -45,4 +45,5 @@ public:
     return ss.str();
   }
 };
+
 #endif
