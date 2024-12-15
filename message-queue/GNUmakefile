@@ -9,9 +9,12 @@ PORTS+= -p 127.0.0.1:9187:9187
 PORTS+= -p 127.0.0.1:3000:3000
 
 containers=$(shell find ./container -maxdepth 1 -mindepth 1 -type d | grep -v base)
+images=$(shell find ./container/ -maxdepth 1 -mindepth 1 -type d)
 
 .PHONY: build
-build: ## TBD, probably recurse into container/ and <lang>/ or container/<lang>
+build:
+
+	printf "%s\n" $(images) | xargs -n1 make build -C
 
 .PHONY: pod
 pod: ## Create the pod
