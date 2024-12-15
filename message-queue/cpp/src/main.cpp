@@ -19,6 +19,7 @@
 #include "./prometheus.hpp"
 #include "./log.hpp"
 #include "./primitives.hpp"
+#include "./instance.hpp"
 
 using namespace std;
 using namespace pqxx;

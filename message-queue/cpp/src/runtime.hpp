@@ -45,16 +45,4 @@ public:
     return ss.str();
   }
 };
-
-class Instance {
-public:
-  Config config;
-  Runtime runtime;
-  Prometheus prometheus;
-  Instance();
-};
-
-prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc);
-
-void PushTestMetric(Instance& app);
 #endif
