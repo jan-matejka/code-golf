@@ -112,7 +112,7 @@ func main() {
 
 	sample := func(workers int) *golang.Results {
 		r := sample_workers(app, workers, pool)
-		sampleDesc := golang.SampleDesc{workers, "channels", "postgres"}
+		sampleDesc := golang.SampleDesc{workers, "goroutines", "postgres"}
 		golang.PushMetrics(app, sampleDesc, r)
 		err := pgm.Push(context.Background(), app.Runtime, sampleDesc, r)
 		if err != nil {

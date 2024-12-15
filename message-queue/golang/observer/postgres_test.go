@@ -53,7 +53,7 @@ func TestPush(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	sdesc := golang.SampleDesc{2, "channels", "postgres"}
+	sdesc := golang.SampleDesc{2, "goroutines", "postgres"}
 	results := golang.NewResults()
 	results.Add(golang.NewWorkerResult(1, 10, 20))
 	results.Add(golang.NewWorkerResult(2, 30, 40))
