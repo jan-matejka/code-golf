@@ -13,6 +13,7 @@
 #include <optional>
 
 #include <boost/algorithm/string.hpp>
+#include "./algorithm.hpp"
 #include "./config.hpp"
 #include "./runtime.hpp"
 #include "./prometheus.hpp"
@@ -21,6 +22,7 @@
 
 using namespace std;
 using namespace pqxx;
+using namespace std::placeholders;
 
 class Worker {
   int worker_id;
@@ -117,12 +119,38 @@ public:
   }
 };
 
-optional<Results> sample_workers(Config c, int n) {
+void SetAndPushMetrics(
+  Instance &app,
+  Results &rs,
+  SampleDesc &sdesc
+) {
+  for(const auto& wr : rs.Workers) {
+    app.prometheus.messages_total
+      .Add(mk_labels(app, wr, sdesc))
+      .Set(wr.MessagesTotal);
+
+    app.prometheus.messages_per_second
+      .Add(mk_labels(app, wr, sdesc))
+      .Set(wr.MessagesPerSecond);
+
+    app.prometheus.duration_seconds
+      .Add(mk_labels(app, wr, sdesc))
+      .Set(wr.DurationSeconds);
+  }
+
+  app.prometheus.Push();
+}
+
+optional<Results> sample_workers(
+  Instance &app,
+  int n
+) {
   INFO("Starting " << n << " workers");
   bool exit = false;
   auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<Worker>> workers;
   barrier b(n+1);
+  auto c = app.config;
 
   {
     mutex mut;
@@ -187,8 +215,13 @@ optional<Results> sample_workers(Config c, int n) {
 
   rs.Print();
   cout << endl;
+
+  auto sdesc = SampleDesc(n, "threading", "postgres");
+  SetAndPushMetrics(app, rs, sdesc);
+
   return rs;
 }
+
 
 int _main(void) {
   auto app = Instance();
@@ -198,70 +231,14 @@ int _main(void) {
     PushTestMetric(app);
     return 0;
   }
-  optional<Results> prev = nullopt;
-  int i = app.config.power;
-  for(;;i++) {
-    int n = pow(2, i);
-    auto opt = sample_workers(app.config, n);
-    if (opt.has_value()) {
-      auto rs = opt.value();
-      auto sdesc = SampleDesc(n, "threading", "postgres");
-      for(const auto& wr : rs.Workers) {
-        app.prometheus.messages_total
-          .Add(mk_labels(app, wr, sdesc))
-          .Set(wr.MessagesTotal);
 
-        app.prometheus.messages_per_second
-          .Add(mk_labels(app, wr, sdesc))
-          .Set(wr.MessagesPerSecond);
-
-        app.prometheus.duration_seconds
-          .Add(mk_labels(app, wr, sdesc))
-          .Set(wr.DurationSeconds);
-      }
-
-      app.prometheus.Push();
-      if (prev.has_value() && rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
-        break;
-
-      prev = rs;
-    }else{
-      THROW("failed to sample " << n << " workers");
-    }
-  }
-
-  i = pow(2, i-1) + 1;
-  for(auto n : ranges::views::iota(i)) {
-    auto opt = sample_workers(app.config, i);
-    if (opt.has_value()) {
-      auto rs = opt.value();
-      auto sdesc = SampleDesc(n, "threading", "postgres");
-      for(const auto& wr : rs.Workers) {
-        app.prometheus.messages_total
-          .Add(mk_labels(app, wr, sdesc))
-          .Set(wr.MessagesTotal);
-
-        app.prometheus.messages_per_second
-          .Add(mk_labels(app, wr, sdesc))
-          .Set(wr.MessagesPerSecond);
-
-        app.prometheus.duration_seconds
-          .Add(mk_labels(app, wr, sdesc))
-          .Set(wr.DurationSeconds);
-      }
-      app.prometheus.Push();
-      if (prev.has_value() and rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
-        break;
-
-      prev = rs;
-    }else{
-      THROW("failed to sample " << n << " workers");
-    }
-  }
-
-  if (prev.has_value()) {
+  auto sampler = bind(sample_workers, ref(app), _1);
+  auto max = FindMaximum(sampler, app.config.power);
+  if (max.has_value()) {
     INFO("Found maximum:");
-    prev.value().Print();
+    max.value().Print();
+  }else{
+    THROW("Maximum is nullopt");
   }
 
   return 0;
