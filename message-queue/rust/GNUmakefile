@@ -4,3 +4,8 @@ include ../mqp-base.mk
 build: ## Build
 
 	cargo build
+
+.PHONY: check
+check: ## Check
+
+	cargo test

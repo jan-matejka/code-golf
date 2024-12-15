@@ -4,7 +4,7 @@ select
   s.id as sample_id,
   r.lang,
   s.n_workers,
-  1/power(10,-9)*sum(w.messages_total)/sum(w.duration_ns) as mps,
+  s.n_workers * 1/power(10,-9)*sum(w.messages_total)/sum(w.duration_ns) as mps,
   s.algorithm,
   s.mq_system,
   r.runtime,

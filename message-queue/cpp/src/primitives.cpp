@@ -17,7 +17,7 @@ void Results::Add(WorkerResult wr) {
   Duration += wr.Duration;
 
   DurationSeconds = Duration.count();
-  MessagesPerSecond = MessagesTotal / DurationSeconds;
+  MessagesPerSecond = Workers.size() * MessagesTotal / DurationSeconds;
 }
 
 void Results::Print() const {

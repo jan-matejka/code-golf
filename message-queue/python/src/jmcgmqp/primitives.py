@@ -36,7 +36,9 @@ class Results:
         self.messages_total = sum(r.messages_total for r in self.workers)
         self.duration_ns = sum(r.duration_ns for r in self.workers)
         self.duration_seconds = self.duration_ns * 10**-9
-        self.messages_per_second = self.messages_total / self.duration_seconds
+        self.messages_per_second = (
+            len(self.workers) * self.messages_total / self.duration_seconds
+        )
 
     def __lt__(self, x):
         return self.messages_per_second < x.messages_per_second

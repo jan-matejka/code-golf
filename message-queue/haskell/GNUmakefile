@@ -3,9 +3,14 @@ include ../mqp-base.mk
 .PHONY: build
 build: ## Build
 
-	cabal build
+	stack build
 
 .PHONY: clean
 clean: ## Clean
 
-	cabal clean
+	stack clean
+
+.PHONY: check
+check:
+
+	stack test
