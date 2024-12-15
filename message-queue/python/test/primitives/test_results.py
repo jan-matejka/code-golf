@@ -19,3 +19,31 @@ def test_total_order():
     assert r3 == r2
     assert r3 >= r2
     assert r3 <= r2
+
+def test_messages_per_second():
+    sdesc = SampleDescription(2, 'foo', 'bar')
+    rs = Results(
+        [
+            WorkerResult(sdesc, worker_id=1, messages_total=10, duration_ns=10**9),
+            WorkerResult(sdesc, worker_id=2, messages_total=10, duration_ns=10**9),
+        ]
+    )
+    assert rs.messages_per_second == 20
+
+    rs = Results(
+        [
+            WorkerResult(sdesc, worker_id=1, messages_total=10, duration_ns=10**9),
+            WorkerResult(sdesc, worker_id=2, messages_total=10, duration_ns=10**9),
+            WorkerResult(sdesc, worker_id=2, messages_total=10, duration_ns=10**9),
+            WorkerResult(sdesc, worker_id=2, messages_total=10, duration_ns=10**9),
+        ]
+    )
+    assert rs.messages_per_second == 40
+
+    rs = Results(
+        [
+            WorkerResult(sdesc, worker_id=1, messages_total=10, duration_ns=10**9),
+            WorkerResult(sdesc, worker_id=2, messages_total=20, duration_ns=2*10**9),
+        ]
+    )
+    assert rs.messages_per_second == 20
