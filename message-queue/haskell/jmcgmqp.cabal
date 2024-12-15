@@ -71,4 +71,15 @@ test-suite spec
     , jmcgmqp
     , hspec >= 2.11.9 && < 2.12
     , QuickCheck >= 2.14.3 && < 2.15
+    , clock >= 0.8.4 && < 0.9
   default-language: Haskell2010
+  default-extensions:
+    DerivingStrategies,
+    DoAndIfThenElse,
+    DisambiguateRecordFields,
+    DuplicateRecordFields,
+    ImportQualifiedPost,
+    NumericUnderscores,
+    OverloadedRecordDot,
+    OverloadedStrings,
+    StandaloneKindSignatures,

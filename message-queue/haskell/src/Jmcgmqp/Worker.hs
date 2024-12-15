@@ -2,6 +2,9 @@
 module Jmcgmqp.Worker
 ( cmdRun
 , newStart
+, newResults
+, newWorkerResult
+, Results(..)
 ) where
 
 import Data.Kind (Type)
@@ -80,7 +83,7 @@ newResults ws = Results {
   workers = ws,
   messagesTotal = totalMsg,
   duration = totalDur,
-  messagesPerSecond = mps totalMsg totalDur
+  messagesPerSecond = mps ((length ws) * totalMsg) totalDur
   }
   where
     totalMsg :: Int
