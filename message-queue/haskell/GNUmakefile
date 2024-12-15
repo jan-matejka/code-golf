@@ -9,3 +9,8 @@ build: ## Build
 clean: ## Clean
 
 	stack clean
+
+.PHONY: check
+check:
+
+	stack test
