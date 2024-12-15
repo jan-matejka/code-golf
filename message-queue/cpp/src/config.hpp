@@ -12,7 +12,9 @@ public:
   int test_prometheus = 0;
   string prometheus_gateway_host = "localhost";
   int prometheus_gateway_port = 9091;
+  string pg_results_dsn;
 
+  Config(const string&);
   Config();
   string str();
 };

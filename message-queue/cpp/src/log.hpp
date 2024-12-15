@@ -40,4 +40,17 @@ inline int igetenv(const char* x, int def) {
   }
 }
 
+inline string sgetenv(const char *x, const string def) {
+  char *c = getenv(x);
+  if(!c)
+    return def; // x undefined
+
+  string s(c);
+  boost::trim(s);
+  if (s.empty()) // x defined empty
+    return def;
+
+  return s;
+}
+
 #endif

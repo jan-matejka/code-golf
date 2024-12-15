@@ -122,8 +122,8 @@ public:
 
 void SetAndPushMetrics(
   Instance &app,
-  Results &rs,
-  SampleDesc &sdesc
+  const Results &rs,
+  const SampleDesc &sdesc
 ) {
   for(const auto& wr : rs.Workers) {
     app.prometheus.messages_total
@@ -140,6 +140,7 @@ void SetAndPushMetrics(
   }
 
   app.prometheus.Push();
+  app.pg.Push(app.runtime, sdesc, rs);
 }
 
 optional<Results> sample_workers(

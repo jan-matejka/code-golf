@@ -23,7 +23,6 @@
 using namespace std;
 
 class Runtime {
-  string ctime_string() const;
 public:
   const chrono::time_point<chrono::system_clock> ctime;
   const boost::uuids::uuid uuid;
@@ -35,6 +34,7 @@ public:
   const string arch;
   Runtime();
   map<string,string> Map() const;
+  string ctime_string() const;
 
   operator std::string() const {
     stringstream ss;
@@ -45,4 +45,5 @@ public:
     return ss.str();
   }
 };
+
 #endif

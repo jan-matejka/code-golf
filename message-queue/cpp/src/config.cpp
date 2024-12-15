@@ -6,10 +6,18 @@
 
 using namespace std;
 
-Config::Config() {
+Config::Config(const string& pg_results_dsn)
+{
   duration = igetenv("DURATION", 3);
   power = igetenv("POWER", 0);
   test_prometheus = igetenv("TEST_PROMETHEUS", 0);
+  this->pg_results_dsn = pg_results_dsn;
+}
+
+Config::Config()
+: Config(sgetenv(
+    "PG_RESULTS_DSN", string("postgres://mq@localhost:5432/mq")
+)) {
 }
 
 string Config::str() {

@@ -4,6 +4,7 @@
 #include <prometheus/labels.h>
 
 #include "./config.hpp"
+#include "./postgres.hpp"
 #include "./primitives.hpp"
 #include "./prometheus.hpp"
 #include "./runtime.hpp"
@@ -15,6 +16,7 @@ public:
   Config config;
   Runtime runtime;
   Prometheus prometheus;
+  Postgres pg;
   Instance();
 };
 
