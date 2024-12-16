@@ -22,7 +22,7 @@ optional<Results> FindMaximum(
 
   i = pow(2, i-1) + 1;
   for(auto n : ranges::views::iota(i)) {
-    auto opt = sample(i);
+    auto opt = sample(n);
     if (opt.has_value()) {
       auto rs = opt.value();
       if (prev.has_value() and rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
