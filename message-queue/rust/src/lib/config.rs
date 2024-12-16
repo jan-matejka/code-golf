@@ -13,6 +13,7 @@ pub enum Error {
 pub struct Config {
     pub test_prometheus: i64,
     pub duration: u64,
+    pub pg_telemetry_dsn: String,
 }
 
 impl Config {
@@ -38,10 +39,18 @@ impl Config {
         }
     }
 
-    pub fn new() -> Result<Self,Box<dyn error::Error>> {
+    pub fn new(
+        pg_telemetry_dsn: Option<String>
+    ) -> Result<Self,Box<dyn error::Error>> {
+        let dsn = pg_telemetry_dsn.unwrap_or(
+            Config::getenv::<String>(
+                "PG_TELEMETRY_DSN", "postgres://mq@localhost/mq".to_string()
+            )?
+        );
         return Ok(Self{
             test_prometheus: Config::getenv::<i64>("TEST_PROMETHEUS", 0)?,
             duration: Config::getenv::<u64>("DURATION", 3)?,
+            pg_telemetry_dsn: dsn,
         });
     }
 }

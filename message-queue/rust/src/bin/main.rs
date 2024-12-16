@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use jmcgmqp::{Instance,test_cmd,WorkerResult,Results,worker,SampleDesc};
 
-fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error>> {
+fn sample_workers(app: &mut Instance, n: u64) -> Result<Results,Box<dyn error::Error>> {
     println!("Spawning {} workers", n);
     let mut workers = Vec::new();
     let mut quit_sig_senders = Vec::new();
@@ -35,6 +35,12 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error
         // if we get an error, it means client disconnected; ignore.
     }
 
+    let sdesc = SampleDesc{
+        n_workers: n,
+        algorithm: "threading",
+        mq_system: "postgres",
+    };
+
     let mut wresults: Vec<WorkerResult> = Vec::new();
     for v in workers {
         let r = v.join().unwrap();
@@ -50,19 +56,15 @@ fn sample_workers(app: &Instance, n: u64) -> Result<Results,Box<dyn error::Error
         let worker_id = wr.worker_id;
 
         wresults.push(wr);
-        let sdesc = SampleDesc{
-            n_workers: n,
-            algorithm: "threading".to_string(),
-            mq_system: "postgres".to_string(),
-        };
-        app.prometheus.push(sdesc, worker_id)?;
+        app.prometheus.push(&sdesc, worker_id)?;
     }
     let results = Results::new(wresults);
+    app.postgres.push(&app.runtime, &sdesc, &results)?;
     return Ok(results);
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let app = Instance::new()?;
+    let mut app = Instance::new()?;
     if app.config.test_prometheus == 1 {
         return test_cmd(&app);
     }
@@ -75,7 +77,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             eprintln!("Ran out of u64 powers");
             exit(1);
         }
-        let rs = sample_workers(&app, pow.unwrap())?;
+        let rs = sample_workers(&mut app, pow.unwrap())?;
         println!("{}", rs);
         if prev.is_some()
         && prev.as_ref().unwrap().messages_per_second >= rs.messages_per_second
@@ -90,7 +92,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let max = base.pow(exp);
     let i = base.pow(exp-1) + 1;
     for i in i..max {
-        let rs = sample_workers(&app, i as u64)?;
+        let rs = sample_workers(&mut app, i as u64)?;
         println!("{}", rs);
         if prev.is_some()
         && prev.as_ref().unwrap().messages_per_second >= rs.messages_per_second

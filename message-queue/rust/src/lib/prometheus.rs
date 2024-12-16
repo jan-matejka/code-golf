@@ -44,7 +44,7 @@ impl Prometheus {
         return Ok(s);
     }
 
-    pub fn push(&self, sdesc: SampleDesc, worker_id: u64) -> Result<(),Box<dyn error::Error>> {
+    pub fn push(&self, sdesc: &SampleDesc, worker_id: u64) -> Result<(),Box<dyn error::Error>> {
         let metrics = self.registry.gather();
         let mut labels = sdesc.to_map();
         labels.insert("worker_id".to_string(), worker_id.to_string());
@@ -69,12 +69,12 @@ pub fn test_cmd(app: &Instance) -> Result<(), Box<dyn error::Error>> {
 
     let sdesc = SampleDesc{
         n_workers: 4,
-        algorithm: "threading".to_string(),
-        mq_system: "postgres".to_string(),
+        algorithm: "threading",
+        mq_system: "postgres",
     };
 
     app.prometheus.test_metric.set(2);
-    app.prometheus.push(sdesc, 1)?;
+    app.prometheus.push(&sdesc, 1)?;
 
     return Ok(());
 }

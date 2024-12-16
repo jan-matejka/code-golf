@@ -16,19 +16,23 @@ pub enum Error {
     WorkerFailed
 }
 
-pub struct SampleDesc {
+pub struct SampleDesc<'a> {
     pub n_workers: u64,
-    pub algorithm: String,
-    pub mq_system: String,
+    pub algorithm: &'a str,
+    pub mq_system: &'a str,
 }
 
-impl SampleDesc {
+impl<'a> SampleDesc<'a> {
     pub fn to_map(&self) -> HashMap<String,String> {
         let mut m = HashMap::new();
         m.insert("n_workers".to_string(), self.n_workers.to_string());
         m.insert("algorithm".to_string(), self.algorithm.to_string());
         m.insert("mq_system".to_string(), self.mq_system.to_string());
         return m;
+    }
+
+    pub fn new<'b>(n: u64, a: &'a str, mq: &'a str) -> Self {
+        return Self{n_workers: n, algorithm: a, mq_system: mq}
     }
 }
 

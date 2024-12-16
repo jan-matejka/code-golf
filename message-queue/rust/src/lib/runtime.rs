@@ -9,6 +9,7 @@ use rustc_version_runtime;
 
 use crate::Config;
 use crate::prometheus::Prometheus;
+use crate::postgres::Postgres;
 
 #[derive(Debug)]
 pub struct Runtime {
@@ -45,8 +46,8 @@ impl Runtime {
         });
     }
 
-    pub fn to_map(&self) -> HashMap<String,String> {
-        let rt_string = format!(
+    pub fn runtime_string(&self) -> String {
+        return format!(
             "{}{}",
             self.runtime.short_version_string,
             match self.runtime.llvm_version.as_ref() {
@@ -54,13 +55,15 @@ impl Runtime {
                 None => { "".to_string() }
             }
         );
+    }
 
+    pub fn to_map(&self) -> HashMap<String,String> {
         let mut m = HashMap::new();
         m.insert("ctime".to_string(), self.ctime.to_rfc3339());
         m.insert("uuid".to_string(), self.uuid.to_string());
         m.insert("lang".to_string(), self.lang.to_owned());
         m.insert("lang_version".to_string(), self.lang_version.to_string());
-        m.insert("runtime".to_string(), rt_string);
+        m.insert("runtime".to_string(), self.runtime_string());
         m.insert("os".to_string(), self.os.to_owned());
         m.insert("kernel".to_string(), self.kernel.to_owned());
         m.insert("arch".to_string(), self.arch.to_owned());
@@ -72,17 +75,21 @@ pub struct Instance {
     pub config: Config,
     pub runtime: Runtime,
     pub prometheus: Prometheus,
+    pub postgres: Postgres,
 }
 
 impl Instance {
     pub fn new() -> Result<Self,Box<dyn error::Error>> {
         let r = Runtime::new()?;
         let p = Prometheus::new(&r)?;
+        let cg = Config::new(None)?;
+        let pg = Postgres::new(&cg)?;
         return Ok(
             Self{
-                config: Config::new()?,
+                config: cg,
                 runtime: r,
                 prometheus: p,
+                postgres: pg,
             }
         );
     }
