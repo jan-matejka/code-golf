@@ -5,7 +5,8 @@ RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-rec
 RUN apt-get update
 
 RUN apt-get install -y \
-  vim procps iproute2 make git zsh ca-certificates libpq-dev pkg-config libssl-dev
+  vim procps iproute2 make git zsh ca-certificates libpq-dev \
+  pkg-config libssl-dev less
 
 RUN useradd -m -s /bin/zsh user
 USER user
