@@ -9,7 +9,8 @@ import Data.ByteString.Lazy.Char8 qualified as B
 
 import Prometheus (exportMetricsAsText, incGauge)
 
-import Jmcgmqp.Runtime (Instance(runtime, metrics), Runtime, runtimeAsMap)
+import Jmcgmqp.Instance (Instance(runtime, metrics))
+import Jmcgmqp.Runtime (Runtime, runtimeAsMap)
 import Jmcgmqp.Prometheus.Metrics (
   Metrics(test), newMetrics, SampleDesc(SampleDesc), sdescAsMap)
 import Jmcgmqp.Prometheus.Http (pushAdd)

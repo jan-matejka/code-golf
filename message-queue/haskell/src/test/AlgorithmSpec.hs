@@ -2,10 +2,9 @@ module AlgorithmSpec
 ( spec )
 where
 
-import Test.Hspec
+import Test.Hspec (Spec, describe, it, shouldBe)
 
-import System.Clock (TimeSpec(..))
-import Jmcgmqp.Algorithm
+import Jmcgmqp.Algorithm (newStart)
 
 spec :: Spec
 spec = do
