@@ -14,6 +14,7 @@ common all
     OverloadedRecordDot,
     OverloadedStrings,
     StandaloneKindSignatures,
+    -- MultilineStrings, -- since 9.12.1
 
 Executable main
   import: all
@@ -34,6 +35,7 @@ Library
   Hs-Source-Dirs: ./src
   Exposed-Modules:
     Jmcgmqp,
+    Jmcgmqp.Postgres,
     Jmcgmqp.Prometheus,
     Jmcgmqp.Prometheus.Metrics,
     Jmcgmqp.Runtime,
@@ -82,3 +84,4 @@ test-suite spec
     , bytestring >= 0.11.5 && <0.12
   Other-Modules:
     WorkerSpec,
+    PostgresSpec
