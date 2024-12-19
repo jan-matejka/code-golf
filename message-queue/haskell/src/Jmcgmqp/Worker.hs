@@ -5,7 +5,7 @@ module Jmcgmqp.Worker
 , newResults
 , newWorkerResult
 , Results(..)
-, WorkerResult
+, WorkerResult(..)
 ) where
 
 import Data.Kind (Type)
@@ -26,7 +26,7 @@ import Prometheus (setGauge)
 
 import Jmcgmqp.Runtime (Instance(Instance, metrics, runtime), config)
 import Jmcgmqp.Config (duration, Config(Config), power)
-import Jmcgmqp.Prometheus.Metrics (SampleDesc(SampleDesc),
+import Jmcgmqp.Prometheus.Metrics (SampleDesc(..),
   Metrics(messagesTotal, messagesPerSecond, durationSeconds)
   )
 import Jmcgmqp.Prometheus (push)

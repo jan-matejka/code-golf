@@ -8,17 +8,19 @@ import Test.QuickCheck
 import System.Clock (TimeSpec(..))
 import Control.Monad (void)
 
-import Database.PostgreSQL.Simple (execute, connectPostgreSQL)
+import Database.PostgreSQL.Simple (execute_, connectPostgreSQL)
 
 import Jmcgmqp.Prometheus.Metrics (SampleDesc(SampleDesc))
 import Jmcgmqp.Worker
-import Jmcgmqp.Postgres
+import Jmcgmqp.Postgres (newPostgres, push)
+import Jmcgmqp.Runtime (newRuntime)
 
 mkDb :: IO ()
 mkDb = do
   c <- connectPostgreSQL "postgres://postgres@localhost:5433"
-  void . execute c "drop database if exists test"
-  void . execute c "create database test template mq"
+  execute_ c "drop database if exists test"
+  execute_ c "create database test template mq"
+  return ()
 
 spec :: Spec
 spec = do
