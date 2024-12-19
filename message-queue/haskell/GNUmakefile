@@ -11,6 +11,6 @@ clean: ## Clean
 	stack clean
 
 .PHONY: check
-check:
+check: ## Check
 
 	stack test
