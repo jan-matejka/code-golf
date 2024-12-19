@@ -82,3 +82,5 @@ test-suite spec
     OverloadedRecordDot,
     OverloadedStrings,
     StandaloneKindSignatures,
+  Other-Modules:
+    WorkerSpec,
