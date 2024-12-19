@@ -9,6 +9,7 @@ import Database.PostgreSQL.Simple (
   Connection, execute, Only(Only), connectPostgreSQL, query, Query)
 import Data.ByteString (ByteString)
 import System.Clock (toNanoSecs, TimeSpec)
+import Control.Exception (onException, catch, throw, Exception, ErrorCall, displayException)
 
 import Jmcgmqp.Runtime (Runtime(..))
 import Jmcgmqp.Prometheus.Metrics (SampleDesc(..))
@@ -30,19 +31,31 @@ push pg r sdesc rs = do
   mapM_ (createWorker pg sample_id) (rs.workers::[WorkerResult])
 
 createRuntime :: Postgres -> Runtime -> IO Int
-createRuntime pg r = do
-  let q = read $ unlines
-        [ "insert into results.runtime ("
-        , "  ctime, uuid, lang, lang_version, runtime, os, kernel, arch"
-        , ") values ("
-        , " ?, ?, ?, ?, ?, ?, ?, ?"
-        , ")"
-        , "returning id"
-        ] :: Query
+createRuntime pg r = catch runQuery handleExc
+  where
+    q = read $ unlines
+      [ "insert into results.runtime ("
+      , "  ctime, uuid, lang, lang_version, runtime, os, kernel, arch"
+      , ") values ("
+      , " ?, ?, ?, ?, ?, ?, ?, ?"
+      , ")"
+      , "returning id"
+      ] :: Query
 
-  [Only id]
-    <- query pg.conn q
-    ( r.ctime
+    runQuery = do
+      [Only id] <- query pg.conn q args
+      return id
+
+    args = (0::Int, show r.uuid, "lang"::String, "lver"::String,
+      "runtime"::String, "os"::String, "ernel"::String, "arch"::String)
+
+    handleExc :: ErrorCall -> IO Int
+    handleExc e = do
+      print e
+      putStrLn $ displayException e
+      throw e
+
+    {- ( r.ctime
     , r.uuid
     , r.lang
     , r.lang_version
@@ -50,8 +63,7 @@ createRuntime pg r = do
     , r.os
     , r.kernel
     , r.arch
-    )
-  return id
+    )-}
 
 createSample :: Postgres -> Int -> SampleDesc -> IO Int
 createSample pg runtime_id sdesc = do
