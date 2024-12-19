@@ -30,7 +30,7 @@ spec = do
              , newWorkerResult 2 20 $ TimeSpec 2 0
              ]
       mkDb
-      pg <- newPostgres
+      pg <- newPostgres "postgres://postgres@localhost:5433/test"
       r <- newRuntime
       push pg r sdesc rs
       0 `shouldBe` 1

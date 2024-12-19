@@ -5,6 +5,7 @@ module Jmcgmqp.Worker
 , newResults
 , newWorkerResult
 , Results(..)
+, WorkerResult
 ) where
 
 import Data.Kind (Type)
