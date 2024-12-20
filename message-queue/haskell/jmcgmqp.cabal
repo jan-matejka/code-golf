@@ -2,9 +2,25 @@ Cabal-Version: 3.4
 Name: jmcgmqp
 Version: 0.1.1
 
+common all
+  default-language: Haskell2010
+  default-extensions:
+    DerivingStrategies,
+    DoAndIfThenElse,
+    DisambiguateRecordFields,
+    DuplicateRecordFields,
+    ImportQualifiedPost,
+    NumericUnderscores,
+    OverloadedRecordDot,
+    OverloadedStrings,
+    StandaloneKindSignatures,
+
 Executable main
+  import: all
   Main-is: Main.hs
-  Build-Depends: base >4 && <5
+  Build-Depends:
+    base >4 && < 5
+    , jmcgmqp
   Hs-Source-Dirs: ./src/bin
   ghc-options: -Wall -Weverything
     -Wno-unsafe -Wno-missing-safe-haskell-mode -Wno-safe
@@ -12,11 +28,9 @@ Executable main
     -Wno-implicit-prelude
  -- can't enable -Wno-unsafe due to postgresql-simple not being safe, maybe later.
  -- -Wall-missed-specializations might be worthwhile, later.
-  Build-Depends:
-    base >4 && < 5
-    , jmcgmqp
 
 Library
+  import: all
   Hs-Source-Dirs: ./src
   Exposed-Modules:
     Jmcgmqp,
@@ -30,16 +44,6 @@ Library
     -Wno-implicit-prelude
  -- can't enable -Wno-unsafe due to postgresql-simple not being safe, maybe later.
  -- -Wall-missed-specializations might be worthwhile, later.
-  default-extensions:
-    DerivingStrategies,
-    DoAndIfThenElse,
-    DisambiguateRecordFields,
-    DuplicateRecordFields,
-    ImportQualifiedPost,
-    NumericUnderscores,
-    OverloadedRecordDot,
-    OverloadedStrings,
-    StandaloneKindSignatures,
   Other-Modules:
     Jmcgmqp.Config,
     Jmcgmqp.Uname,
@@ -63,6 +67,7 @@ Library
     , uri-encode >= 1.5.0.7 && < 1.6
 
 test-suite spec
+  import: all
   type: exitcode-stdio-1.0
   hs-source-dirs: src/test
   main-is: Main.hs
@@ -71,16 +76,7 @@ test-suite spec
     , jmcgmqp
     , hspec >= 2.11.9 && < 2.12
     , clock >= 0.8.4 && < 0.9
-  default-language: Haskell2010
-  default-extensions:
-    DerivingStrategies,
-    DoAndIfThenElse,
-    DisambiguateRecordFields,
-    DuplicateRecordFields,
-    ImportQualifiedPost,
-    NumericUnderscores,
-    OverloadedRecordDot,
-    OverloadedStrings,
-    StandaloneKindSignatures,
+    , postgresql-simple >= 0.7.0 && < 0.8
+    , bytestring >= 0.11.5 && <0.12
   Other-Modules:
     WorkerSpec,
