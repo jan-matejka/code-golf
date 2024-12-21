@@ -22,6 +22,9 @@ common all
     -Wno-all-missed-specializations
     -- ^ might be worthwhile, later.
     -Wno-implicit-prelude
+    -Wno-name-shadowing
+    -- ^ just gets in the way with little benefit.
+    -- Especially due to field selectors.
 
 common deps
   Build-Depends:
