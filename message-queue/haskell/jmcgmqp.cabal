@@ -46,6 +46,7 @@ Library
   Hs-Source-Dirs: ./src
   Exposed-Modules:
     Jmcgmqp,
+    Jmcgmqp.Algorithm,
     Jmcgmqp.Prometheus,
     Jmcgmqp.Prometheus.Metrics,
     Jmcgmqp.Runtime,
@@ -81,3 +82,4 @@ test-suite spec
     , Decimal >= 0.5.2 && <0.6
   Other-Modules:
     WorkerSpec,
+    AlgorithmSpec,
