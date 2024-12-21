@@ -15,11 +15,13 @@ common all
     OverloadedStrings,
     StandaloneKindSignatures,
   ghc-options: -Wall -Weverything
-    -Wno-unsafe -Wno-missing-safe-haskell-mode -Wno-safe
+    -Wno-unsafe
+    -- ^ postgresql-simple is not safe, maybe later.
+    -Wno-missing-safe-haskell-mode
+    -Wno-safe
     -Wno-all-missed-specializations
+    -- ^ might be worthwhile, later.
     -Wno-implicit-prelude
- -- can't enable -Wno-unsafe due to postgresql-simple not being safe, maybe later.
- -- -Wall-missed-specializations might be worthwhile, later.
 
 common deps
   Build-Depends:
