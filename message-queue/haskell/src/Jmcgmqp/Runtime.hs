@@ -1,7 +1,5 @@
 module Jmcgmqp.Runtime
-( Instance(Instance, config, metrics, runtime)
-, Runtime(..)
-, newInstance
+( Runtime(..)
 , newRuntime
 , runtimeAsMap
 ) where
@@ -18,9 +16,7 @@ import Data.Version (showVersion)
 import System.Info qualified as I
 import Text.Printf (printf)
 
-import Jmcgmqp.Config (newConfig, Config)
 import Jmcgmqp.Uname (getKernel)
-import Jmcgmqp.Prometheus.Metrics (newMetrics, Metrics)
 
 type Runtime :: Type
 data Runtime = Runtime {
@@ -64,16 +60,3 @@ runtimeAsMap r = fromList [
   ("kernel", pack $ kernel r),
   ("arch", pack $ arch r)
   ]
-
-type Instance :: Type
-data Instance = Instance {
-  config :: Config,
-  runtime :: Runtime,
-  metrics :: Metrics
-  }
-
-newInstance :: IO Instance
-newInstance = do
-  c <- newConfig
-  r <- newRuntime
-  Instance c r <$> newMetrics
