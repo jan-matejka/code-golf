@@ -3,7 +3,7 @@ Name: jmcgmqp
 Version: 0.1.1
 
 common all
-  default-language: Haskell2010
+  default-language: GHC2021
   default-extensions:
     DerivingStrategies,
     DoAndIfThenElse,
