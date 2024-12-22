@@ -1,5 +1,5 @@
-# Base GNU makefile for building individual implementations and
-# their container images and container.
+# Base GNU makefile for building message producers, and their container
+# images and providing container helpers.
 .DEFAULT_GOAL = build
 CONTAINERFILE := Containerfile
 COMMON_NAME := mq-producer
