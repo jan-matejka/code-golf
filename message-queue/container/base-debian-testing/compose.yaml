@@ -1,0 +1,5 @@
+services:
+  base-debian-testing:
+    build:
+      context: container/base-debian-testing
+      dockerfile: Containerfile

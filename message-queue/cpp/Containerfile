@@ -1,8 +1,4 @@
-FROM localhost/base-debian
+FROM localhost/message-queue_producer-cpp-dev
 
-RUN apt-get install -y \
-  prometheus-cpp-dev libgtest-dev libboost-dev libpqxx-dev
-
-USER user
-COPY --chown=user ../mqp-base.mk /home/user/
-WORKDIR mq
+COPY --chown=user cpp/ ./
+RUN make build

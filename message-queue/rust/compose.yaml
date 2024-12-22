@@ -1,0 +1,17 @@
+services:
+  producer-rust-dev:
+    build:
+      context: ./
+      dockerfile: rust/Containerfile-dev
+    userns_mode: "keep-id"
+    network_mode: host
+    volumes:
+      - "./rust:/home/user/mq:U"
+    entrypoint: /bin/zsh
+
+  producer-rust:
+    build:
+      context: ./
+      dockerfile: rust/Containerfile
+    network_mode: host
+    entrypoint: /home/user/mq/main

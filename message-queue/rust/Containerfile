@@ -1,16 +1,4 @@
-FROM localhost/base-debian-testing
+FROM localhost/message-queue_producer-rust-dev
 
-USER root
-RUN apt-get install -y openssl rust-all
-
-USER user
-COPY --chown=user ../mqp-base.mk /home/user/
-COPY --chown=user rust/Cargo.toml rust/Cargo.lock  mq/
-
-RUN cd mq && cargo fetch
-RUN mkdir -p mq/src/lib mq/src/bin && \
-  echo '// dummy' >> mq/src/lib/lib.rs && \
-  echo 'fn main() {}' >> mq/src/bin/main.rs
-RUN cd mq && cargo build
-
-WORKDIR mq
+COPY --chown=user rust/ ./
+RUN make build

@@ -3,7 +3,7 @@ include ../mqp-base.mk
 .PHONY: build
 build: ## Build
 
-	# NOOP
+	ln -snf src/jmcgmqp/main.py main
 
 .PHONY: check
 check: ## Run unit tests tests

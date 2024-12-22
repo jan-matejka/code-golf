@@ -1,0 +1,17 @@
+services:
+  producer-python-dev:
+    build:
+      context: ./
+      dockerfile: python/Containerfile-dev
+    userns_mode: "keep-id"
+    network_mode: host
+    volumes:
+      - "./python:/home/user/mq:U"
+    entrypoint: /bin/zsh
+
+  producer-python:
+    build:
+      context: ./
+      dockerfile: python/Containerfile
+    network_mode: host
+    entrypoint: /bin/zsh -c 'source ~/venv/bin/activate && /home/user/mq/main'

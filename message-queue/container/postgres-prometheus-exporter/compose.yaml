@@ -1,0 +1,12 @@
+services:
+  postgres-prometheus-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    expose:
+      - 9187
+    ports:
+      - "127.0.0.1:9187:9187"
+    environment:
+      DATA_SOURCE_URI: postgres:5432/postgres?sslmode=disable
+      DATA_SOURCE_USER: postgres
+      DATA_SOURCE_PASS:
+

@@ -1,0 +1,20 @@
+# vi: ft=dockerfile
+
+FROM localhost/message-queue_base-debian
+
+RUN apt-get install -y python3 python3-venv
+
+COPY --chown=user python/setup.py mq/
+COPY --chown=user python/src/jmcgmqp/__init__.py mq/src/jmcgmqp/
+
+USER user
+RUN set -e;\
+  python3 -m venv venv;\
+  . venv/bin/activate;\
+  cd mq;\
+  ls;\
+  pip install -e .[test]
+
+COPY --chown=user mqp-base.mk /home/user/
+COPY --chown=user python/container/zshrc /home/user/.zshrc2
+WORKDIR mq
