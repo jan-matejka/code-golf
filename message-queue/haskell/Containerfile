@@ -15,4 +15,3 @@ RUN cd mq && stack build --only-dependencies
 
 COPY --chown=user ../mqp-base.mk /home/user/
 WORKDIR mq
-COPY --chown=user ./ ./
