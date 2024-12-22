@@ -15,5 +15,4 @@ RUN set -e;\
 
 COPY --chown=user mqp-base.mk /home/user/
 COPY --chown=user python/container/zshrc /home/user/.zshrc2
-COPY --chown=user ./ mq/
 WORKDIR mq
