@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Jmcgmqp.Algorithm
 ( cmdRun
 , newStart

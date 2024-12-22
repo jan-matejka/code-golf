@@ -6,14 +6,10 @@ common all
   default-language: GHC2021
   default-extensions:
     DerivingStrategies,
-    DoAndIfThenElse,
-    DisambiguateRecordFields,
+    -- ^ GHC2024 default
     DuplicateRecordFields,
-    ImportQualifiedPost,
-    NumericUnderscores,
     OverloadedRecordDot,
     OverloadedStrings,
-    StandaloneKindSignatures,
     -- MultilineStrings, -- since 9.12.1
   ghc-options: -Wall -Weverything
     -Wno-unsafe
