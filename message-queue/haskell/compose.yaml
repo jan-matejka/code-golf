@@ -1,0 +1,5 @@
+services:
+  producer-haskell:
+    build:
+      context: haskell
+      dockerfile: Containerfile

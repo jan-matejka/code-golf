@@ -1,0 +1,14 @@
+services:
+  grafana:
+    image: docker.io/grafana/grafana
+    expose:
+      - 3000
+    #ports:
+    #  - "127.0.0.1:3000:3000"
+    # userns_mode: "keep-id"
+    x-podman.uidmap:
+      - 472:1000:1
+    network_mode: host
+    volumes:
+      - "./container/grafana/grafana.db:/var/lib/grafana/grafana.db:U"
+

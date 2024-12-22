@@ -1,0 +1,24 @@
+x-podman:
+  in_pod: False
+
+include:
+  - container/base-debian/compose.yaml
+  - container/base-debian-testing/compose.yaml
+  - container/base-haskell/compose.yaml
+  - container/grafana/compose.yaml
+  - container/postgres/compose.yaml
+  - container/postgres-prometheus-exporter/compose.yaml
+  - container/postgres-test/compose.yaml
+  - container/prometheus/compose.yaml
+  - container/pushgateway/compose.yaml
+  - cpp/compose.yaml
+
+services:
+  infra:
+    depends_on:
+      - grafana
+      - postgres
+      - postgres-test
+      - prometheus
+      - pushgateway
+      - postgres-prometheus-exporter

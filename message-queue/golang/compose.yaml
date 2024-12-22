@@ -1,0 +1,5 @@
+services:
+  producer-golang:
+    build:
+      context: golang
+      dockerfile: Containerfile

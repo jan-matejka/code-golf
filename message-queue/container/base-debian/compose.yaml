@@ -1,0 +1,5 @@
+services:
+  base-debian:
+    build:
+      context: container/base-debian
+      dockerfile: Containerfile

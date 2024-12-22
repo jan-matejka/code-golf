@@ -1,0 +1,17 @@
+services:
+  producer-cpp:
+    build:
+      context: ./
+      dockerfile: cpp/Containerfile
+    userns_mode: "keep-id"
+    network_mode: host
+    volumes:
+      - "./cpp:/home/user/mq:U"
+    entry_point: ./main
+    depends_on:
+      - grafana
+      - postgres
+      - postgres-test
+      - prometheus
+      - pushgateway
+      - postgres-prometheus-exporter

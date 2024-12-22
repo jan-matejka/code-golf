@@ -1,0 +1,5 @@
+services:
+  base-haskell:
+    build:
+      context: container/base-haskell
+      dockerfile: Containerfile
