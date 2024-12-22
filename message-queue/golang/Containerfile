@@ -1,0 +1,11 @@
+FROM localhost/base-debian
+
+RUN apt-get install -y \
+  golang
+
+USER user
+COPY --chown=user ../mqp-base.mk /home/user/
+COPY --chown=user golang/go.mod golang/go.sum /home/user/mq/
+
+WORKDIR mq
+RUN echo 'package golang' >config.go && go get -t -x ./
