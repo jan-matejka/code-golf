@@ -12,6 +12,5 @@ RUN mkdir -p mq/src/lib mq/src/bin && \
   echo '// dummy' >> mq/src/lib/lib.rs && \
   echo 'fn main() {}' >> mq/src/bin/main.rs
 RUN cd mq && cargo build
-#
-#WORKDIR mq
-#COPY --chown=user ./ ./
+
+WORKDIR mq
