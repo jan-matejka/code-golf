@@ -12,7 +12,7 @@ containers=$(shell find ./container -maxdepth 1 -mindepth 1 -type d | grep -v ba
 images=$(shell find ./container/ -maxdepth 1 -mindepth 1 -type d)
 
 .PHONY: build
-build:
+build: ## Build all images
 
 	printf "%s\n" $(images) | xargs -n1 make build -C
 
