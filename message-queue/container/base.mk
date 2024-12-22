@@ -5,6 +5,11 @@ build: ## Build the image
 
 	podman build -t localhost/$(NAME) ./
 
+.PHONY: rebuild
+rebuild: ## Rebuild the image (--no-cache)
+
+	podman build --no-cache -t localhost/$(NAME) ./
+
 .PHONY: pull
 pull: ## Pull the base image
 
