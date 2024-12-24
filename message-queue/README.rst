@@ -37,3 +37,10 @@ Dev Notes
   be available.
 
 - Some containers assume the user's id=1000 (namely grafana at the moment) for uid maps.
+
+Example
+#######
+
+Runtimes overview from my workstation:
+
+.. image:: ./assets/runtimes-overview.png
