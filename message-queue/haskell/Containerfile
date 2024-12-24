@@ -1,17 +1,4 @@
-FROM localhost/base-haskell
+FROM localhost/message-queue_producer-haskell-dev
 
-USER root
-RUN apt-get install -y libpq-dev libghc-zlib-dev
-# libpq-dev required by postgres-simple
-# libghc-zlib-dev required by http-client (zlib)
-
-USER user
-# Note the snapshot of stack.yml here must match the one from dummy
-# Add a check later
-# Note: podman-build can mount a volume, however, it does not accept --userns=keep-id so the
-# permissions gets messed up
-COPY --chown=user haskell/jmcgmqp.cabal haskell/stack.yaml mq/
-RUN cd mq && stack build --only-dependencies
-
-COPY --chown=user ../mqp-base.mk /home/user/
-WORKDIR mq
+COPY --chown=user haskell/ ./
+RUN make build

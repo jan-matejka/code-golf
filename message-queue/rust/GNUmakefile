@@ -4,6 +4,7 @@ include ../mqp-base.mk
 build: ## Build
 
 	cargo build
+	ln -snf target/debug/main main
 
 .PHONY: check
 check: ## Check

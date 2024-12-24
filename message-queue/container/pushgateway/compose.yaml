@@ -1,0 +1,7 @@
+services:
+  pushgateway:
+    image: quay.io/prometheus/pushgateway
+    expose:
+      - 9091
+    ports:
+      - "127.0.0.1:9091:9091"

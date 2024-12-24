@@ -4,30 +4,43 @@ Message Queue
 
 .. image:: ./assets/overview.png
 
+Dependencies
+############
+
+- Podman >= 4.3.1
+- Podman-compose >= 1.2.0
+- GNU make
+
 Build
 #####
 
-1. ``$ make build`` to build the infra containers with podman
+1. Build all the container images (this will take a while):
 
-2. ``$ make pod`` to run the required infra in a pod with port forwarding from the host.
+    ``$ podman-compose build``
 
-3.  ``cd <lang> && make && make check`` to build message producers.
+2. Start infrastructure:
 
-    c++, go, can be built localy on debian stable.
+    ``$ podman-compose up -d infra``
 
-    python, rust and haskell are containerized to be built with ``make image`` and ran inside
-    ``make container``.
+3. Run message proucers:
 
-    Refer to ``make help`` for more.
+    ``$ make run-producers``
 
-4. Run the message producers ``./main``.
+4. Open grafana at http://localhost:3000. Login as admin/admin. Navigate to the overview dashboard.
 
-   Sometimes you need to locate the binary first depending on build system (e.g. haskell, rust).
+Dev Notes
+#########
 
-   Note not all implementation support the metric visualization yet (see https://github.com/jan-matejka/code-golf/issues/6).
+- Producers have -dev versions of the container for development with sources bind mounted.
 
-5. Open grafana at http://localhost:3000.
+- All the containers run on host network (to support --userns for -dev containers) so ports need to
+  be available.
 
-   Login as admin/admin.
+- Some containers assume the user's id=1000 (namely grafana at the moment) for uid maps.
 
-   Navigate to the overview dashboard.
+Example
+#######
+
+Runtimes overview from my workstation:
+
+.. image:: ./assets/runtimes-overview.png
