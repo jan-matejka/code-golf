@@ -1,6 +1,6 @@
 # vi: ft=dockerfile
 
-FROM localhost/message-queue_base-debian
+FROM localhost/code-golf_message-queue_base-debian
 
 RUN apt-get install -y \
   prometheus-cpp-dev libgtest-dev libboost-dev libpqxx-dev libfmt-dev

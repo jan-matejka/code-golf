@@ -1,5 +1,5 @@
 # vi: ft=dockerfile
-FROM localhost/message-queue_base-haskell
+FROM localhost/code-golf_message-queue_base-haskell
 
 USER root
 RUN apt-get install -y libpq-dev libghc-zlib-dev

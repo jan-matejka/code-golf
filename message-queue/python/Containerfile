@@ -1,4 +1,4 @@
-FROM localhost/message-queue_producer-python-dev
+FROM localhost/code-golf_message-queue_producer-python-dev
 
 COPY --chown=user python/ ./
 RUN make build

@@ -1,5 +1,5 @@
 # vi: ft=dockerfile
-FROM localhost/message-queue_base-debian-testing
+FROM localhost/code-golf_message-queue_base-debian-testing
 
 USER root
 RUN apt-get install -y openssl rust-all

@@ -1,4 +1,4 @@
-FROM localhost/message-queue_producer-cpp-dev
+FROM localhost/code-golf_message-queue_producer-cpp-dev
 
 COPY --chown=user cpp/ ./
 RUN make build

@@ -1,4 +1,4 @@
-FROM localhost/message-queue_producer-rust-dev
+FROM localhost/code-golf_message-queue_producer-rust-dev
 
 COPY --chown=user rust/ ./
 RUN make build

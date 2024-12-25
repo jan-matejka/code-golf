@@ -1,4 +1,4 @@
-FROM localhost/message-queue_producer-golang-dev
+FROM localhost/code-golf_message-queue_producer-golang-dev
 
 COPY --chown=user golang/ ./
 RUN make build

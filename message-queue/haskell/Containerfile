@@ -1,4 +1,4 @@
-FROM localhost/message-queue_producer-haskell-dev
+FROM localhost/code-golf_message-queue_producer-haskell-dev
 
 COPY --chown=user haskell/ ./
 RUN make build

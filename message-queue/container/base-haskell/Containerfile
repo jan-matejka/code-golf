@@ -1,4 +1,4 @@
-FROM localhost/message-queue_base-debian
+FROM localhost/code-golf_message-queue_base-debian
 # Base image with haskell tooling
 
 RUN apt-get install -y \
