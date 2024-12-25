@@ -1,0 +1,86 @@
+name: Build and push container image
+description: with layer caching
+inputs:
+  image:
+    required: true
+    description: image name to build with podman-compose
+  dir:
+    required: true
+    description: directory to call podman-compose in
+  repository:
+    description: git repository name
+    default: code-golf
+  registry:
+    description: registry
+    default: ghcr.io/${{ github.repository_owner }}
+  registry_user:
+    description: registry user
+    default: ${{ github.actor }}
+  registry_pass:
+    description: registry password
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v45
+
+    - name: Show changed files
+      env:
+        changed: ${{ steps.changed-files.outputs.all_changed_files }}
+      run: printf "%s\n" $changed
+      shell: sh
+
+    - name: Install podman-compose
+      run: pip3 install podman-compose
+      shell: sh
+      # Ubuntu also uses too old (1.0.6) version
+      #  run: sudo apt-get install -y podman-compose
+
+    - name: Print podman-compose version
+      run: podman-compose version
+      shell: sh
+
+    - name: Log in to the Github Container registry
+      uses: redhat-actions/podman-login@v1
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry_user }}
+        password: ${{ inputs.registry_pass }}
+
+    - name: Build image
+      env:
+        IMAGE_FULL: >-
+          ${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
+        CACHE: >-
+          ${{ inputs.registry }}/${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
+      run: >
+        set -x && cd message-queue &&
+        podman-compose
+        -p code-golf_${{ inputs.dir }}
+        --podman-build-args "-t ${{ env.IMAGE_FULL }}:${{ github.sha }}
+        --cache-from=${{ env.CACHE }}
+        --cache-to=${{ env.CACHE }}"
+        build "${{ inputs.image }}"
+      shell: sh
+
+    - name: Push image
+      id: push
+      uses: redhat-actions/push-to-registry@v2
+      env:
+        IMAGE_FULL: >
+          ${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
+      with:
+        image: ${{ env.IMAGE_FULL }}
+        tags: ${{ github.sha }}
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry_user }}
+        password: ${{ inputs.registry_pass }}
+
+    - name: Print image url
+      run: >
+        printf "Image pushed to %s\n"
+        "${{ steps.push.outputs.registry-paths }}"
+      shell: sh
