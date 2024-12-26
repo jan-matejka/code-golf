@@ -1,11 +1,6 @@
 FROM docker.io/library/postgres:latest
 
-LABEL name mq/postgres
-
-USER root
-ENV POSTGRES_HOST_AUTH_METHOD trust
-
-RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
-RUN apt-get update
-RUN apt-get install -y procps iproute2 make
-RUN rm -rf /var/cache/apt/* /var/lib/apt/*
+# Github Actions workflows can't give command to service container so
+# we have to bake it into our own image.
+# https://github.com/orgs/community/discussions/52675
+CMD postgres -c 'config_file=/etc/postgres/postgresql.conf'
