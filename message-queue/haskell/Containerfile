@@ -1,4 +1,6 @@
-FROM localhost/code-golf_message-queue_producer-haskell-dev
+ARG registry=localhost
+ARG tag=latest
+FROM ${registry}/code-golf_message-queue_producer-haskell-dev:${tag}
 
 COPY --chown=user haskell/ ./
 RUN make build

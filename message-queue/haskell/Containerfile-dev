@@ -1,5 +1,7 @@
 # vi: ft=dockerfile
-FROM localhost/code-golf_message-queue_base-haskell
+ARG registry=localhost
+ARG tag=latest
+FROM ${registry}/code-golf_message-queue_base-haskell:${tag}
 
 USER root
 RUN apt-get install -y libpq-dev libghc-zlib-dev

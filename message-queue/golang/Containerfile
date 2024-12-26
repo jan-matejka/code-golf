@@ -1,4 +1,6 @@
-FROM localhost/code-golf_message-queue_producer-golang-dev
+ARG registry=localhost
+ARG tag=latest
+FROM ${registry}/code-golf_message-queue_producer-golang-dev:${tag}
 
 COPY --chown=user golang/ ./
 RUN make build
