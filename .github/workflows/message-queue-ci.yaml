@@ -211,3 +211,39 @@ jobs:
     with:
       name: python
     secrets: inherit
+
+  test-producer-golang:
+    needs:
+      - build-producer-golang
+      - build-postgres
+    uses: ./.github/workflows/mq-run-test.yaml
+    with:
+      name: golang
+    secrets: inherit
+
+  test-producer-cpp:
+    needs:
+      - build-producer-cpp
+      - build-postgres
+    uses: ./.github/workflows/mq-run-test.yaml
+    with:
+      name: cpp
+    secrets: inherit
+
+  test-producer-rust:
+    needs:
+      - build-producer-rust
+      - build-postgres
+    uses: ./.github/workflows/mq-run-test.yaml
+    with:
+      name: rust
+    secrets: inherit
+
+  test-producer-haskell:
+    needs:
+      - build-producer-haskell
+      - build-postgres
+    uses: ./.github/workflows/mq-run-test.yaml
+    with:
+      name: haskell
+    secrets: inherit
