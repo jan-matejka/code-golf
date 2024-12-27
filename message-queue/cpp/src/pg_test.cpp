@@ -1,4 +1,4 @@
-#include "pg_unittest.hpp"
+#include "pg_test.hpp"
 
 PgFixture::PgFixture()
 : root_conn("postgres://postgres@localhost:5433"),

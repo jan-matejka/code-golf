@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "postgres.hpp"
-#include "pg_unittest.hpp"
+#include "pg_test.hpp"
 #include "config.hpp"
 
 namespace {
