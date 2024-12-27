@@ -207,27 +207,7 @@ jobs:
     needs:
       - build-producer-python
       - build-postgres
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/${{ github.repository_owner }}/code-golf_message-queue_producer-python:${{ github.sha }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    services:
-      postgres-test:
-        image: ghcr.io/${{ github.repository_owner }}/code-golf_message-queue_postgres:${{ github.sha }}
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        volumes:
-          - "./container/postgres/postgresql.conf:/etc/postgres/postgresql.conf"
-          - "./container/postgres/init:/docker-entrypoint-initdb.d/"
-    steps:
-      - name: make check
-        env:
-          PG_TEST_DSN: postgres-test:5432
-        run: >
-          . /home/user/venv/bin/activate &&
-          make -C /home/user/mq check-full
+    uses: ./.github/workflows/mq-run-test.yaml
+    with:
+      name: python
+    secrets: inherit
