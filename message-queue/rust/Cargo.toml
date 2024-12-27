@@ -10,6 +10,7 @@ thiserror = "1.0"
 platform-info = "2"
 rustc_version_runtime = "0.3.0"
 chrono = "0.4.38"
+lazy_static = "1.5.0"
 # derive_more = "1.0", can't use. Requires newer rustc >= 1.75.
 
 [dependencies.uuid]
