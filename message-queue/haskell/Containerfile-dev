@@ -12,7 +12,7 @@ USER user
 # Note: podman-build can mount a volume, however, it does not accept --userns=keep-id so the
 # permissions gets messed up
 COPY --chown=user haskell/jmcgmqp.cabal haskell/stack.yaml mq/
-RUN cd mq && stack build --only-dependencies
+RUN cd mq && stack build --only-dependencies --trace
 
 COPY --chown=user ../mqp-base.mk /home/user/
 WORKDIR mq
