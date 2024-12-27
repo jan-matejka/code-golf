@@ -47,6 +47,7 @@ Library
   Exposed-Modules:
     Jmcgmqp,
     Jmcgmqp.Algorithm,
+    Jmcgmqp.Config,
     Jmcgmqp.Postgres,
     Jmcgmqp.Prometheus,
     Jmcgmqp.Prometheus.Metrics,
@@ -54,7 +55,6 @@ Library
     Jmcgmqp.Worker,
     Jmcgmqp.Instance,
   Other-Modules:
-    Jmcgmqp.Config,
     Jmcgmqp.Uname,
     Jmcgmqp.Prometheus.Http
   Build-Depends:
@@ -83,3 +83,4 @@ test-suite spec
     WorkerSpec,
     AlgorithmSpec,
     PostgresSpec,
+    TestConfig,
