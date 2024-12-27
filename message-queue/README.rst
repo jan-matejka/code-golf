@@ -16,7 +16,7 @@ Build
 
 1. Build all the container images (this will take a while):
 
-    ``$ podman-compose build``
+    ``$ podman-compose -p code-golf_message-queue build``
 
 2. Start infrastructure:
 

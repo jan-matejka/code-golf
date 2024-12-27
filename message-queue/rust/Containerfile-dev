@@ -1,12 +1,14 @@
 # vi: ft=dockerfile
-FROM localhost/message-queue_base-debian-testing
+ARG registry=localhost
+ARG tag=latest
+FROM ${registry}/code-golf_message-queue_base-debian-testing:${tag}
 
 USER root
 RUN apt-get install -y openssl rust-all
 
 USER user
 COPY --chown=user ../mqp-base.mk /home/user/
-COPY --chown=user rust/Cargo.toml rust/Cargo.lock  mq/
+COPY --chown=user rust/Cargo.toml mq/
 
 RUN cd mq && cargo fetch
 RUN mkdir -p mq/src/lib mq/src/bin && \

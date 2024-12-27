@@ -1,4 +1,6 @@
-FROM localhost/message-queue_base-debian
+ARG registry=localhost
+ARG tag=latest
+FROM ${registry}/code-golf_message-queue_base-debian:${tag}
 # Base image with haskell tooling
 
 RUN apt-get install -y \

@@ -1,11 +1,15 @@
 FROM docker.io/library/postgres:latest
 
-LABEL name mq/postgres
+# GHA service containers don't have access to the repository so we have to bake
+# this in (unless we want to start the services manually in steps).
+COPY postgresql.conf /etc/postgres/postgresql.conf
+COPY init/ /docker-entrypoint-initdb.d/
 
-USER root
-ENV POSTGRES_HOST_AUTH_METHOD trust
+# Custom entrypoint wrapping the upstream so we can inject debug prints.
+COPY --chmod=755 entrypoint.sh /usr/local/bin
+ENTRYPOINT ["entrypoint.sh"]
 
-RUN printf "APT::Install-Recommends \"0\";" > /etc/apt/apt.conf.d/no-install-recommends
-RUN apt-get update
-RUN apt-get install -y procps iproute2 make
-RUN rm -rf /var/cache/apt/* /var/lib/apt/*
+# Github Actions workflows can't give command to service container so
+# we have to bake it into our own image.
+# https://github.com/orgs/community/discussions/52675
+CMD ["postgres", "-c", "config_file=/etc/postgres/postgresql.conf"]

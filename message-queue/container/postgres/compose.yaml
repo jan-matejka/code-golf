@@ -10,4 +10,10 @@ services:
     volumes:
       - "./container/postgres/postgresql.conf:/etc/postgres/postgresql.conf"
       - "./container/postgres/init:/docker-entrypoint-initdb.d/"
-    command: -c 'config_file=/etc/postgres/postgresql.conf'
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 5s
+      timeout: 1s
+      retries: 5

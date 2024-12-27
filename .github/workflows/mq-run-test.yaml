@@ -1,0 +1,53 @@
+name: Run message-queue producer test
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+      command:
+        type: string
+        default: make -C /home/user/mq check
+      container_tag:
+        type: string
+        default: ${{ github.sha }}
+      pg_tag:
+        type: string
+        default: ${{ github.sha }}
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/code-golf_message-queue_producer-${{ inputs.name }}:${{ inputs.container_tag }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    services:
+      postgres-test:
+        image: ghcr.io/${{ github.repository_owner }}/code-golf_message-queue_postgres:${{ inputs.pg_tag }}
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 1s
+          --health-retries 5
+    steps:
+      - name: make check
+        env:
+          PG_TEST_DSN: postgres-test:5432
+          # I have no idea why github sets HOME=/github/home. Its root owned
+          # and there is nothing useful. Hypothetically it could be a volume
+          # (related to /__w (workdir)) and share data between the host and
+          # service containers. With the right volume definition it could be
+          # shared between the job container as well. But that is still useless
+          # because first service containers start, _and then_ a checkout step
+          # can run in job container. Anyway, we have our user in our
+          # containers so set HOME to the correct one. wtf.
+          HOME: /home/user
+        run: ${{ inputs.command }}

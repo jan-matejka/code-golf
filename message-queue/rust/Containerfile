@@ -1,4 +1,6 @@
-FROM localhost/message-queue_producer-rust-dev
+ARG registry=localhost
+ARG tag=latest
+FROM ${registry}/code-golf_message-queue_producer-rust-dev:${tag}
 
 COPY --chown=user rust/ ./
 RUN make build
