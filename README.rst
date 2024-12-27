@@ -24,7 +24,13 @@ Projects
 
 - `message-queue/ <./message-queue>`_
 
+    |message-queue CI|
+
     Benchmarks of various languages, IO systems, and message queue systems (aspirational).
+
+.. |message-queue CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/message-queue-ci.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/message-queue-ci.yaml
+   :alt: message-queue CI
 
 - `5.connection-counter <./5.connection-counter>`_
 

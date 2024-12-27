@@ -2,6 +2,12 @@
 Message Queue
 #############
 
+|message-queue CI|
+
+.. |message-queue CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/message-queue-ci.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/message-queue-ci.yaml
+   :alt: message-queue CI
+
 .. image:: ./assets/overview.png
 
 Dependencies
