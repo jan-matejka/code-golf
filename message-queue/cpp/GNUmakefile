@@ -8,6 +8,7 @@ LDLIBS+=-lpqxx -lcurl
 # debian: prometheus-cpp-dev
 LDLIBS+=-lprometheus-cpp-push -lprometheus-cpp-core
 LDLIBS+=-lz -lstdc++ -lm
+LDLIBS+=-lfmt
 
 # debian: libgtest-dev
 test_LDLIBS=$(LDLIBS) -lgtest -lgtest_main
