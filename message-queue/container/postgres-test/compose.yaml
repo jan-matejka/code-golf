@@ -4,9 +4,9 @@ services:
       context: container/postgres
       dockerfile: Containerfile
     expose:
-      - 5433
+      - 5432
     ports:
-      - "127.0.0.1:5433:5433"
+      - "127.0.0.1:5433:5432"
     volumes:
       - "./container/postgres-test/postgresql.conf:/etc/postgres/postgresql.conf"
       - "./container/postgres/init:/docker-entrypoint-initdb.d/"
