@@ -12,3 +12,8 @@ services:
       - "./container/postgres/init:/docker-entrypoint-initdb.d/"
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 5s
+      timeout: 1s
+      retries: 5
