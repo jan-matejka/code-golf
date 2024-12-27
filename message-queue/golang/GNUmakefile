@@ -15,6 +15,7 @@ format:  ## Format code
 	go fmt
 	go fmt cmd/main.go
 	cd observer && go fmt
+	cd test && go fmt
 
 .PHONY: check
 check: ## Run tests

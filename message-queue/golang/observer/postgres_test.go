@@ -8,13 +8,11 @@ import (
 
 import "github.com/jackc/pgx/v4/pgxpool"
 import "github.com/jan-matejka/code-golf/message-queue/golang"
-
-const TestRootDsn = "postgres://postgres@localhost:5433"
-const TestMqDsn = "postgres://mq@localhost:5433/test"
+import "github.com/jan-matejka/code-golf/message-queue/golang/test"
 
 func mkTestDb() (*pgxpool.Pool, error) {
 	ctx := context.Background()
-	pool, err := pgxpool.Connect(ctx, TestRootDsn)
+	pool, err := pgxpool.Connect(ctx, test.TestConfig.PgTestRootDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +27,7 @@ func mkTestDb() (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
-	pool, err = pgxpool.Connect(ctx, TestMqDsn)
+	pool, err = pgxpool.Connect(ctx, test.TestConfig.PgTestMqDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +41,7 @@ func TestPush(t *testing.T) {
 	}
 	defer pool.Close()
 
-	pgm, err := NewPgMetrics(TestMqDsn)
+	pgm, err := NewPgMetrics(test.TestConfig.PgTestMqDSN)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

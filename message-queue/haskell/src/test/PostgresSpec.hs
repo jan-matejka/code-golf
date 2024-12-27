@@ -26,6 +26,9 @@ import Jmcgmqp.Postgres (newPostgres, push, Postgres(conn), close)
 import Jmcgmqp.Runtime (newRuntime,
   Runtime(ctime, uuid, lang, lang_version, runtime, os, kernel, arch)
   )
+import TestConfig (newTestConfig,
+  TestConfig(pg_test_root_dsn, pg_test_mq_dsn)
+  )
 
 withConnect :: ByteString -> (Connection -> IO c) -> IO c
 withConnect x = bracket (connectPostgreSQL x) PSQL.close
@@ -34,8 +37,9 @@ withConnect2 :: ByteString -> (Postgres -> IO c) -> IO c
 withConnect2 x = bracket (newPostgres x) close
 
 mkDb :: IO ()
-mkDb =
-  withConnect "postgres://postgres@localhost:5433"
+mkDb = do
+  tcg <- newTestConfig
+  withConnect tcg.pg_test_root_dsn
    (\c ->  void (
       execute_ c "drop database if exists test" >>
       execute_ c "create database test template mq"
@@ -154,11 +158,12 @@ spec = do
              , newWorkerResult 2 20 $ TimeSpec 2 0
              ]
       _ <- mkDb
+      tcg <- newTestConfig
       r <- newRuntime
-      withConnect2 "postgres://postgres@localhost:5433/test" $ \pg ->
+      withConnect2 tcg.pg_test_mq_dsn $ \pg ->
         void $ execStateT (push pg r sdesc rs) Nothing
 
-      withConnect2 "postgres://postgres@localhost:5433/test" $ \pg -> do
+      withConnect2 tcg.pg_test_mq_dsn $ \pg -> do
         runtime_id <- test_runtime pg r
         sample_id <- test_samples pg runtime_id sdesc
         test_workers pg sample_id rs
@@ -172,8 +177,8 @@ spec = do
              , newWorkerResult 2 20 $ TimeSpec 2 0
              ]
       _ <- mkDb
-
-      withConnect2 "postgres://postgres@localhost:5433/test" $ \pg -> do
+      tcg <- newTestConfig
+      withConnect2 tcg.pg_test_mq_dsn $ \pg -> do
           r <- newRuntime
 
           _ <- execStateT (push pg r sdesc1 rs >> push pg r sdesc2 rs) Nothing

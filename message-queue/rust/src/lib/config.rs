@@ -17,7 +17,7 @@ pub struct Config {
 }
 
 impl Config {
-    fn getenv<T: FromStr>(name: &str, default: T) -> Result<T,Box<dyn error::Error>>
+    pub fn getenv<T: FromStr>(name: &str, default: T) -> Result<T,Box<dyn error::Error>>
     where <T as FromStr>::Err: 'static, <T as FromStr>::Err: error::Error
     {
         if let Some(x) = env::var_os(name) {
@@ -52,5 +52,35 @@ impl Config {
             duration: Config::getenv::<u64>("DURATION", 3)?,
             pg_telemetry_dsn: dsn,
         });
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use lazy_static::lazy_static;
+
+    #[derive(Debug)]
+    pub struct TestConfig {
+        pub pg_test_dsn: String,
+        pub pg_test_root_dsn: String,
+        pub pg_test_mq_dsn: String,
+    }
+
+    impl TestConfig {
+        pub fn new() -> Result<Self,Box<dyn error::Error>> {
+            let base = Config::getenv::<String>(
+                "PG_TEST_DSN", "localhost:5433".to_string()
+            )?;
+            return Ok(Self{
+                pg_test_dsn: base.clone(),
+                pg_test_root_dsn: format!("postgres://postgres@{}", &base),
+                pg_test_mq_dsn: format!("postgres://mq@{}/test", &base),
+            });
+        }
+    }
+
+    lazy_static! {
+        pub static ref TCG: TestConfig = TestConfig::new().unwrap();
     }
 }

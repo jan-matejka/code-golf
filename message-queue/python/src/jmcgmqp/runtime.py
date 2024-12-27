@@ -20,7 +20,6 @@ class Instance:
         self.observer = Registry()
         self.runtime = Runtime.new()
         self.config = Config()
-        self.config.load_env()
         log.info(f"Config: {asdict(self.config)}")
 
 @dataclass(frozen=True)

@@ -4,6 +4,7 @@ module Jmcgmqp.Config
 , duration
 , power
 , newConfig
+, sgetenv
 ) where
 
 import System.Environment (lookupEnv)
@@ -20,6 +21,9 @@ data Config = Config {
 
 igetenv :: String -> String -> IO String
 igetenv var def = lookupEnv var <&> fromMaybe def
+
+sgetenv :: String -> String -> IO String
+sgetenv var def = lookupEnv var <&> fromMaybe def
 
 newConfig :: IO Config
 newConfig = do
