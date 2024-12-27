@@ -1,5 +1,10 @@
 include ../mqp-base.mk
 
+PYTEST:=pytest --cov-report=term-missing --cov=jmcgmqp
+ifeq ($(CI),true)
+PYTEST:=. /home/user/venv/bin/activate && $(PYTEST)
+endif
+
 .PHONY: build
 build: ## Build
 
@@ -8,9 +13,9 @@ build: ## Build
 .PHONY: check-unit
 check-unit: ## Run unit tests tests
 
-	pytest --cov-report=term-missing --cov=jmcgmqp -m 'not integration' ./
+	$(PYTEST) -m 'not integration' ./
 
 .PHONY: check
 check: ## Run all the tests
 
-	pytest --cov-report=term-missing --cov=jmcgmqp ./
+	$(PYTEST) ./
