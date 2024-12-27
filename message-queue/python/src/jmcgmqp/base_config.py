@@ -13,3 +13,6 @@ class BaseConfig:
             else:
                 x = reader(x)
             setattr(self, name, x)
+
+    def __post_init__(self):
+        self.load_env()
