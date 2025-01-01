@@ -73,7 +73,7 @@ runs:
       run: >
         set -x && cd message-queue &&
         podman-compose
-        -p code-golf_${{ inputs.dir }}
+        -p ${{ inputs.repository }}_${{ inputs.dir }}
         --podman-build-args "-t ${{ env.IMAGE_FULL }}:${{ github.sha }}
         --cache-from=${{ env.CACHE }}
         --cache-to=${{ env.CACHE }}"
