@@ -1,4 +1,4 @@
-name: message-queue CI
+name: message-queue cpp CI
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
     uses: ./.github/workflows/mq-infra.yaml
     secrets: inherit
 
-  build-base-haskell:
+  build-producer-cpp-dev:
     if: true
     needs: common
     runs-on: ubuntu-latest
@@ -26,49 +26,34 @@ jobs:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/build-image"
         with:
-          image: base-haskell
+          image: producer-cpp-dev
           dir: message-queue
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
           base: base-debian
 
-  build-producer-haskell-dev:
+  build-producer-cpp:
     if: true
-    needs: build-base-haskell
+    needs: build-producer-cpp-dev
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/build-image"
         with:
-          image: producer-haskell-dev
+          image: producer-cpp
           dir: message-queue
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
-          base: base-haskell
+          base: producer-cpp-dev
 
-  build-producer-haskell:
-    if: true
-    needs: build-producer-haskell-dev
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: producer-haskell
-          dir: message-queue
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-          base: producer-haskell-dev
-
-  test-producer-haskell:
+  test-producer-cpp:
     if: true
     needs:
-      - build-producer-haskell
+      - build-producer-cpp
       - common
     uses: ./.github/workflows/mq-run-test.yaml
     with:
-      name: haskell
+      name: cpp
     secrets: inherit
