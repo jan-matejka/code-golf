@@ -28,9 +28,27 @@ Projects
 
     Benchmarks of various languages, IO systems, and message queue systems (aspirational).
 
-.. |message-queue CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/message-queue-ci.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/message-queue-ci.yaml
-   :alt: message-queue CI
+    |mq-python CI| |mq-rust CI| |mq-golang CI| |mq-haskell CI| |mq-cpp CI|
+
+.. |mq-python CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-python.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-python.yaml
+   :alt: mq-python CI
+
+.. |mq-cpp CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-cpp.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-cpp.yaml
+   :alt: mq-cpp CI
+
+.. |mq-haskell CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-haskell.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-haskell.yaml
+   :alt: mq-haskell CI
+
+.. |mq-golang CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-golang.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-golang.yaml
+   :alt: mq-golang CI
+
+.. |mq-rust CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-rust.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-rust.yaml
+   :alt: mq-rust CI
 
 - `5.connection-counter <./5.connection-counter>`_
 

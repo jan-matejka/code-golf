@@ -1,0 +1,82 @@
+name: message-queue cpp CI
+
+on:
+  push:
+    paths:
+      - "message-queue/cpp/**"
+      - "message-queue/container/base-debian/**"
+      - ".github/workflows/mq-cpp.yaml"
+      - ".github/actions/build-image/**"
+
+concurrency:
+  # Automatically cancel workflows if newer workflow started for the same
+  # branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-base-debian:
+    if: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: base-debian
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-postgres:
+    if: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: postgres
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-producer-cpp-dev:
+    if: true
+    needs: build-base-debian
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: producer-cpp-dev
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+          base: base-debian
+
+  build-producer-cpp:
+    if: true
+    needs: build-producer-cpp-dev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: producer-cpp
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+          base: producer-cpp-dev
+
+  test-producer-cpp:
+    if: true
+    needs:
+      - build-producer-cpp
+      - build-postgres
+    uses: ./.github/workflows/mq-run-test.yaml
+    with:
+      name: cpp
+    secrets: inherit
