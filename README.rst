@@ -24,8 +24,6 @@ Projects
 
 - `message-queue/ <./message-queue>`_
 
-    |message-queue CI|
-
     Benchmarks of various languages, IO systems, and message queue systems (aspirational).
 
     |mq-python CI| |mq-rust CI| |mq-golang CI| |mq-haskell CI| |mq-cpp CI|
