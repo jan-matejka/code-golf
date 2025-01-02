@@ -3,8 +3,10 @@ name: message-queue golang CI
 on:
   push:
     paths:
-      - "message-queue/**"
-      - ".github/**"
+      - "message-queue/golang/**"
+      - "message-queue/container/base-debian/**"
+      - ".github/workflows/mq-golang.yaml"
+      - ".github/actions/build-image/**"
 
 concurrency:
   # Automatically cancel workflows if newer workflow started for the same

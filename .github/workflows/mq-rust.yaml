@@ -3,8 +3,10 @@ name: message-queue rust CI
 on:
   push:
     paths:
-      - "message-queue/**"
-      - ".github/**"
+      - "message-queue/rust/**"
+      - "message-queue/container/base-debian-testing/**"
+      - ".github/workflows/mq-rust.yaml"
+      - ".github/actions/build-image/**"
 
 concurrency:
   # Automatically cancel workflows if newer workflow started for the same
