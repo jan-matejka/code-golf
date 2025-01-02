@@ -13,14 +13,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  common:
+  build-base-debian:
     if: true
-    uses: ./.github/workflows/mq-infra.yaml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: base-debian
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-postgres:
+    if: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: postgres
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
 
   build-base-haskell:
     if: true
-    needs: common
+    needs: build-base-debian
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +88,7 @@ jobs:
     if: true
     needs:
       - build-producer-haskell
-      - common
+      - build-postgres
     uses: ./.github/workflows/mq-run-test.yaml
     with:
       name: haskell
