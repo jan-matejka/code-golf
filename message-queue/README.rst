@@ -4,24 +4,24 @@ Message Queue
 
 |mq-python CI| |mq-rust CI| |mq-golang CI| |mq-haskell CI| |mq-cpp CI|
 
-.. |mq-python CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-python.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-python.yaml
+.. |mq-python CI| image:: https://github.com/jan-matejka/code-golf/tree/master/message-queue/python.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/python
    :alt: mq-python CI
 
-.. |mq-cpp CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-cpp.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-cpp.yaml
+.. |mq-cpp CI| image:: https://github.com/jan-matejka/code-golf/tree/master/message-queue/cpp.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/cpp
    :alt: mq-cpp CI
 
-.. |mq-haskell CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-haskell.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-haskell.yaml
+.. |mq-haskell CI| image:: https://github.com/jan-matejka/code-golf/tree/master/message-queue/haskell.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/haskell
    :alt: mq-haskell CI
 
-.. |mq-golang CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-golang.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-golang.yaml
+.. |mq-golang CI| image:: https://github.com/jan-matejka/code-golf/tree/master/message-queue/golang.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/golang
    :alt: mq-golang CI
 
-.. |mq-rust CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-rust.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-rust.yaml
+.. |mq-rust CI| image:: https://github.com/jan-matejka/code-golf/tree/master/message-queue/rust.yaml/badge.svg
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/rust
    :alt: mq-rust CI
 
 .. image:: ./assets/overview.png

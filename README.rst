@@ -29,23 +29,23 @@ Projects
     |mq-python CI| |mq-rust CI| |mq-golang CI| |mq-haskell CI| |mq-cpp CI|
 
 .. |mq-python CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-python.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-python.yaml
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/python
    :alt: mq-python CI
 
 .. |mq-cpp CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-cpp.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-cpp.yaml
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/cpp
    :alt: mq-cpp CI
 
 .. |mq-haskell CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-haskell.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-haskell.yaml
+   :target: https://github.com/jan-matejka/code-golf/tree/master/message-queue/haskell
    :alt: mq-haskell CI
 
 .. |mq-golang CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-golang.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-golang.yaml
+   :target: https://github.com/jan-matejka/code-golf/tree/master/golang
    :alt: mq-golang CI
 
 .. |mq-rust CI| image:: https://github.com/jan-matejka/code-golf/actions/workflows/mq-rust.yaml/badge.svg
-   :target: https://github.com/jan-matejka/code-golf/actions/workflows/mq-rust.yaml
+   :target: https://github.com/jan-matejka/code-golf/tree/master/rust
    :alt: mq-rust CI
 
 - `5.connection-counter <./5.connection-counter>`_
