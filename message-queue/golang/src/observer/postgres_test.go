@@ -7,8 +7,8 @@ import (
 )
 
 import "github.com/jackc/pgx/v4/pgxpool"
-import "github.com/jan-matejka/code-golf/message-queue/golang"
-import "github.com/jan-matejka/code-golf/message-queue/golang/test"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src/test"
 
 func mkTestDb() (*pgxpool.Pool, error) {
 	ctx := context.Background()

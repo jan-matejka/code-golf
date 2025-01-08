@@ -6,8 +6,8 @@ import "context"
 import "time"
 import "sync"
 
-import "github.com/jan-matejka/code-golf/message-queue/golang"
-import "github.com/jan-matejka/code-golf/message-queue/golang/observer"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src/observer"
 
 import "github.com/jackc/pgx/v4/pgxpool"
 

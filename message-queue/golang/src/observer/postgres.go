@@ -4,7 +4,7 @@ import "context"
 
 import "github.com/jackc/pgx/v4/pgxpool"
 import "github.com/jackc/pgx/v4"
-import "github.com/jan-matejka/code-golf/message-queue/golang"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src"
 
 type PgMetrics struct {
 	pool       *pgxpool.Pool
