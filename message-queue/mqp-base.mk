@@ -15,8 +15,7 @@ PODMAN_RUN = podman run \
 .PHONY: image
 image: ## Build image
 
-	# Need to build with parent as context due to some shared code like this makefile
-	podman build -f $(CONTAINERFILE) -t localhost/$(FULL_NAME) ..
+	cd .. && podman-compose build producer-$(NAME)-dev producer-$(NAME)
 
 .PHONY: container
 container: ## Run the image in container
