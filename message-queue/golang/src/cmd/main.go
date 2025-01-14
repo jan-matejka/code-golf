@@ -33,7 +33,7 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, end chan<- *golang.WorkerResult) {
+func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, end chan<- *jmcgmqp.WorkerResult) {
 	wg.Done()
 	wg.Wait()
 
@@ -44,7 +44,7 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 		select {
 		case <-quit:
 			duration := time.Since(start)
-			r := golang.NewWorkerResult(id, i, duration)
+			r := jmcgmqp.NewWorkerResult(id, i, duration)
 			end <- r
 			return
 		default:
@@ -54,16 +54,16 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 	}
 }
 
-func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) *golang.Results {
+func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *jmcgmqp.Results {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
-	end_channels := make([]chan *golang.WorkerResult, workers, workers)
+	end_channels := make([]chan *jmcgmqp.WorkerResult, workers, workers)
 
 	var wg sync.WaitGroup
 	wg.Add(workers + 1)
 	for i := range quit_channels {
 		quit_channels[i] = make(chan bool)
-		end_channels[i] = make(chan *golang.WorkerResult)
+		end_channels[i] = make(chan *jmcgmqp.WorkerResult)
 		go worker(&wg, i, quit_channels[i], pool, end_channels[i])
 	}
 
@@ -80,7 +80,7 @@ func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) *gola
 		quit_channels[i] <- true
 	}
 
-	rs := golang.NewResults()
+	rs := jmcgmqp.NewResults()
 	for i := range end_channels {
 		r := <-end_channels[i]
 		rs.Add(r)
@@ -91,12 +91,12 @@ func sample_workers(app *golang.Instance, workers int, pool *pgxpool.Pool) *gola
 }
 
 func main() {
-	app, err := golang.NewInstance()
+	app, err := jmcgmqp.NewInstance()
 	if err != nil {
 		die("Couldnt construct instance: %v\n", err)
 	}
 	if app.Config.Test_prometheus == 1 {
-		golang.TestPusher(app)
+		jmcgmqp.TestPusher(app)
 		os.Exit(0)
 	}
 	pool, err := pgxpool.Connect(context.Background(), "postgres://mq@localhost/mq?pool_max_conns=2048")
@@ -110,10 +110,10 @@ func main() {
 		die("Unable to connect to postgres metrics: %v\n", err)
 	}
 
-	sample := func(workers int) *golang.Results {
+	sample := func(workers int) *jmcgmqp.Results {
 		r := sample_workers(app, workers, pool)
-		sampleDesc := golang.SampleDesc{workers, "goroutines", "postgres"}
-		golang.PushMetrics(app, sampleDesc, r)
+		sampleDesc := jmcgmqp.SampleDesc{workers, "goroutines", "postgres"}
+		jmcgmqp.PushMetrics(app, sampleDesc, r)
 		err := pgm.Push(context.Background(), app.Runtime, sampleDesc, r)
 		if err != nil {
 			die("%v", err)
@@ -121,7 +121,7 @@ func main() {
 		return r
 	}
 
-	r := golang.FindMaximum(sample)
+	r := jmcgmqp.FindMaximum(sample)
 	if r == nil {
 		die("No successful run")
 	}

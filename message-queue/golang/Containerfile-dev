@@ -11,4 +11,4 @@ COPY --chown=user ../mqp-base.mk /home/user/
 COPY --chown=user golang/src/go.mod golang/src/go.sum /home/user/mq/src/
 
 WORKDIR mq
-RUN cd src && echo 'package golang' >config.go && go get -t -x ./
+RUN cd src && echo 'package jmcgmqp' >config.go && go get -t -x ./
