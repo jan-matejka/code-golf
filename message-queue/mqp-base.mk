@@ -5,6 +5,12 @@ CONTAINERFILE := Containerfile
 COMMON_NAME := mq-producer
 NAME := $(shell basename $(CURDIR))
 FULL_NAME := $(COMMON_NAME)-$(NAME)
+PODMAN_RUN = podman run \
+		--userns keep-id \
+		-v $(realpath .):/home/user/mq \
+		-u user \
+		--network=host \
+		$(1) $(FULL_NAME) $(2)
 
 .PHONY: image
 image: ## Build image
@@ -19,15 +25,13 @@ container: ## Run the image in container
 	# Run with --network=host for now.
 	# Option --userns and --pod are mutually exlusive.
 	# TBD Maybe its possible to run the entire pod with --userns.
-	podman run \
-		--name $(FULL_NAME) \
-		--userns keep-id \
-		-v $(realpath .):/home/user/mq \
-		-u user \
-		--network=host \
-		-it \
-		$(FULL_NAME) \
-		zsh
+	$(call PODMAN_RUN,--name $(FULL_NAME) -it,zsh)
+
+.PHONY: check-container
+check-container: image ## Run make check inside container
+
+	podman rm $(FULL_NAME)-check || true
+	$(call PODMAN_RUN,--name $(FULL_NAME)-check,make check)
 
 .PHONY: exec-root
 exec-root: ## Exec into running container as root
