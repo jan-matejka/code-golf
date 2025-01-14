@@ -1,4 +1,4 @@
-package golang
+package jmcgmqp
 
 type sampler = func(int) *Results
 

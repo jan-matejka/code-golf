@@ -4,7 +4,7 @@ import "context"
 
 import "github.com/jackc/pgx/v4/pgxpool"
 import "github.com/jackc/pgx/v4"
-import "github.com/jan-matejka/code-golf/message-queue/golang"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src"
 
 type PgMetrics struct {
 	pool       *pgxpool.Pool
@@ -23,9 +23,9 @@ func NewPgMetrics(dsn string) (*PgMetrics, error) {
 
 func (p *PgMetrics) Push(
 	ctx context.Context,
-	runtime *golang.Runtime,
-	sample golang.SampleDesc,
-	rs *golang.Results,
+	runtime *jmcgmqp.Runtime,
+	sample jmcgmqp.SampleDesc,
+	rs *jmcgmqp.Results,
 ) error {
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
@@ -59,7 +59,7 @@ func (p *PgMetrics) Push(
 	return nil
 }
 
-func runtimeId(ctx context.Context, tx pgx.Tx, r *golang.Runtime) (int, error) {
+func runtimeId(ctx context.Context, tx pgx.Tx, r *jmcgmqp.Runtime) (int, error) {
 	q := `
   insert into results.runtime (
       ctime, uuid, lang, lang_version, runtime, os, kernel, arch
@@ -94,7 +94,7 @@ func runtimeId(ctx context.Context, tx pgx.Tx, r *golang.Runtime) (int, error) {
 	return id, nil
 }
 
-func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample golang.SampleDesc) (int, error) {
+func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample jmcgmqp.SampleDesc) (int, error) {
 	// TBD: pgxv5 supports named arguments
 	q := `
   with
@@ -133,7 +133,7 @@ func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample golang.Samp
 	return id, nil
 }
 
-func workerResult(ctx context.Context, tx pgx.Tx, sample_id int, wr *golang.WorkerResult) error {
+func workerResult(ctx context.Context, tx pgx.Tx, sample_id int, wr *jmcgmqp.WorkerResult) error {
 	q := `
   insert into results.worker
   (sample_id, worker_id, messages_total, duration_ns)

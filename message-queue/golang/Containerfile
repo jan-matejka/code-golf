@@ -2,5 +2,6 @@ ARG registry=localhost
 ARG tag=latest
 FROM ${registry}/code-golf_message-queue_producer-golang-dev:${tag}
 
-COPY --chown=user golang/ ./
+COPY --chown=user golang/GNUmakefile ./
+COPY --chown=user golang/src ./src
 RUN make build

@@ -1,4 +1,4 @@
-package golang
+package jmcgmqp
 
 import "time"
 import "strconv"

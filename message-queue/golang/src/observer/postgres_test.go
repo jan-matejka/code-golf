@@ -7,8 +7,8 @@ import (
 )
 
 import "github.com/jackc/pgx/v4/pgxpool"
-import "github.com/jan-matejka/code-golf/message-queue/golang"
-import "github.com/jan-matejka/code-golf/message-queue/golang/test"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src/test"
 
 func mkTestDb() (*pgxpool.Pool, error) {
 	ctx := context.Background()
@@ -46,15 +46,15 @@ func TestPush(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	r, err := golang.NewRuntime()
+	r, err := jmcgmqp.NewRuntime()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	sdesc := golang.SampleDesc{2, "goroutines", "postgres"}
-	results := golang.NewResults()
-	results.Add(golang.NewWorkerResult(1, 10, 20))
-	results.Add(golang.NewWorkerResult(2, 30, 40))
+	sdesc := jmcgmqp.SampleDesc{2, "goroutines", "postgres"}
+	results := jmcgmqp.NewResults()
+	results.Add(jmcgmqp.NewWorkerResult(1, 10, 20))
+	results.Add(jmcgmqp.NewWorkerResult(2, 30, 40))
 
 	ctx := context.Background()
 	err = pgm.Push(ctx, r, sdesc, results)
@@ -71,7 +71,7 @@ func TestPush(t *testing.T) {
 	defer rows.Close()
 	i := 0
 	var runtime_id int
-	var r2 golang.Runtime
+	var r2 jmcgmqp.Runtime
 	for rows.Next() {
 		err = rows.Scan(
 			&runtime_id,
@@ -113,7 +113,7 @@ func TestPush(t *testing.T) {
 	i = 0
 	var sample_id int
 	var r_id int
-	var s2 golang.SampleDesc
+	var s2 jmcgmqp.SampleDesc
 	for rows.Next() {
 		i += 1
 		err = rows.Scan(&sample_id, &r_id, &s2.N_workers, &s2.Algorithm, &s2.Mq_system)

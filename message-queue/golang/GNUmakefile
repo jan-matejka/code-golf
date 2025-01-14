@@ -6,19 +6,17 @@ all: format build
 .PHONY: build
 build:  ## Build
 
-	go build
-	go build cmd/main.go
+	cd src && go build
+	cd src && go build cmd/main.go
 
 .PHONY: format
 format:  ## Format code
 
-	go fmt
-	go fmt cmd/main.go
-	cd observer && go fmt
-	cd test && go fmt
+	find -type f -name '*.go' -printf "%h\n" | sort | uniq | \
+		xargs -I % sh -c "cd % && go fmt *.go"
 
 .PHONY: check
 check: ## Run tests
 
-	go test
-	cd observer && go test
+	cd src && go test
+	cd src/observer && go test
