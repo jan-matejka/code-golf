@@ -10,7 +10,7 @@ from jmcgmqp.config import Config
 
 class Model:
     def __init__(self, config: Config):
-        self._conn = psycopg.connect(config.POSTGRES)
+        self._conn = psycopg.connect(config.TELEMETRY_POSTGRES)
         self._conn.autocommit = True
 
     @cache
