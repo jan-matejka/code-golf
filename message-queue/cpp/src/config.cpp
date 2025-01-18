@@ -6,17 +6,17 @@
 
 using namespace std;
 
-Config::Config(const string& pg_results_dsn)
+Config::Config(const string& telemetry_postgres)
 {
   duration = igetenv("DURATION", 3);
   power = igetenv("POWER", 0);
   test_prometheus = igetenv("TEST_PROMETHEUS", 0);
-  this->pg_results_dsn = pg_results_dsn;
+  this->telemetry_postgres = telemetry_postgres;
 }
 
 Config::Config()
 : Config(sgetenv(
-    "PG_RESULTS_DSN", string("postgres://mq@localhost:5432/mq")
+    "TELEMETRY_POSTGRES", string("postgres://mq@localhost:5442/mq")
 )) {
 }
 
@@ -25,7 +25,9 @@ string Config::str() {
   s
     << "duration=" << duration
     << " power=" << power
-    << " test_prometheus=" << test_prometheus;
+    << " test_prometheus=" << test_prometheus
+    << " telemetry_postgres=" << telemetry_postgres
+  ;
   return s.str();
 }
 
