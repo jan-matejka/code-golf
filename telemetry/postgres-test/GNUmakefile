@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../../help.mk
 .DEFAULT_GOAL := help
 PORT:=5443

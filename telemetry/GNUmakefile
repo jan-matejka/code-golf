@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 COMPOSE_SERVICE:=all
 COMPOSE_PROJECT:=code-golf_telemetry
 include ../compose.mk
