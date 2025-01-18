@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../help.mk
 COMPOSE_SERVICE:=infra
 COMPOSE_PROJECT:=code-golf_message-queue

@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../base.mk
 
 .PHONY: psql

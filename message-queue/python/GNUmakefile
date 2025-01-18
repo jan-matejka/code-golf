@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../mqp-base.mk
 CONTAINER_CHECK_COMPOSE_ARGS:=-e ACTIVATE=true
 

@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../mqp-base.mk
 
 CXX=gcc
@@ -36,6 +37,10 @@ test: $(test_objs)
 	$(CXX) $(LDFLAGS) -o test $^ $(test_LDLIBS)
 
 %.o: %.cpp %.hpp
+
+	$(CXX) $(CPPFLAGS) -c $< -o $@
+
+%.o: %.cpp
 
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 

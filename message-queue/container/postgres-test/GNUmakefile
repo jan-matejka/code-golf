@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../base.mk
 
 PORT := 5433
