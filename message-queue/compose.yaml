@@ -9,12 +9,12 @@ include:
   - container/postgres/compose.yaml
   - container/postgres-prometheus-exporter/compose.yaml
   - container/postgres-test/compose.yaml
-  - container/pushgateway/compose.yaml
   - cpp/compose.yaml
   - golang/compose.yaml
   - rust/compose.yaml
   - python/compose.yaml
   - haskell/compose.yaml
+  - ../telemetry/pushgateway/compose.yaml
   - ../telemetry/prometheus/compose.yaml
   - ../telemetry/postgres/compose.yaml
 
