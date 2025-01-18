@@ -14,9 +14,6 @@ include:
   - rust/compose.yaml
   - python/compose.yaml
   - haskell/compose.yaml
-  - ../telemetry/pushgateway/compose.yaml
-  - ../telemetry/prometheus/compose.yaml
-  - ../telemetry/postgres/compose.yaml
 
 services:
   infra:
@@ -29,7 +26,4 @@ services:
       - grafana
       - postgres
       - postgres-test
-      - telemetry-postgres
-      - prometheus
-      - pushgateway
       - postgres-prometheus-exporter

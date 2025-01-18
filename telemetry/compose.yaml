@@ -1,0 +1,21 @@
+x-podman:
+  in_pod: False
+
+include:
+  - pushgateway/compose.yaml
+  - prometheus/compose.yaml
+  - postgres/compose.yaml
+  - postgres-test/compose.yaml
+
+services:
+  all:
+    # dummy container via which we can refer to the group of containers
+    # that provide the infrastructure to run producers against.
+    image: ghcr.io/linuxcontainers/debian-slim:12
+    command: /bin/sh -c 'while true; do sleep 1h; done'
+    stop_signal: SIGKILL
+    depends_on:
+      - postgres
+      - postgres-test
+      - prometheus
+      - pushgateway

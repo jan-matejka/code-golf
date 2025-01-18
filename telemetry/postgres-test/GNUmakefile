@@ -1,6 +1,6 @@
 include ../../help.mk
 .DEFAULT_GOAL := help
-PORT:=5442
+PORT:=5443
 
 .PHONY: psql-mq
 psql:  # Run psql as mq

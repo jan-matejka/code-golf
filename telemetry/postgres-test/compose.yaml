@@ -1,12 +1,10 @@
 services:
-  postgres:
-    build:
-      context: ./postgres
-      dockerfile: Containerfile
+  postgres-test:
+    image: postgres
     expose:
       - 5432
     ports:
-      - "127.0.0.1:5442:5432"
+      - "127.0.0.1:5443:5432"
     volumes:
       - "./postgres/postgresql.conf:/etc/postgres/postgresql.conf"
       - "./postgres/init:/docker-entrypoint-initdb.d/"

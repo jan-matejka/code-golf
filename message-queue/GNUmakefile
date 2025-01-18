@@ -9,10 +9,18 @@ producers = python cpp golang rust haskell
 .PHONY: build
 build: compose_build ## Build all images
 
-	$(call compose,build)
+	make -C ../telemetry build
 
 .PHONY: run-producers
 run-producers: ## Run producers
 
 	printf "%s\n" $(producers) | \
 		xargs -I% sh -c 'podman-compose run --rm producer-% || true'
+
+compose-before_up:
+
+	make -C ../telemetry all-up
+
+compose-after_down:
+
+	make -C ../telemetry all-down
