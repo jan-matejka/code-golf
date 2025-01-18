@@ -6,12 +6,6 @@ CONTAINERFILE := Containerfile
 COMMON_NAME := mq-producer
 NAME := $(shell basename $(CURDIR))
 FULL_NAME := $(COMMON_NAME)-$(NAME)
-PODMAN_RUN = podman run \
-		--userns keep-id \
-		-v $(realpath .):/home/user/mq \
-		-u user \
-		--network=host \
-		$(1) $(FULL_NAME) $(2)
 
 compose = podman-compose -f ../compose.yaml -p code-golf_message-queue $1
 
@@ -33,11 +27,7 @@ dev-image: ## Build dev image
 .PHONY: container
 container: ## Run the image in container
 
-	podman rm $(FULL_NAME) || true
-	# Run with --network=host for now.
-	# Option --userns and --pod are mutually exlusive.
-	# TBD Maybe its possible to run the entire pod with --userns.
-	$(call PODMAN_RUN,--name $(FULL_NAME) -it,zsh)
+	$(call compose,run producer-$(NAME)-dev)
 
 .PHONY: container-check
 container-check: dev-image ## Run make check inside container
