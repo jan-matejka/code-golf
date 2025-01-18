@@ -34,7 +34,8 @@ container: ## Run the image in container
 # cache takes relatively long and is mostly unnecessary.
 container-check: ## Run make check inside container
 
-	$(call compose,run producer-$(NAME)-dev -c 'make check')
+	$(call compose,run --rm $(CONTAINER_CHECK_COMPOSE_ARGS) \
+		producer-$(NAME)-dev -c 'make check')
 
 .PHONY: exec-root
 exec-root: ## Exec into running container as root
