@@ -16,14 +16,19 @@ PODMAN_RUN = podman run \
 compose = podman-compose -f ../compose.yaml -p code-golf_message-queue $1
 
 .PHONY: image
-image: ## Build image
+image: dev-image ## Build image
 
 	# Build the images separately because podman-compose-build runs the builds in
 	# parallel, even tho one image depends on the other. Which is weird.
 	# Also the output is unreadable since it jumbles the outputs of both builds
 	# without any indication of which image the outputs is from.
-	$(call compose,build producer-$(NAME)-dev)
+	# Now also because we want check-container to depend on the dev-image only
 	$(call compose,build producer-$(NAME))
+
+.PHONY: dev-image
+dev-image: ## Build dev image
+
+	$(call compose,build producer-$(NAME)-dev)
 
 .PHONY: container
 container: ## Run the image in container
@@ -35,10 +40,9 @@ container: ## Run the image in container
 	$(call PODMAN_RUN,--name $(FULL_NAME) -it,zsh)
 
 .PHONY: check-container
-check-container: image ## Run make check inside container
+check-container: dev-image ## Run make check inside container
 
-	podman rm $(FULL_NAME)-check || true
-	$(call PODMAN_RUN,--name $(FULL_NAME)-check,make check)
+	$(call compose,run producer-$(NAME)-dev -c 'make check')
 
 .PHONY: exec-root
 exec-root: ## Exec into running container as root
