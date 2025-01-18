@@ -30,7 +30,9 @@ container: ## Run the image in container
 	$(call compose,run producer-$(NAME)-dev)
 
 .PHONY: container-check
-container-check: dev-image ## Run make check inside container
+# Run image build manually. Do not add as container-check dependency. Even full
+# cache takes relatively long and is mostly unnecessary.
+container-check: ## Run make check inside container
 
 	$(call compose,run producer-$(NAME)-dev -c 'make check')
 
