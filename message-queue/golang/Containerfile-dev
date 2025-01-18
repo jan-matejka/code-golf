@@ -7,8 +7,12 @@ RUN apt-get install -y \
   golang
 
 USER user
-COPY --chown=user ../mqp-base.mk /home/user/
-COPY --chown=user golang/src/go.mod golang/src/go.sum /home/user/mq/src/
+COPY --chown=user ../help.mk /home/
+COPY --chown=user message-queue/mqp-base.mk /home/user/
+COPY --chown=user \
+  message-queue/golang/src/go.mod \
+  message-queue/golang/src/go.sum \
+  /home/user/mq/src/
 
 WORKDIR mq
 RUN cd src && echo 'package jmcgmqp' >config.go && go get -t -x ./

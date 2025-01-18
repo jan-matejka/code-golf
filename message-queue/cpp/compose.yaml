@@ -1,8 +1,8 @@
 services:
   producer-cpp-dev:
     build:
-      context: ./
-      dockerfile: cpp/Containerfile-dev
+      context: ../
+      dockerfile: message-queue/cpp/Containerfile-dev
     userns_mode: "keep-id"
     network_mode: host
     volumes:

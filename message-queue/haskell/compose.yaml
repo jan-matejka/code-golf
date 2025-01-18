@@ -1,8 +1,8 @@
 services:
   producer-haskell-dev:
     build:
-      context: ./
-      dockerfile: haskell/Containerfile-dev
+      context: ../
+      dockerfile: message-queue/haskell/Containerfile-dev
     userns_mode: "keep-id"
     network_mode: host
     volumes:

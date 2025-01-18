@@ -8,5 +8,6 @@ RUN apt-get install -y \
   prometheus-cpp-dev libgtest-dev libboost-dev libpqxx-dev libfmt-dev
 
 USER user
-COPY --chown=user ../mqp-base.mk /home/user/
+COPY --chown=user ../help.mk /home/
+COPY --chown=user message-queue/mqp-base.mk /home/user/
 WORKDIR mq
