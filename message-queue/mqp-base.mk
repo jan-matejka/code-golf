@@ -39,8 +39,8 @@ container: ## Run the image in container
 	# TBD Maybe its possible to run the entire pod with --userns.
 	$(call PODMAN_RUN,--name $(FULL_NAME) -it,zsh)
 
-.PHONY: check-container
-check-container: dev-image ## Run make check inside container
+.PHONY: container-check
+container-check: dev-image ## Run make check inside container
 
 	$(call compose,run producer-$(NAME)-dev -c 'make check')
 

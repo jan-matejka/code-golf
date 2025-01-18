@@ -21,7 +21,7 @@ run-producers: ## Run producers
 container-check-producers:  ## Run all producer's tests
 
 	printf "%s\n" $(producers) | \
-		xargs -I% sh -c 'make -C % check-container || true'
+		xargs -I% sh -c 'make -C % container-check || true'
 
 compose-before_up:
 
