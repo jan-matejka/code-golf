@@ -1,3 +1,4 @@
+include ../../help.mk
 # Base GNU makefile for building message producers, and their container
 # images and providing container helpers.
 .DEFAULT_GOAL = build
@@ -43,10 +44,3 @@ check-container: image ## Run make check inside container
 exec-root: ## Exec into running container as root
 
 	podman exec -u root -it $(FULL_NAME) bash
-
-.PHONY: help
-help: ## Print help
-
-	@@grep -h '^\([a-zA-Z-]\+\):' $(MAKEFILE_LIST) | \
-		sort | \
-		awk -F ':.*?## ' 'NF==2 {printf "  %-26s%s\n", $$1, $$2}'

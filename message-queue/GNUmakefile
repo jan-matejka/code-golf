@@ -1,3 +1,4 @@
+include ../help.mk
 .DEFAULT_GOAL := build
 
 project=code-golf_message-queue
@@ -14,10 +15,3 @@ run-producers: ## Run producers
 
 	printf "%s\n" $(producers) | \
 		xargs -I% sh -c 'podman-compose run --rm producer-% || true'
-
-.PHONY: help
-help: ## Print help
-
-	@@grep -h '^\([a-zA-Z$(PERCENT)-]\+\):' $(MAKEFILE_LIST) | \
-		sort | \
-		awk -F ':.*?## ' 'NF==2 {printf "  %-26s%s\n", $$1, $$2}'
