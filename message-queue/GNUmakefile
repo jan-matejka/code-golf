@@ -17,6 +17,12 @@ run-producers: ## Run producers
 	printf "%s\n" $(producers) | \
 		xargs -I% sh -c 'podman-compose run --rm producer-% || true'
 
+.PHONY: container-check-producers
+container-check-producers:  ## Run all producer's tests
+
+	printf "%s\n" $(producers) | \
+		xargs -I% sh -c 'make -C % check-container || true'
+
 compose-before_up:
 
 	make -C ../telemetry all-up
