@@ -7,9 +7,9 @@ using namespace std;
 
 class Config {
 public:
-  int duration = 3;
-  int power = 0;
-  int test_prometheus = 0;
+  int duration;
+  int power;
+  int test_prometheus;
   string prometheus_gateway_host = "localhost";
   int prometheus_gateway_port = 9091;
   string pg_results_dsn;
