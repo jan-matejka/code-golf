@@ -12,10 +12,17 @@ PODMAN_RUN = podman run \
 		--network=host \
 		$(1) $(FULL_NAME) $(2)
 
+compose = podman-compose -f ../compose.yaml -p code-golf_message-queue $1
+
 .PHONY: image
 image: ## Build image
 
-	cd .. && podman-compose build producer-$(NAME)-dev producer-$(NAME)
+	# Build the images separately because podman-compose-build runs the builds in
+	# parallel, even tho one image depends on the other. Which is weird.
+	# Also the output is unreadable since it jumbles the outputs of both builds
+	# without any indication of which image the outputs is from.
+	$(call compose,build producer-$(NAME)-dev)
+	$(call compose,build producer-$(NAME))
 
 .PHONY: container
 container: ## Run the image in container

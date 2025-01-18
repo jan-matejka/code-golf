@@ -1,11 +1,13 @@
 .DEFAULT_GOAL := build
 
+project=code-golf_message-queue
 producers = python cpp golang rust haskell
+compose=podman-compose -p $(project) $1
 
 .PHONY: build
 build: ## Build all images
 
-	podman-compose build
+	$(call compose,build)
 
 .PHONY: run-producers
 run-producers: ## Run producers
