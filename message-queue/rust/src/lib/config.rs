@@ -44,7 +44,7 @@ impl Config {
     ) -> Result<Self,Box<dyn error::Error>> {
         let dsn = pg_telemetry_dsn.unwrap_or(
             Config::getenv::<String>(
-                "PG_TELEMETRY_DSN", "postgres://mq@localhost/mq".to_string()
+                "TELEMETRY_POSTGRES", "postgres://mq@localhost:5442/mq".to_string()
             )?
         );
         return Ok(Self{
@@ -65,17 +65,28 @@ pub mod tests {
         pub pg_test_dsn: String,
         pub pg_test_root_dsn: String,
         pub pg_test_mq_dsn: String,
+        pub telemetry_pg_base: String,
+        pub telemetry_pg_root: String,
+        pub telemetry_pg_mq: String,
     }
 
     impl TestConfig {
         pub fn new() -> Result<Self,Box<dyn error::Error>> {
-            let base = Config::getenv::<String>(
+            let mq_pg = Config::getenv::<String>(
                 "PG_TEST_DSN", "localhost:5433".to_string()
             )?;
+            let telemetry_pg = Config::getenv::<String>(
+                "TEST_TELEMETRY_POSTGRES", "localhost:5443".to_string()
+            )?;
             return Ok(Self{
-                pg_test_dsn: base.clone(),
-                pg_test_root_dsn: format!("postgres://postgres@{}", &base),
-                pg_test_mq_dsn: format!("postgres://mq@{}/test", &base),
+                pg_test_dsn: mq_pg.clone(),
+                pg_test_root_dsn: format!("postgres://postgres@{}", &mq_pg),
+                pg_test_mq_dsn: format!("postgres://mq@{}/test", &mq_pg),
+                telemetry_pg_base: telemetry_pg.clone(),
+                telemetry_pg_root:
+                    format!("postgres://postgres@{}", &telemetry_pg),
+                telemetry_pg_mq:
+                    format!("postgres://mq@{}/test", &telemetry_pg),
             });
         }
     }
