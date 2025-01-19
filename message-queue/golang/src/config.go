@@ -4,14 +4,16 @@ import "os"
 import "strconv"
 
 type Config struct {
-	Test_prometheus int
-	Duration        int
+	Test_prometheus   int
+	Duration          int
+	TelemetryPostgres string
 }
 
 func DefaultConfig() *Config {
 	c := new(Config)
 	c.Test_prometheus = 0
 	c.Duration = 3
+	c.TelemetryPostgres = "postgres://mq@localhost:5442/mq"
 	return c
 }
 
@@ -37,6 +39,13 @@ func NewConfig() (*Config, error) {
 				return nil, err
 			}
 			c.Duration = i
+		}
+	}
+
+	{
+		x, exists := os.LookupEnv("TELEMETRY_POSTGRES")
+		if exists {
+			c.TelemetryPostgres = x
 		}
 	}
 

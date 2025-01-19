@@ -12,7 +12,7 @@ import "github.com/jan-matejka/code-golf/message-queue/golang/src/test"
 
 func mkTestDb() (*pgxpool.Pool, error) {
 	ctx := context.Background()
-	pool, err := pgxpool.Connect(ctx, test.TestConfig.PgTestRootDSN)
+	pool, err := pgxpool.Connect(ctx, test.TestConfig.TelemetryPostgresRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func mkTestDb() (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
-	pool, err = pgxpool.Connect(ctx, test.TestConfig.PgTestMqDSN)
+	pool, err = pgxpool.Connect(ctx, test.TestConfig.TelemetryPostgresMq)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,10 @@ func TestPush(t *testing.T) {
 	}
 	defer pool.Close()
 
-	pgm, err := NewPgMetrics(test.TestConfig.PgTestMqDSN)
+	cg := jmcgmqp.DefaultConfig()
+	cg.TelemetryPostgres = test.TestConfig.TelemetryPostgresMq
+
+	pgm, err := NewPgMetrics(cg)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

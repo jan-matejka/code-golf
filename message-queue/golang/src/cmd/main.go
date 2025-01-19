@@ -105,7 +105,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	pgm, err := postgres.NewPgMetrics("postgres://mq@localhost/mq?pool_max_conns=2048")
+	pgm, err := postgres.NewPgMetrics(app.Config)
 	if err != nil {
 		die("Unable to connect to postgres metrics: %v\n", err)
 	}
