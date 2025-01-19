@@ -37,10 +37,24 @@ jobs:
           --health-interval 5s
           --health-timeout 1s
           --health-retries 5
+
+      telemetry-postgres:
+        image: ghcr.io/${{ github.repository_owner }}/code-golf_telemetry_postgres:${{ inputs.pg_tag }}
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 1s
+          --health-retries 5
     steps:
       - name: make check
         env:
           PG_TEST_DSN: postgres-test:5432
+          TEST_TELEMETRY_POSTGRES: telemetry-postgres:5432
           # I have no idea why github sets HOME=/github/home. Its root owned
           # and there is nothing useful. Hypothetically it could be a volume
           # (related to /__w (workdir)) and share data between the host and
