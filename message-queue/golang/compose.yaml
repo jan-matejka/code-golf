@@ -1,8 +1,8 @@
 services:
   producer-golang-dev:
     build:
-      context: ./
-      dockerfile: golang/Containerfile-dev
+      context: ../
+      dockerfile: message-queue/golang/Containerfile-dev
     userns_mode: "keep-id"
     network_mode: host
     volumes:

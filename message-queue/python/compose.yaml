@@ -1,8 +1,8 @@
 services:
   producer-python-dev:
     build:
-      context: ./
-      dockerfile: python/Containerfile-dev
+      context: ../
+      dockerfile: message-queue/python/Containerfile-dev
     userns_mode: "keep-id"
     network_mode: host
     volumes:
