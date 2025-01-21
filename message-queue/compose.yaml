@@ -9,8 +9,6 @@ include:
   - container/postgres/compose.yaml
   - container/postgres-prometheus-exporter/compose.yaml
   - container/postgres-test/compose.yaml
-  - container/prometheus/compose.yaml
-  - container/pushgateway/compose.yaml
   - cpp/compose.yaml
   - golang/compose.yaml
   - rust/compose.yaml
@@ -28,6 +26,4 @@ services:
       - grafana
       - postgres
       - postgres-test
-      - prometheus
-      - pushgateway
       - postgres-prometheus-exporter

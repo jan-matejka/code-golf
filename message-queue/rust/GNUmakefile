@@ -1,3 +1,4 @@
+MAKEFLAGS += -r
 include ../mqp-base.mk
 
 .PHONY: build

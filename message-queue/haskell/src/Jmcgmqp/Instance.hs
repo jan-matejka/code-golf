@@ -5,7 +5,7 @@ module Jmcgmqp.Instance
 
 import Data.Kind (Type)
 
-import Jmcgmqp.Config (newConfig, Config)
+import Jmcgmqp.Config (newConfig, Config, telemetryPostgres)
 import Jmcgmqp.Prometheus.Metrics (newMetrics, Metrics)
 import Jmcgmqp.Postgres (newPostgres, Postgres)
 import Jmcgmqp.Runtime (Runtime, newRuntime)
@@ -22,5 +22,5 @@ newInstance :: IO Instance
 newInstance = do
   c <- newConfig
   r <- newRuntime
-  pg <- newPostgres "postgres://postgres@localhost:5432/mq"
+  pg <- newPostgres c.telemetryPostgres
   Instance c r pg <$> newMetrics

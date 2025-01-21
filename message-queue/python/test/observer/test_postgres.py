@@ -13,14 +13,14 @@ from jmcgmqp.primitives import SampleDescription, WorkerResult
 from jmcgmqp import event
 
 @pytest.fixture
-def m(pg):
-    c = Config(POSTGRES=pg.info.dsn)
+def m(telemetry_pg):
+    c = Config(TELEMETRY_POSTGRES=telemetry_pg.info.dsn)
     m = Model(c)
     with closing(m):
         yield m
 
 @pytest.mark.integration
-def test_Model_runtime_id(pg, m):
+def test_Model_runtime_id(m):
     r = Runtime.new()
     assert m.fetch_runtimes() == []
     r_id = m.runtime_id(r)
@@ -44,7 +44,7 @@ def test_Model_runtime_id(pg, m):
     assert m.fetch_runtimes() == [d]
 
 @pytest.mark.integration
-def test_Model_sample_id(pg, m):
+def test_Model_sample_id(m):
     r = Runtime.new()
     r_id = m.runtime_id(r)
     sdesc = SampleDescription(2, 'multiprocessing', 'postgres')
@@ -68,7 +68,7 @@ def test_Model_sample_id(pg, m):
     assert m.fetch_samples() == [d]
 
 @pytest.mark.integration
-def test_Model_worker_result(pg, m):
+def test_Model_worker_result(m):
     r = Runtime.new()
     r_id = m.runtime_id(r)
     sdesc = SampleDescription(2, 'multiprocessing', 'postgres')
@@ -88,9 +88,9 @@ def test_Model_worker_result(pg, m):
     assert m.fetch_workers() == [d]
 
 @pytest.mark.integration
-def test_observer(pg, m):
+def test_observer(telemetry_pg, m):
     app = Instance()
-    app.config.POSTGRES = pg.info.dsn
+    app.config.TELEMETRY_POSTGRES = telemetry_pg.info.dsn
     o = Observer(app)
 
     sdesc = SampleDescription(2, 'multiprocessing', 'postgres')

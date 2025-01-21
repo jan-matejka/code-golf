@@ -10,8 +10,10 @@ from jmcgmqp.base_config import BaseConfig
 class TestConfig(BaseConfig):
     _opts = (
         ('PG_TEST_DSN', str, "localhost:5433"),
+        ('TEST_TELEMETRY_POSTGRES', str, "localhost:5443")
     )
     PG_TEST_DSN: str = None
+    TEST_TELEMETRY_POSTGRES: str = None
 
     PG_TEST_ROOT_DSN: str = None
     PG_TEST_MQ_DSN: str = None
@@ -20,6 +22,13 @@ class TestConfig(BaseConfig):
         super().__post_init__()
         self.PG_TEST_ROOT_DSN=f"postgres://postgres@{self.PG_TEST_DSN}"
         self.PG_TEST_MQ_DSN=f"postgres://mq@{self.PG_TEST_DSN}/test"
+
+        self.TEST_TELEMETRY_POSTGRES_ROOT=(
+            f"postgres://postgres@{self.TEST_TELEMETRY_POSTGRES}"
+        )
+        self.TEST_TELEMETRY_POSTGRES_MQ=(
+            f"postgres://mq@{self.TEST_TELEMETRY_POSTGRES}/test"
+        )
 
 @pytest.fixture(scope='session')
 def tcg():
@@ -44,4 +53,19 @@ def pg_root(tcg):
 @pytest.fixture()
 def pg(pg_root, tcg):
     with psycopg.connect(tcg.PG_TEST_MQ_DSN) as conn:
+        yield conn
+
+@pytest.fixture()
+def telemetry_pg_root(tcg):
+    with psycopg.connect(tcg.TEST_TELEMETRY_POSTGRES_ROOT) as conn:
+        conn.autocommit = True
+        # pprint_connect(conn)
+        with conn.cursor() as c:
+            c.execute("DROP DATABASE if exists test");
+            c.execute("CREATE DATABASE test TEMPLATE mq");
+            yield
+
+@pytest.fixture()
+def telemetry_pg(telemetry_pg_root, tcg):
+    with psycopg.connect(tcg.TEST_TELEMETRY_POSTGRES_MQ) as conn:
         yield conn

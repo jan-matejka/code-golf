@@ -4,7 +4,7 @@
 using namespace std;
 
 Postgres::Postgres(Config &c)
-: conn(connection(c.pg_results_dsn)) {
+: conn(connection(c.telemetry_postgres)) {
 }
 
 Postgres::~Postgres() {

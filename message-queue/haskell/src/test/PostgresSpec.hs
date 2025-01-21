@@ -27,7 +27,7 @@ import Jmcgmqp.Runtime (newRuntime,
   Runtime(ctime, uuid, lang, lang_version, runtime, os, kernel, arch)
   )
 import TestConfig (newTestConfig,
-  TestConfig(pg_test_root_dsn, pg_test_mq_dsn)
+  TestConfig(telemetryPgMq, telemetryPgRoot)
   )
 
 withConnect :: ByteString -> (Connection -> IO c) -> IO c
@@ -39,7 +39,7 @@ withConnect2 x = bracket (newPostgres x) close
 mkDb :: IO ()
 mkDb = do
   tcg <- newTestConfig
-  withConnect tcg.pg_test_root_dsn
+  withConnect tcg.telemetryPgRoot
    (\c ->  void (
       execute_ c "drop database if exists test" >>
       execute_ c "create database test template mq"
@@ -160,10 +160,10 @@ spec = do
       _ <- mkDb
       tcg <- newTestConfig
       r <- newRuntime
-      withConnect2 tcg.pg_test_mq_dsn $ \pg ->
+      withConnect2 tcg.telemetryPgMq $ \pg ->
         void $ execStateT (push pg r sdesc rs) Nothing
 
-      withConnect2 tcg.pg_test_mq_dsn $ \pg -> do
+      withConnect2 tcg.telemetryPgMq $ \pg -> do
         runtime_id <- test_runtime pg r
         sample_id <- test_samples pg runtime_id sdesc
         test_workers pg sample_id rs
@@ -178,7 +178,7 @@ spec = do
              ]
       _ <- mkDb
       tcg <- newTestConfig
-      withConnect2 tcg.pg_test_mq_dsn $ \pg -> do
+      withConnect2 tcg.telemetryPgMq $ \pg -> do
           r <- newRuntime
 
           _ <- execStateT (push pg r sdesc1 rs >> push pg r sdesc2 rs) Nothing

@@ -130,11 +130,11 @@ mod tests {
 
     impl PgFixture {
         pub fn new() -> Result<Self, Box<dyn error::Error>> {
-            let mut c = pg::Client::connect(&TCG.pg_test_root_dsn, pg::NoTls)?;
+            let mut c = pg::Client::connect(&TCG.telemetry_pg_root, pg::NoTls)?;
             let _ = c.execute("drop database if exists test", &[]);
             _ = c.execute("create database test template mq", &[]);
 
-            let t = pg::Client::connect(&TCG.pg_test_mq_dsn, pg::NoTls)?;
+            let t = pg::Client::connect(&TCG.telemetry_pg_mq, pg::NoTls)?;
             return Ok(Self{c: t});
         }
     }
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_push() -> Result<(), Box<dyn error::Error>> {
         let cg = Config::new(
-            Some(TCG.pg_test_mq_dsn.to_string())
+            Some(TCG.telemetry_pg_mq.to_string())
         )?;
         let mut pgf = PgFixture::new()?;
         let mut pg = Postgres::new(&cg)?;

@@ -1,6 +1,8 @@
 package postgres
 
-import "context"
+import (
+	"context"
+)
 
 import "github.com/jackc/pgx/v4/pgxpool"
 import "github.com/jackc/pgx/v4"
@@ -11,8 +13,8 @@ type PgMetrics struct {
 	runtime_id int
 }
 
-func NewPgMetrics(dsn string) (*PgMetrics, error) {
-	pool, err := pgxpool.Connect(context.Background(), dsn)
+func NewPgMetrics(cg *jmcgmqp.Config) (*PgMetrics, error) {
+	pool, err := pgxpool.Connect(context.Background(), cg.TelemetryPostgres)
 	if err != nil {
 		return nil, err
 	}

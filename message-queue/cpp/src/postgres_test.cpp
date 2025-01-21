@@ -6,20 +6,22 @@
 
 namespace {
 TEST(Results, Push) {
-  PgFixture pgf;
+  auto tcg = TestConfig::Instance();
 
   SampleDesc sdesc(2, "threading", "postgres");
   Results rs;
   rs.Add(WorkerResult(1, 10, chrono::duration<double>(1s)));
   rs.Add(WorkerResult(2, 20, chrono::duration<double>(2s)));
 
-  Config cg(pgf.dsn);
+  auto pgf = tcg.telemetry_postgres();
+
+  Config cg(pgf->dsn);
   Postgres pg(cg);
   Runtime r;
 
   pg.Push(r, sdesc, rs);
 
-  connection conn(pgf.dsn);
+  connection conn(pgf->dsn);
   work tx(conn);
   auto pq_runtime = tx.exec(R"(
   select
