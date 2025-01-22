@@ -10,11 +10,12 @@ USER user
 COPY --chown=user ../help.mk /home/
 COPY --chown=user message-queue/mqp-base.mk /home/user/
 COPY --chown=user message-queue/rust/Cargo.toml mq/
+COPY --chown=user message-queue/rust/Cargo.lock mq/
 
 RUN cd mq && cargo fetch
 RUN mkdir -p mq/src/lib mq/src/bin && \
   echo '// dummy' >> mq/src/lib/lib.rs && \
   echo 'fn main() {}' >> mq/src/bin/main.rs
-RUN cd mq && cargo build
+RUN cd mq && cargo fetch && cargo build --all-targets
 
 WORKDIR mq
