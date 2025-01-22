@@ -15,4 +15,4 @@ COPY --chown=user \
   /home/user/mq/src/
 
 WORKDIR mq
-RUN cd src && echo 'package jmcgmqp' >config.go && go get -t -x ./
+RUN cd src && go mod download -x

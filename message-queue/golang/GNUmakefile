@@ -7,8 +7,8 @@ all: format build
 .PHONY: build
 build:  ## Build
 
-	cd src && go build
-	cd src && go build cmd/main.go
+	cd src && go build -x
+	cd src && go build -x cmd/main.go
 
 .PHONY: format
 format:  ## Format code
