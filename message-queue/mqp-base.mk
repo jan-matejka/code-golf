@@ -27,7 +27,7 @@ dev-image: ## Build dev image
 .PHONY: container
 container: ## Run the image in container
 
-	$(call compose,run producer-$(NAME)-dev)
+	$(call compose,run --rm producer-$(NAME)-dev)
 
 .PHONY: container-check
 # Run image build manually. Do not add as container-check dependency. Even full
