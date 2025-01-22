@@ -17,7 +17,7 @@ COPY --chown=user \
   message-queue/haskell/jmcgmqp.cabal \
   message-queue/haskell/stack.yaml \
   mq/
-RUN cd mq && stack build --only-dependencies --trace
+RUN cd mq && stack build --test --only-dependencies --trace
 
 COPY --chown=user ../help.mk /home/
 COPY --chown=user message-queue/mqp-base.mk /home/user/
