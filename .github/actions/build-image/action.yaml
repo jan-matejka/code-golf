@@ -19,6 +19,10 @@ inputs:
   registry_pass:
     description: registry password
     required: true
+  base_tag:
+    description: Base tag defining what version of the FROM image we build on
+    required: false
+    default:
 
 runs:
   using: "composite"
@@ -53,6 +57,10 @@ runs:
           ${{ inputs.registry }}/${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
       run: >
         set -x && cd ${{ inputs.dir }} &&
+        extra="";
+        [ -n "${{ inputs.base_tag }}" ] && {
+          extra="--build-arg tag=${{ inputs.base_tag }}"
+        };
         podman-compose
         -p ${{ inputs.repository }}_${{ inputs.dir }}
         --podman-build-args "
@@ -61,7 +69,7 @@ runs:
         --cache-from=${{ env.CACHE }}
         --cache-to=${{ env.CACHE }}"
         build
-        --build-arg tag=${{ github.sha }}
+        $extra
         --build-arg registry=${{ inputs.registry }}
         "${{ inputs.image }}"
       shell: sh
