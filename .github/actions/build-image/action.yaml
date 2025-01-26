@@ -41,15 +41,6 @@ runs:
         username: ${{ inputs.registry_user }}
         password: ${{ inputs.registry_pass }}
 
-    - name: Pull base image
-      if: inputs.base != ''
-      env:
-        BASE: >-
-          ${{ inputs.registry }}/${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.base }}:${{ github.sha }}
-      run: >
-        podman pull ${{ env.BASE }}
-      shell: sh
-
     - name: Build image
       env:
         IMAGE_FULL: >-
