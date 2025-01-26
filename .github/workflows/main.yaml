@@ -51,6 +51,8 @@ jobs:
       mq-test-producer-rust: ${{ steps.changes.outputs.mq_test_producer_rust_any_changed }}
     steps:
       # TBD: check if $ref_name exists in registry, otheriwse build.
+      # FIXME: yeah this aint gonna work for new branches.
+      #        We need to fallback to master tag if this is a new branch.
       - uses: actions/checkout@v4
         with:
           # Just fetch everything here.
