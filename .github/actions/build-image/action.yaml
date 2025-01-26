@@ -28,25 +28,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v45
-
-    - name: Show changed files
-      env:
-        changed: ${{ steps.changed-files.outputs.all_changed_files }}
-      run: printf "%s\n" $changed
-      shell: sh
-
     - name: Install podman-compose
       run: pip3 install podman-compose
       shell: sh
       # Ubuntu also uses too old (1.0.6) version
       #  run: sudo apt-get install -y podman-compose
-
-    - name: Print podman-compose version
-      run: podman-compose version
-      shell: sh
 
     - name: Log in to the Github Container registry
       uses: redhat-actions/podman-login@v1
