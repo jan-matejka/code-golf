@@ -344,6 +344,9 @@ jobs:
     uses: ./.github/workflows/mq-run-test.yaml
     with:
       name: cpp
+      container_tag: ${{ needs.analyze.outputs.mq-producer-cpp-tag }}
+      pg_tag: ${{ needs.analyze.outputs.mq-postgres-tag }}
+      telemetry_pg_tag: ${{ needs.analyze.outputs.telemetry-postgres-tag }}
     secrets: inherit
 
   build-producer-golang-dev:
@@ -396,6 +399,9 @@ jobs:
     uses: ./.github/workflows/mq-run-test.yaml
     with:
       name: golang
+      container_tag: ${{ needs.analyze.outputs.mq-producer-golang-tag }}
+      pg_tag: ${{ needs.analyze.outputs.mq-postgres-tag }}
+      telemetry_pg_tag: ${{ needs.analyze.outputs.telemetry-postgres-tag }}
     secrets: inherit
 
   build-producer-haskell-dev:
@@ -448,6 +454,9 @@ jobs:
     uses: ./.github/workflows/mq-run-test.yaml
     with:
       name: haskell
+      container_tag: ${{ needs.analyze.outputs.mq-producer-haskell-tag }}
+      pg_tag: ${{ needs.analyze.outputs.mq-postgres-tag }}
+      telemetry_pg_tag: ${{ needs.analyze.outputs.telemetry-postgres-tag }}
     secrets: inherit
 
   build-producer-python-dev:
@@ -500,6 +509,9 @@ jobs:
     uses: ./.github/workflows/mq-run-test.yaml
     with:
       name: python
+      container_tag: ${{ needs.analyze.outputs.mq-producer-python-tag }}
+      pg_tag: ${{ needs.analyze.outputs.mq-postgres-tag }}
+      telemetry_pg_tag: ${{ needs.analyze.outputs.telemetry-postgres-tag }}
     secrets: inherit
 
   build-producer-rust-dev:
@@ -552,4 +564,7 @@ jobs:
     uses: ./.github/workflows/mq-run-test.yaml
     with:
       name: rust
+      container_tag: ${{ needs.analyze.outputs.mq-producer-rust-tag }}
+      pg_tag: ${{ needs.analyze.outputs.mq-postgres-tag }}
+      telemetry_pg_tag: ${{ needs.analyze.outputs.telemetry-postgres-tag }}
     secrets: inherit
