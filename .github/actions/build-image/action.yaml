@@ -36,6 +36,15 @@ runs:
         username: ${{ inputs.registry_user }}
         password: ${{ inputs.registry_pass }}
 
+    - id: branch-tag
+      name: Sanitize ref_name into a valid tag token
+      env:
+        ref_name: ${{ github.ref_name }}
+      run: |
+        echo "branch_tag=$ref_name" | sed 's#/#__#g' >> "${GITHUB_ENV}"
+        echo "branch_tag=$ref_name" | sed 's#/#__#g' >> "${GITHUB_OUTPUT}"
+      shell: sh
+
     - name: Build image
       env:
         IMAGE_FULL: >-
@@ -46,10 +55,13 @@ runs:
         set -x && cd ${{ inputs.dir }} &&
         podman-compose
         -p ${{ inputs.repository }}_${{ inputs.dir }}
-        --podman-build-args "-t ${{ env.IMAGE_FULL }}:${{ github.sha }}
+        --podman-build-args "
+        -t ${{ env.IMAGE_FULL }}:${{ github.sha }}
+        -t ${{ env.IMAGE_FULL }}:${{ env.branch_tag }}
         --cache-from=${{ env.CACHE }}
         --cache-to=${{ env.CACHE }}"
-        build --build-arg tag=${{ github.sha }}
+        build
+        --build-arg tag=${{ github.sha }}
         --build-arg registry=${{ inputs.registry }}
         "${{ inputs.image }}"
       shell: sh
@@ -62,7 +74,7 @@ runs:
           ${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
       with:
         image: ${{ env.IMAGE_FULL }}
-        tags: ${{ github.sha }}
+        tags: ${{ github.sha }} ${{ env.branch_tag }}
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry_user }}
         password: ${{ inputs.registry_pass }}
