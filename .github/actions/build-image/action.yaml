@@ -19,34 +19,15 @@ inputs:
   registry_pass:
     description: registry password
     required: true
-  base:
-    # TBD: load this automatically from the containerfile
-    description: base image
-    required: false
-    default: ''
 
 runs:
   using: "composite"
   steps:
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v45
-
-    - name: Show changed files
-      env:
-        changed: ${{ steps.changed-files.outputs.all_changed_files }}
-      run: printf "%s\n" $changed
-      shell: sh
-
     - name: Install podman-compose
       run: pip3 install podman-compose
       shell: sh
       # Ubuntu also uses too old (1.0.6) version
       #  run: sudo apt-get install -y podman-compose
-
-    - name: Print podman-compose version
-      run: podman-compose version
-      shell: sh
 
     - name: Log in to the Github Container registry
       uses: redhat-actions/podman-login@v1
@@ -55,13 +36,13 @@ runs:
         username: ${{ inputs.registry_user }}
         password: ${{ inputs.registry_pass }}
 
-    - name: Pull base image
-      if: inputs.base != ''
+    - id: branch-tag
+      name: Sanitize ref_name into a valid tag token
       env:
-        BASE: >-
-          ${{ inputs.registry }}/${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.base }}:${{ github.sha }}
-      run: >
-        podman pull ${{ env.BASE }}
+        ref_name: ${{ github.ref_name }}
+      run: |
+        echo "branch_tag=$ref_name" | sed 's#/#__#g' >> "${GITHUB_ENV}"
+        echo "branch_tag=$ref_name" | sed 's#/#__#g' >> "${GITHUB_OUTPUT}"
       shell: sh
 
     - name: Build image
@@ -74,10 +55,13 @@ runs:
         set -x && cd ${{ inputs.dir }} &&
         podman-compose
         -p ${{ inputs.repository }}_${{ inputs.dir }}
-        --podman-build-args "-t ${{ env.IMAGE_FULL }}:${{ github.sha }}
+        --podman-build-args "
+        -t ${{ env.IMAGE_FULL }}:${{ github.sha }}
+        -t ${{ env.IMAGE_FULL }}:${{ env.branch_tag }}
         --cache-from=${{ env.CACHE }}
         --cache-to=${{ env.CACHE }}"
-        build --build-arg tag=${{ github.sha }}
+        build
+        --build-arg tag=${{ github.sha }}
         --build-arg registry=${{ inputs.registry }}
         "${{ inputs.image }}"
       shell: sh
@@ -90,7 +74,7 @@ runs:
           ${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
       with:
         image: ${{ env.IMAGE_FULL }}
-        tags: ${{ github.sha }}
+        tags: ${{ github.sha }} ${{ env.branch_tag }}
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry_user }}
         password: ${{ inputs.registry_pass }}

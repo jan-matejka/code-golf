@@ -68,7 +68,6 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
-          base: base-debian
 
   build-producer-haskell-dev:
     if: true
@@ -83,7 +82,6 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
-          base: base-haskell
 
   build-producer-haskell:
     if: true
