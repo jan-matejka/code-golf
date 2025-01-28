@@ -67,7 +67,6 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
-          base: base-debian
 
   build-producer-golang:
     if: true
@@ -82,7 +81,6 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
-          base: producer-golang-dev
 
   test-producer-golang:
     if: true

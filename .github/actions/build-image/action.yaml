@@ -19,11 +19,6 @@ inputs:
   registry_pass:
     description: registry password
     required: true
-  base:
-    # TBD: load this automatically from the containerfile
-    description: base image
-    required: false
-    default: ''
 
 runs:
   using: "composite"
