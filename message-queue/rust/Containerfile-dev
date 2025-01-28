@@ -10,7 +10,6 @@ USER user
 COPY --chown=user ../help.mk /home/
 COPY --chown=user message-queue/mqp-base.mk /home/user/
 COPY --chown=user message-queue/rust/Cargo.toml mq/
-COPY --chown=user message-queue/rust/Cargo.lock mq/
 
 RUN cd mq && cargo fetch
 RUN mkdir -p mq/src/lib mq/src/bin && \
