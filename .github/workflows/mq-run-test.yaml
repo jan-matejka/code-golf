@@ -11,10 +11,13 @@ on:
         default: make -C /home/user/mq check
       container_tag:
         type: string
-        default: ${{ github.sha }}
+        required: true
       pg_tag:
         type: string
-        default: ${{ github.sha }}
+        required: true
+      telemetry_pg_tag:
+        type: string
+        required: true
 
 jobs:
   run-tests:
@@ -39,7 +42,7 @@ jobs:
           --health-retries 5
 
       telemetry-postgres:
-        image: ghcr.io/${{ github.repository_owner }}/code-golf_telemetry_postgres:${{ inputs.pg_tag }}
+        image: ghcr.io/${{ github.repository_owner }}/code-golf_telemetry_postgres:${{ inputs.telemetry_pg_tag }}
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}

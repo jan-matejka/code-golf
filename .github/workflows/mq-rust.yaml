@@ -1,62 +1,43 @@
-name: message-queue rust CI
+name: message-queue/producer/rust CI
 
 on:
-  push:
-    paths:
-      - "message-queue/rust/**"
-      - "message-queue/container/base-debian-testing/**"
-      - ".github/workflows/mq-rust.yaml"
-      - ".github/actions/build-image/**"
-
-concurrency:
-  # Automatically cancel workflows if newer workflow started for the same
-  # branch
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
+    inputs:
+      before:
+        required: true
+        type: string
+      base_image_changed:
+        required: true
+        type: string
+      base_image_tag:
+        required: true
+        type: string
+      telemetry_postgres_changed:
+        required: true
+        type: string
+      telemetry_postgres_tag:
+        required: true
+        type: string
+      postgres_changed:
+        required: true
+        type: string
+      postgres_tag:
+        required: true
+        type: string
+      producer_changed:
+        required: true
+        type: string
+      producer_tag:
+        required: true
+        type: string
+      branch_tag:
+        required: true
+        type: string
 
 jobs:
-  build-postgres:
-    if: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: postgres
-          dir: message-queue
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-
-  build-telemetry-postgres:
-    if: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: postgres
-          dir: telemetry
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-
-  build-base-debian-testing:
-    if: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: base-debian-testing
-          dir: message-queue
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-
   build-producer-rust-dev:
-    if: true
-    needs: build-base-debian-testing
+    if: inputs.producer_changed == 'true' ||
+        inputs.base_image_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +45,14 @@ jobs:
         with:
           image: producer-rust-dev
           dir: message-queue
+          base_tag: ${{ inputs.base_image_tag }}
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
 
   build-producer-rust:
-    if: true
+    if: inputs.producer_changed == 'true' ||
+        inputs.base_image_changed == 'true'
     needs: build-producer-rust-dev
     runs-on: ubuntu-latest
     steps:
@@ -78,17 +61,23 @@ jobs:
         with:
           image: producer-rust
           dir: message-queue
+          base_tag: ${{ inputs.producer_tag }}
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
 
   test-producer-rust:
-    if: true
+    if: ${{ ! failure() && (
+      inputs.producer_changed == 'true' ||
+      inputs.telemetry_postgres_changed == 'true' ||
+      inputs.postgres_changed == 'true'
+      ) }}
     needs:
       - build-producer-rust
-      - build-postgres
-      - build-telemetry-postgres
     uses: ./.github/workflows/mq-run-test.yaml
     with:
+      container_tag: ${{ inputs.producer_tag }}
+      pg_tag: ${{ inputs.postgres_tag }}
+      telemetry_pg_tag: ${{ inputs.telemetry_postgres_tag }}
       name: rust
     secrets: inherit

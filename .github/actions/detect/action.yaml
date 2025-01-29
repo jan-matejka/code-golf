@@ -1,0 +1,55 @@
+name: Detect changes
+description: Note the action can't hande force pushes. Force push should be handled by the caller by finding the merge-base and passing that as before input instead of the github.event.before.
+
+inputs:
+  path:
+    required: true
+    description: path that trigger the build
+  branch_tag:
+    required: true
+    description: branch tag for the image
+  before:
+    required: true
+    description: before sha
+  base_image_changed:
+    required: true
+    description: bool true if base image changed, false otherwise
+
+outputs:
+  tag:
+    description:
+    value: ${{ steps.tag.outputs.tag }}
+  changed:
+    description:
+    value: ${{ steps.tag.outputs.changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: changes-push
+      name: detect pushed changes
+      uses: tj-actions/changed-files@v45
+      with:
+        files: ${{ inputs.path }}
+        base_sha: ${{ inputs.before }}
+
+    - id: changes-branch
+      name: detect branch changes
+      if: steps.changes-push.outputs.any_changed == 'false'
+      uses: tj-actions/changed-files@v45
+      with:
+        files: ${{ inputs.path }}
+        base_sha: ${{ github.event.repository.default_branch }}
+
+    - id: tag
+      name: determine tags
+      if: ${{ ! failure() }}
+      env:
+        sha: ${{ github.sha }}
+        is_forced: ${{ inputs.is_forced }}
+        push_changed: ${{ steps.changes-push.outputs.any_changed }}
+        branch_changed: ${{ steps.changes-branch.outputs.any_changed }}
+        base_image_changed: ${{ inputs.base_image_changed }}
+        default: ${{ github.event.repository.default_branch }}
+      run: .github/determine-tag.sh | tee "${GITHUB_OUTPUT}"
+      shell: sh
