@@ -1,0 +1,409 @@
+name: code-golf CI
+
+on: [push]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    outputs:
+      telemetry_postgres_tag: ${{ steps.changed-telemetry-postgres.outputs.tag }}
+      telemetry_postgres_changed: ${{ steps.changed-telemetry-postgres.outputs.changed }}
+
+      mq_base_debian_tag: ${{ steps.changed-mq-base-debian.outputs.tag }}
+      mq_base_debian_changed: ${{ steps.changed-mq-base-debian.outputs.changed }}
+
+      mq_base_debian_testing_tag: ${{ steps.changed-mq-base-debian-testing.outputs.tag }}
+      mq_base_debian_testing_changed: ${{ steps.changed-mq-base-debian-testing.outputs.changed }}
+
+      mq_base_haskell_tag: ${{ steps.changed-mq-base-haskell.outputs.tag }}
+      mq_base_haskell_changed: ${{ steps.changed-mq-base-haskell.outputs.changed }}
+
+      mq_postgres_tag: ${{ steps.changed-mq-postgres.outputs.tag }}
+      mq_postgres_changed: ${{ steps.changed-mq-postgres.outputs.changed }}
+
+      mq_producer_cpp_tag: ${{ steps.changed-mq-producer-cpp.outputs.tag }}
+      mq_producer_cpp_changed: ${{ steps.changed-mq-producer-cpp.outputs.changed }}
+
+      mq_producer_golang_tag: ${{ steps.changed-mq-producer-golang.outputs.tag }}
+      mq_producer_golang_changed: ${{ steps.changed-mq-producer-golang.outputs.changed }}
+
+      mq_producer_haskell_tag: ${{ steps.changed-mq-producer-haskell.outputs.tag }}
+      mq_producer_haskell_changed: ${{ steps.changed-mq-producer-haskell.outputs.changed }}
+
+      mq_producer_python_tag: ${{ steps.changed-mq-producer-python.outputs.tag }}
+      mq_producer_python_changed: ${{ steps.changed-mq-producer-python.outputs.changed }}
+
+      mq_producer_rust_tag: ${{ steps.changed-mq-producer-rust.outputs.tag }}
+      mq_producer_rust_changed: ${{ steps.changed-mq-producer-rust.outputs.changed }}
+
+      branch_tag: ${{ steps.branch-tag.outputs.branch_tag }}
+
+    env:
+      before: ${{ github.event.before }}
+      sha: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Just fetch everything here.
+          # The tj-actions/changed-files action is not smart enough to fetch
+          # whatever amount it actually needs.
+          fetch-depth: 0
+
+      - name: find proper before if forced
+        if: github.event.forced
+        run: |
+          git fetch origin "$before"
+          base=$(git merge-base "$before" "$sha") || exit 1
+          printf "before=%s" $base >> $GITHUB_ENV
+
+      - id: branch-tag
+        name: Sanitize ref_name into a valid tag token
+        env:
+          ref_name: ${{ github.ref_name }}
+        run: |
+          echo "branch_tag=$ref_name" | sed 's#/#__#g' >> "${GITHUB_ENV}"
+          echo "branch_tag=$ref_name" | sed 's#/#__#g' >> "${GITHUB_OUTPUT}"
+
+      # this could probably be a job matrix but I don't wanna spend the job
+      # overhead.
+      - id: changed-telemetry-postgres
+        name: "Detect changes: telemetry-postgres"
+        uses: ./.github/actions/detect
+        with:
+          path: telemetry/postgres/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: false
+
+      - id: changed-mq-base-debian
+        name: "Detect changes: mq-base-debian"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/container/base-debian/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: false
+
+      - id: changed-mq-base-debian-testing
+        name: "Detect changes: mq-base-debian-testing"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/container/base-debian-testing/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: false
+
+      - id: changed-mq-base-haskell
+        name: "Detect changes: mq-base-haskell"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/container/base-haskell/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: ${{ steps.changed-mq-base-debian.outputs.changed }}
+
+      - id: changed-mq-postgres
+        name: "Detect changes: mq-postgres"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/container/postgres/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: false
+
+      - id: changed-mq-producer-cpp
+        name: "Detect changes: mq-producer-cpp"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/cpp/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: ${{ steps.changed-mq-base-debian.outputs.changed }}
+
+      - id: changed-mq-producer-golang
+        name: "Detect changes: mq-producer-golang"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/golang/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: ${{ steps.changed-mq-base-debian.outputs.changed }}
+
+      - id: changed-mq-producer-haskell
+        name: "Detect changes: mq-producer-haskell"
+        uses: ./.github/actions/detect
+        with:
+          path: mesage-queue/haskell/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: ${{ steps.changed-mq-base-debian.outputs.changed }}
+
+      - id: changed-mq-producer-python
+        name: "Detect changes: mq-producer-python"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/python/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: ${{ steps.changed-mq-base-debian.outputs.changed }}
+
+      - id: changed-mq-producer-rust
+        name: "Detect changes: mq-producer-rust"
+        uses: ./.github/actions/detect
+        with:
+          path: message-queue/rust/**
+          branch_tag: ${{ env.branch_tag }}
+          before: ${{ env.before }}
+          base_image_changed: ${{ steps.changed-mq-base-debian-testing.outputs.changed }}
+
+  build-base-debian:
+    needs:
+      - analyze
+    if: needs.analyze.outputs.mq_base_debian_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: base-debian
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-base-debian-testing:
+    needs:
+      - analyze
+    if: needs.analyze.outputs.mq_base_debian_testing_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: base-debian-testing
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-postgres:
+    needs:
+      - analyze
+    if: needs.analyze.outputs.mq_postgres_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: postgres
+          dir: message-queue
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-telemetry-postgres:
+    needs:
+      - analyze
+    if: needs.analyze.outputs.telemetry_postgres_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: postgres
+          dir: telemetry
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  build-base-haskell:
+    needs:
+      - analyze
+      - build-base-debian
+    if: ${{ ! failure() && (
+      needs.analyze.outputs.base_haskell_changed == 'true' ||
+      needs.analyze.outputs.base_debian_changed == 'true'
+      ) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/build-image"
+        with:
+          image: base-haskell
+          dir: message-queue
+          base_tag: ${{ needs.analyze.outputs.base_debian_tag }}
+          registry: ghcr.io/${{ github.repository_owner }}
+          registry_user: ${{ github.actor }}
+          registry_pass: ${{ secrets.GITHUB_TOKEN }}
+
+  dispatch-workflow-mq-producer-cpp:
+    runs-on: ubuntu-latest
+    needs:
+      - analyze
+      - build-base-debian
+      - build-postgres
+      - build-telemetry-postgres
+    if: ${{ ! failure() && (
+      needs.analyze.outputs.mq_base_debian_changed     == 'true' ||
+      needs.analyze.outputs.mq_postgres_changed        == 'true'||
+      needs.analyze.outputs.telemetry_postgres_changed == 'true' ||
+      needs.analyze.outputs.mq_producer_cpp_changed    == 'true'
+      ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/dispatch
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: mq-cpp.yaml
+          branch_tag: ${{ needs.analyze.outputs.branch_tag }}
+          base_image_changed: ${{ needs.analyze.outputs.mq_base_debian_changed }}
+          base_image_tag: ${{ needs.analyze.outputs.mq_base_debian_tag }}
+
+          telemetry_postgres_changed: ${{ needs.analyze.outputs.telemetry_postgres_changed }}
+          telemetry_postgres_tag: ${{ needs.analyze.outputs.telemetry_postgres_tag }}
+
+          postgres_changed: ${{ needs.analyze.outputs.mq_postgres_changed }}
+          postgres_tag: ${{ needs.analyze.outputs.mq_postgres_tag }}
+
+          producer_changed: ${{ needs.analyze.outputs.mq_producer_cpp_changed }}
+          producer_tag: ${{ needs.analyze.outputs.mq_producer_cpp_tag }}
+
+  dispatch-workflow-mq-producer-golang:
+    runs-on: ubuntu-latest
+    needs:
+      - analyze
+      - build-base-debian
+      - build-postgres
+      - build-telemetry-postgres
+    if: ${{ ! failure() && (
+      needs.analyze.outputs.mq_base_debian_changed     == 'true' ||
+      needs.analyze.outputs.mq_postgres_changed        == 'true' ||
+      needs.analyze.outputs.telemetry_postgres_changed == 'true' ||
+      needs.analyze.outputs.mq_producer_golang_changed == 'true'
+      ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/dispatch
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: mq-golang.yaml
+          branch_tag: ${{ needs.analyze.outputs.branch_tag }}
+          base_image_changed: ${{ needs.analyze.outputs.mq_base_debian_changed }}
+          base_image_tag: ${{ needs.analyze.outputs.mq_base_debian_tag }}
+
+          telemetry_postgres_changed: ${{ needs.analyze.outputs.telemetry_postgres_changed }}
+          telemetry_postgres_tag: ${{ needs.analyze.outputs.telemetry_postgres_tag }}
+
+          postgres_changed: ${{ needs.analyze.outputs.mq_postgres_changed }}
+          postgres_tag: ${{ needs.analyze.outputs.mq_postgres_tag }}
+
+          producer_changed: ${{ needs.analyze.outputs.mq_producer_golang_changed }}
+          producer_tag: ${{ needs.analyze.outputs.mq_producer_golang_tag }}
+
+  dispatch-workflow-mq-producer-haskell:
+    runs-on: ubuntu-latest
+    needs:
+      - analyze
+      - build-base-haskell
+      - build-postgres
+      - build-telemetry-postgres
+    if: ${{ ! failure() && (
+      needs.analyze.outputs.mq_base_haskell_changed     == 'true' ||
+      needs.analyze.outputs.mq_postgres_changed         == 'true' ||
+      needs.analyze.outputs.telemetry_postgres_changed  == 'true' ||
+      needs.analyze.outputs.mq_producer_haskell_changed == 'true'
+      ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/dispatch
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: mq-haskell.yaml
+          branch_tag: ${{ needs.analyze.outputs.branch_tag }}
+          base_image_changed: ${{ needs.analyze.outputs.mq_base_haskell_changed }}
+          base_image_tag: ${{ needs.analyze.outputs.mq_base_haskell_tag }}
+
+          telemetry_postgres_changed: ${{ needs.analyze.outputs.telemetry_postgres_changed }}
+          telemetry_postgres_tag: ${{ needs.analyze.outputs.telemetry_postgres_tag }}
+
+          postgres_changed: ${{ needs.analyze.outputs.mq_postgres_changed }}
+          postgres_tag: ${{ needs.analyze.outputs.mq_postgres_tag }}
+
+          producer_changed: ${{ needs.analyze.outputs.mq_producer_haskell_changed }}
+          producer_tag: ${{ needs.analyze.outputs.mq_producer_haskell_tag }}
+
+  dispatch-workflow-mq-producer-python:
+    runs-on: ubuntu-latest
+    needs:
+      - analyze
+      - build-base-debian
+      - build-postgres
+      - build-telemetry-postgres
+    if: ${{ ! failure() && (
+      needs.analyze.outputs.mq_base_debian_changed     == 'true' ||
+      needs.analyze.outputs.mq_postgres_changed        == 'true' ||
+      needs.analyze.outputs.telemetry_postgres_changed == 'true' ||
+      needs.analyze.outputs.mq_producer_python_changed == 'true'
+      ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/dispatch
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: mq-python.yaml
+          branch_tag: ${{ needs.analyze.outputs.branch_tag }}
+          base_image_changed: ${{ needs.analyze.outputs.mq_base_debian_changed }}
+          base_image_tag: ${{ needs.analyze.outputs.mq_base_debian_tag }}
+
+          telemetry_postgres_changed: ${{ needs.analyze.outputs.telemetry_postgres_changed }}
+          telemetry_postgres_tag: ${{ needs.analyze.outputs.telemetry_postgres_tag }}
+
+          postgres_changed: ${{ needs.analyze.outputs.mq_postgres_changed }}
+          postgres_tag: ${{ needs.analyze.outputs.mq_postgres_tag }}
+
+          producer_changed: ${{ needs.analyze.outputs.mq_producer_python_changed }}
+          producer_tag: ${{ needs.analyze.outputs.mq_producer_python_tag }}
+
+  dispatch-workflow-mq-producer-rust:
+    runs-on: ubuntu-latest
+    needs:
+      - analyze
+      - build-base-debian-testing
+      - build-postgres
+      - build-telemetry-postgres
+    if: ${{ ! failure() && (
+      needs.analyze.outputs.mq_base_debian_testing_changed == 'true' ||
+      needs.analyze.outputs.mq_postgres_changed            == 'true' ||
+      needs.analyze.outputs.telemetry_postgres_changed     == 'true' ||
+      needs.analyze.outputs.mq_producer_rust_changed       == 'true'
+      ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/dispatch
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: mq-rust.yaml
+          branch_tag: ${{ needs.analyze.outputs.branch_tag }}
+          base_image_changed: ${{ needs.analyze.outputs.mq_base_debian_testing_changed }}
+          base_image_tag: ${{ needs.analyze.outputs.mq_base_debian_testing_tag }}
+
+          telemetry_postgres_changed: ${{ needs.analyze.outputs.telemetry_postgres_changed }}
+          telemetry_postgres_tag: ${{ needs.analyze.outputs.telemetry_postgres_tag }}
+
+          postgres_changed: ${{ needs.analyze.outputs.mq_postgres_changed }}
+          postgres_tag: ${{ needs.analyze.outputs.mq_postgres_tag }}
+
+          producer_changed: ${{ needs.analyze.outputs.mq_producer_rust_changed }}
+          producer_tag: ${{ needs.analyze.outputs.mq_producer_rust_tag }}

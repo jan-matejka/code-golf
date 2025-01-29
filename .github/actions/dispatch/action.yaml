@@ -1,0 +1,75 @@
+name: Trigger Workflow
+
+inputs:
+  token:
+    required: true
+    description: github token
+  workflow:
+    required: true
+    description: Workflow filename
+  base_image_changed:
+    required: true
+    type: string
+  base_image_tag:
+    required: true
+    type: string
+  telemetry_postgres_changed:
+    required: true
+    type: string
+  telemetry_postgres_tag:
+    required: true
+    type: string
+  postgres_changed:
+    required: true
+    type: string
+  postgres_tag:
+    required: true
+    type: string
+  producer_changed:
+    required: true
+    type: string
+  producer_tag:
+    required: true
+    type: string
+  branch_tag:
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - env:
+        ref: ${{ toJSON(github.ref) }}
+        before: ${{ toJSON(github.event.before) }}
+
+        base_image_changed: ${{ toJSON(inputs.base_image_changed) }}
+        base_image_tag: ${{ toJSON(inputs.base_image_tag) }}
+
+        telemetry_postgres_changed: ${{ toJSON(inputs.telemetry_postgres_changed) }}
+        telemetry_postgres_tag: ${{ toJSON(inputs.telemetry_postgres_tag) }}
+
+        postgres_changed: ${{ toJSON(inputs.postgres_changed) }}
+        postgres_tag: ${{ toJSON(inputs.postgres_tag) }}
+
+        producer_changed: ${{ toJSON(inputs.producer_changed) }}
+        producer_tag: ${{ toJSON(inputs.producer_tag) }}
+
+        branch_tag: ${{ toJSON(inputs.branch_tag) }}
+
+        tpl: 'payload={"ref": %s, "inputs": {"before": %s,"base_image_changed": %s, "base_image_tag": %s, "telemetry_postgres_changed": %s, "telemetry_postgres_tag": %s, "postgres_changed": %s, "postgres_tag": %s, "producer_changed": %s, "producer_tag": %s, "branch_tag": %s}}'
+      shell: sh
+      run: |
+        printf "$tpl" "$ref" "$before" "$base_image_changed" "$base_image_tag" "$telemetry_postgres_changed" "$telemetry_postgres_tag" "$postgres_changed" "$postgres_tag" "$producer_changed" "$producer_tag" "$branch_tag" >> "$GITHUB_ENV"
+    - env:
+        repo: ${{ github.repository }}
+        token: ${{ inputs.token }}
+        sha: ${{ github.sha }}
+        URL:  https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ inputs.workflow }}/dispatches
+      shell: sh
+      run: |
+          curl \
+            -D - \
+            -X POST $URL \
+            -H "Authorization: Bearer $token" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d "$payload"

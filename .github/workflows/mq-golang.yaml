@@ -1,62 +1,43 @@
-name: message-queue golang CI
+name: message-queue/producer/golang CI
 
 on:
-  push:
-    paths:
-      - "message-queue/golang/**"
-      - "message-queue/container/base-debian/**"
-      - ".github/workflows/mq-golang.yaml"
-      - ".github/actions/build-image/**"
-
-concurrency:
-  # Automatically cancel workflows if newer workflow started for the same
-  # branch
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
+    inputs:
+      before:
+        required: true
+        type: string
+      base_image_changed:
+        required: true
+        type: string
+      base_image_tag:
+        required: true
+        type: string
+      telemetry_postgres_changed:
+        required: true
+        type: string
+      telemetry_postgres_tag:
+        required: true
+        type: string
+      postgres_changed:
+        required: true
+        type: string
+      postgres_tag:
+        required: true
+        type: string
+      producer_changed:
+        required: true
+        type: string
+      producer_tag:
+        required: true
+        type: string
+      branch_tag:
+        required: true
+        type: string
 
 jobs:
-  build-base-debian:
-    if: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: base-debian
-          dir: message-queue
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-
-  build-postgres:
-    if: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: postgres
-          dir: message-queue
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-
-  build-telemetry-postgres:
-    if: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: "./.github/actions/build-image"
-        with:
-          image: postgres
-          dir: telemetry
-          registry: ghcr.io/${{ github.repository_owner }}
-          registry_user: ${{ github.actor }}
-          registry_pass: ${{ secrets.GITHUB_TOKEN }}
-
   build-producer-golang-dev:
-    if: true
-    needs: build-base-debian
+    if: inputs.producer_changed == 'true' ||
+        inputs.base_image_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +45,14 @@ jobs:
         with:
           image: producer-golang-dev
           dir: message-queue
+          base_tag: ${{ inputs.base_image_tag }}
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
 
   build-producer-golang:
-    if: true
+    if: inputs.producer_changed == 'true' ||
+        inputs.base_image_changed == 'true'
     needs: build-producer-golang-dev
     runs-on: ubuntu-latest
     steps:
@@ -78,17 +61,23 @@ jobs:
         with:
           image: producer-golang
           dir: message-queue
+          base_tag: ${{ inputs.producer_tag }}
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
 
   test-producer-golang:
-    if: true
+    if: ${{ ! failure() && (
+      inputs.producer_changed == 'true' ||
+      inputs.telemetry_postgres_changed == 'true' ||
+      inputs.postgres_changed == 'true'
+      ) }}
     needs:
       - build-producer-golang
-      - build-postgres
-      - build-telemetry-postgres
     uses: ./.github/workflows/mq-run-test.yaml
     with:
+      container_tag: ${{ inputs.producer_tag }}
+      pg_tag: ${{ inputs.postgres_tag }}
+      telemetry_pg_tag: ${{ inputs.telemetry_postgres_tag }}
       name: golang
     secrets: inherit
