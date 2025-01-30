@@ -55,23 +55,29 @@ runs:
           ${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
         CACHE: >-
           ${{ inputs.registry }}/${{ inputs.repository }}_${{ inputs.dir }}_${{ inputs.image }}
+        DIR: ${{ inputs.dir }}
+        BASE_TAG: ${{ inputs.base_tag }}
+        REPO: ${{ inputs.repository }}
+        SHA: ${{ github.sha }}
+        REGISTRY: ${{ inputs.registry }}
+        IMAGE: ${{ inputs.image }}
       run: >
-        set -x && cd ${{ inputs.dir }} &&
+        set -x && cd $DIR &&
         extra="";
         [ -n "${{ inputs.base_tag }}" ] && {
-          extra="--build-arg tag=${{ inputs.base_tag }}"
+          extra="--build-arg tag=$BASE_TAG"
         };
         podman-compose
-        -p ${{ inputs.repository }}_${{ inputs.dir }}
+        -p "${REPO}_${DIR}"
         --podman-build-args "
-        -t ${{ env.IMAGE_FULL }}:${{ github.sha }}
-        -t ${{ env.IMAGE_FULL }}:${{ env.branch_tag }}
-        --cache-from=${{ env.CACHE }}
-        --cache-to=${{ env.CACHE }}"
+        -t ${IMAGE_FULL}:$SHA
+        -t ${IMAGE_FULL}:$branch_tag
+        --cache-from=${CACHE}
+        --cache-to=${CACHE}"
         build
         $extra
-        --build-arg registry=${{ inputs.registry }}
-        "${{ inputs.image }}"
+        --build-arg registry=${REGISTRY}
+        "${IMAGE}"
       shell: sh
 
     - name: Push image
@@ -88,7 +94,9 @@ runs:
         password: ${{ inputs.registry_pass }}
 
     - name: Print image url
+      env:
+        paths: ${{ steps.push.outputs.registry-paths }}
       run: >
         printf "Image pushed to %s\n"
-        "${{ steps.push.outputs.registry-paths }}"
+        "${PATHS}"
       shell: sh
