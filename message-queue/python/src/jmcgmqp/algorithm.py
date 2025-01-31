@@ -106,3 +106,46 @@ def find_maximum(sample: Sampler, starting_power: int = 0) -> T:
     :returns: the last non-decreasing result.
     """
     return max(SampleGenerator(sample, starting_power))
+
+
+def SampleBiGenerator(
+    starting_power: int = 0,
+) -> Generator[T, None, None]:
+    """
+    Same as :ref:`SampleGenerator` except the caller is responsible for calling
+    the sampler and then sending the result back to the generator.
+
+    This is insanity. It passes tests but I have no idea if it is correct.
+    Maybe I am missing something but the fact that g.send() returns the next
+    yield seems super inconvenient.
+    """
+    r = prev = None
+    count = itertools.count(starting_power)
+    while prev is None or (r and r > prev):
+        i = next(count)
+        prev = r
+        r = yield 2**i
+
+    if 2**(i-1)+1 == 2**(i):
+        return
+
+    count = itertools.count(2**(i-1)+1)
+    r, prev = prev, None
+    j = next(count)
+    while j < 2**i and (prev is None or r is None or r > prev):
+        prev = r
+        r = yield j
+        j = next(count)
+
+def find_maximum2(sample: Sampler, starting_power: int = 0):
+    g = SampleBiGenerator(starting_power)
+    max_ = None
+    n = next(g)
+    try:
+        while True:
+            r = sample(n)
+            if max_ is None or r > max_:
+                max_ = r
+            n = g.send(r)
+    except StopIteration:
+        return max_
