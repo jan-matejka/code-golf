@@ -125,6 +125,7 @@ def SampleBiGenerator(
         i = next(count)
         prev = r
         r = yield 2**i
+        yield r # yield the result back to send() rv
 
     if 2**(i-1)+1 == 2**(i):
         return
@@ -135,20 +136,15 @@ def SampleBiGenerator(
     while j < 2**i and (prev is None or r is None or r > prev):
         prev = r
         r = yield j
+        yield r # yield the result back to send() rv
         j = next(count)
+
+    return prev
 
 def find_maximum2(sample: Sampler, starting_power: int = 0):
     g = SampleBiGenerator(starting_power)
-    max_ = None
-    n = next(g)
-    try:
-        while True:
-            r = sample(n)
-            if max_ is None or r > max_:
-                max_ = r
-            n = g.send(r)
-    except StopIteration:
-        return max_
+    observable = lambda n: g.send(sample(n))
+    return max(observable(n) for n in g)
 
 @dataclass
 class SampleBiIterator(Iterator):

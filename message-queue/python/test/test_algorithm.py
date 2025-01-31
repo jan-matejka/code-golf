@@ -60,12 +60,8 @@ def test_SampleBiGenerator(sequence, result, power):
     """
     g = SampleBiGenerator(power)
     s_it = iter(sequence.items())
-    try:
-        g_n = next(g)
-        n, result = next(s_it)
-        while True:
-            assert g_n == n
-            g_n = g.send(result)
-            n, result = next(s_it)
-    except StopIteration:
-        pass
+    assert [
+        (g_n, g.send(r))
+        for (g_n, (n, r))
+        in zip(g, s_it)
+    ] == list(sequence.items())
