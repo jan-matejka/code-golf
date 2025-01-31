@@ -114,30 +114,20 @@ def SampleBiGenerator(
     """
     Same as :ref:`SampleGenerator` except the caller is responsible for calling
     the sampler and then sending the result back to the generator.
-
-    This is insanity. It passes tests but I have no idea if it is correct.
-    Maybe I am missing something but the fact that g.send() returns the next
-    yield seems super inconvenient.
     """
-    r = prev = None
-    count = itertools.count(starting_power)
-    while prev is None or (r and r > prev):
-        i = next(count)
-        prev = r
+    prev = None
+    for i in itertools.count(starting_power):
         r = yield 2**i
-        yield r # yield the result back to send() rv
-
-    if 2**(i-1)+1 == 2**(i):
-        return
-
-    count = itertools.count(2**(i-1)+1)
-    r, prev = prev, None
-    j = next(count)
-    while j < 2**i and (prev is None or r is None or r > prev):
+        yield r # yield to send()
+        if prev and prev >= r:
+            break
         prev = r
+
+    for j in range(2**(i-1)+1, 2**(i)):
         r = yield j
-        yield r # yield the result back to send() rv
-        j = next(count)
+        yield r # yield to send()
+        if prev and prev >= r:
+            break
 
     return prev
 
