@@ -136,6 +136,77 @@ def find_maximum2(sample: Sampler, starting_power: int = 0):
     observable = lambda n: g.send(sample(n))
     return max(observable(n) for n in g)
 
+def SampleBiGenerator2(
+    starting_power: int = 0,
+) -> Generator[T, None, None]:
+    """
+    Basicly same as :ref:`SampleBiGenerator` but this is made to yield the
+    maximum as last element of the generator.
+    """
+    prev = None
+    for i in itertools.count(starting_power):
+        r = yield 2**i
+        if prev and prev >= r:
+            break
+        else:
+            yield # yield to send()
+        prev = r
+
+    for j in range(2**(i-1)+1, 2**(i)):
+        yield
+        # ^ yield to send, either after the break in previous loop or after
+        # the yield from previous iteration in this one.
+        r = yield j
+        if prev and prev >= r:
+            break
+
+    yield prev
+
+def last(it: Iterator[T]):
+    for x in it:
+        ...
+    return x
+
+def find_maximum22(sample: Sampler, starting_power: int = 0):
+    g = SampleBiGenerator(starting_power)
+    rs = (g.send(sample(n)) for n in g)
+    return last(rs)
+
+def powers(i: int = 0):
+    for i in itertools.count(starting_power):
+        r = yield 2**i
+        if prev and prev >= r:
+            break
+        else:
+            yield # yield to send()
+        prev = r
+
+    return prev, i-1
+
+def steps(prev, i):
+    for j in range(2**i+1, 2**(i+1)):
+        r = yield j
+        yield # yield to send()
+        if prev and prev >= r:
+            break
+
+    return prev
+
+def SampleBiGenerator3(starting_power: int = 0) -> Generator[T, None, None]:
+    """
+    Same as :ref:`SampleBiGenerator2` but refactored into subgenerators.
+    """
+    prev, i = (yield from powers(starting_power))
+    r = (yield from steps(prev, i))
+    yield r
+
+def compose(f, g):
+    return lambda *args, **kw: f(g(*args, **kw))
+
+def find_maximum23(sample: Sampler, starting_power: int = 0):
+    g = SampleBiGenerator(starting_power)
+    return last(compose(g.send, sample) for n in g)
+
 @dataclass
 class SampleBiIterator(Iterator):
     """

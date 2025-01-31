@@ -1,7 +1,7 @@
 from jmcgmqp.algorithm import (
     find_maximum, Sampler, SampleIterator,
     find_maximum2, SampleBiGenerator,
-    find_maximum3, find_maximum4,
+    find_maximum3, find_maximum4, find_maximum22, find_maximum23
 )
 
 from collections import OrderedDict
@@ -38,6 +38,8 @@ cases = (
     find_maximum2,
     find_maximum3,
     find_maximum4,
+    find_maximum22,
+    find_maximum23,
 ))
 @pytest.mark.parametrize('sequence, result, power', cases)
 def test_find_maximum(facade, sequence, result, power):
