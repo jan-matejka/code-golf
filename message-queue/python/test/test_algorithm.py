@@ -1,6 +1,7 @@
 from jmcgmqp.algorithm import (
     find_maximum, Sampler, SampleIterator,
-    find_maximum2, SampleBiGenerator
+    find_maximum2, SampleBiGenerator,
+    find_maximum3,
 )
 
 from collections import OrderedDict
@@ -32,8 +33,13 @@ cases = (
     (OrderedDict(((4, 1), (8, 1), (5, 1))), 1, 2),
 )
 
+@pytest.mark.parametrize('facade', (
+    find_maximum,
+    find_maximum2,
+    find_maximum3,
+))
 @pytest.mark.parametrize('sequence, result, power', cases)
-def test_find_maximum(sequence, result, power):
+def test_find_maximum(facade, sequence, result, power):
     sample = create_autospec(Sampler, spec_set=True)
     sample.side_effect = list(sequence.values())
     assert find_maximum(sample, power) == result
@@ -44,13 +50,6 @@ def test_SampleIterator(sequence, result, power):
     sample = create_autospec(Sampler, spec_set=True)
     sample.side_effect = list(sequence.values())
     assert tuple(SampleIterator(sample, power)) == tuple(sequence.values())
-    assert sample.call_args_list == [call(x) for x in sequence.keys()]
-
-@pytest.mark.parametrize('sequence, result, power', cases)
-def test_find_maximum2(sequence, result, power):
-    sample = create_autospec(Sampler, spec_set=True)
-    sample.side_effect = list(sequence.values())
-    assert find_maximum2(sample, power) == result
     assert sample.call_args_list == [call(x) for x in sequence.keys()]
 
 @pytest.mark.parametrize('sequence, result, power', cases)

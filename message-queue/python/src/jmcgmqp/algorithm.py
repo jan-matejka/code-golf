@@ -149,3 +149,51 @@ def find_maximum2(sample: Sampler, starting_power: int = 0):
             n = g.send(r)
     except StopIteration:
         return max_
+
+@dataclass
+class SampleBiIterator(Iterator):
+    """
+    Same as SampleIterator but the caller is responsible for calling sampler
+    and updating this iterator.
+    """
+    power:int = 0
+
+    _next_impl: Callable[[], [T]] = None
+    _count = None
+
+    def __post_init__(self):
+        self._next_impl = self._next_power
+        self._count = itertools.count(self.power)
+
+    def __next__(self):
+        # Note: we can not simply re-assign __next__ itself because next()
+        # resolves it statically via Py_TYPE() to the class method (probably
+        # for performance reasons).
+        return self._next_impl()
+
+    def _next_power(self):
+        return 2**next(self._power_count)
+
+    def step(self):
+        self._count = itertools.count(2**(self._next_power()-2)+1)
+        self._next_impl = self._next_step
+
+    def _next_step(self):
+        return next(self._next_step)
+
+    def __iter__(self):
+        return self
+
+def find_maximum3(sample: Sampler, starting_power: int = 0):
+    it = SampleBiIterator(starting_power)
+    prev = None
+    fst = True
+    for n in it:
+        r = sample(n)
+        if prev is None or r > prev:
+            prev = r
+        elif r <= prev and fst:
+            it.step()
+            fst = False
+        else:
+            return prev
