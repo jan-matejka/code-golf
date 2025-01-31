@@ -197,3 +197,62 @@ def find_maximum3(sample: Sampler, starting_power: int = 0):
             fst = False
         else:
             return prev
+
+@dataclass
+class SampleBiIterator2(Iterator):
+    """
+    Same as SampleBiIterator but its observing the result of sampler so it can
+    actually be plugged into max().
+
+    This could actually also be a facade on top of SampleBiIterator as the only
+    difference is the addition of notify(), _prev and _next_stop.
+    """
+    power:int = 0
+
+    _next_impl: Callable[[], [T]] = None
+    _count = None
+
+    _prev = None
+
+    def __post_init__(self):
+        self._next_impl = self._next_power
+        self._count = itertools.count(self.power)
+
+    def __next__(self):
+        # Note: we can not simply re-assign __next__ itself because next()
+        # resolves it statically via Py_TYPE() to the class method (probably
+        # for performance reasons).
+        return self._next_impl()
+
+    def _next_power(self):
+        return 2**next(self._power_count)
+
+    def step(self):
+        self._count = itertools.count(2**(self._next_power()-2)+1)
+        self._next_impl = self._next_step
+
+    def _next_step(self):
+        return next(self._next_step)
+
+    def __iter__(self):
+        return self
+
+    def notify(self, r):
+        if r > self.prev:
+            self.prev = r
+        elif self._next_impl is self._next_power:
+            self._next_impl = self._next_step
+        elif self._next_impl is self._next_step:
+            self._next_impl = self._next_stop
+
+    def _next_stop(self):
+        raise StopIteration
+
+def find_maximum4(sample: Sampler, starting_power: int = 0):
+    it = SampleBiIterator2(starting_power)
+    def observable(*args, **kw):
+        r = sample(*args, **kw)
+        it.notify(r)
+        return r
+
+    return max(observable(n) for n in it)
