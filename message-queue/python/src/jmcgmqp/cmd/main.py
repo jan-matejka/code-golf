@@ -8,7 +8,7 @@ from jmcgmqp.core.algorithm import find_maximum
 from jmcgmqp.core.runtime import Instance
 from jmcgmqp.core import event
 from jmcgmqp.mt_system import process as mp
-from jmcgmqp.observer import stdout
+from jmcgmqp.core import stdout
 import jmcgmqp.telemetry as tele
 import jmcgmqp.mq_system as mqs
 

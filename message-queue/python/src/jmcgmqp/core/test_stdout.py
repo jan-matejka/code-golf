@@ -4,8 +4,9 @@ from functools import partial
 import pytest
 
 from jmcgmqp.core import event as es
-from jmcgmqp.observer.stdout import observer
 from jmcgmqp.core.primitives import WorkerResult, Results, SampleDescription
+
+from .stdout import observer
 
 sdesc = SampleDescription(4, 'foo', 'bar')
 
