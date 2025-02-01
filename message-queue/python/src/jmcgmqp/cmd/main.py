@@ -20,10 +20,6 @@ def main():
     app.observer.subscribe(tele.prometheus.Observer(app))
     app.observer.subscribe(tele.pg.Observer(app))
 
-    if app.config.TEST_PROMETHEUS:
-        tele.prometheus.test_cmd(app)
-        sys.exit(1)
-
     mq_connector = mqs.pg.Connector(app.config)
     sampler = partial(mp.sample, app, mq_connector)
     max_ = find_maximum(sampler, app.config.POWER)

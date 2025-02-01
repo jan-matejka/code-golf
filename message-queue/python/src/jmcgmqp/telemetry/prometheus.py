@@ -42,13 +42,6 @@ def push(config: Config):
         registry=registry
     )
 
-def test_cmd(app):
-    test_metric.labels(
-        worker_id='worker_1',
-        **app.runtime.metric_labels(),
-    ).inc()
-    push(app.config)
-
 @dataclass
 class Observer:
     app: Instance
