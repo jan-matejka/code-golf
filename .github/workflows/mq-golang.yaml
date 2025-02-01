@@ -35,6 +35,15 @@ on:
         type: string
 
 jobs:
+  associate-to-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-status
+        with:
+          status: pending
+          token: ${{ secrets.GITHUB_TOKEN }}
+
   build-producer-golang-dev:
     if: inputs.producer_changed == 'true' ||
         inputs.base_image_changed == 'true'
@@ -81,3 +90,14 @@ jobs:
       telemetry_pg_tag: ${{ inputs.telemetry_postgres_tag }}
       name: golang
     secrets: inherit
+
+  set-final-status:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: test-producer-golang
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-status
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
