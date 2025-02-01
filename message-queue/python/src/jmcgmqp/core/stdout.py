@@ -1,23 +1,40 @@
+import dataclasses as dc
 import sys
 
-from jmcgmqp.core import event as es
+from jmcgmqp.core.event import Event as E
 
-def observer(e: es.Event, _ostream=sys.stdout):
-    if isinstance(e, es.SamplingWorkers):
-        print(f"Starting {e.n} workers", file=_ostream)
-    elif isinstance(e, es.Waiting):
-        if e.duration is None:
-            print("Waiting", file=_ostream)
+@dc.dataclass
+class Observer:
+    ostream: "filelike" = sys.stdout
+
+    _fmt = {
+        E.SamplingWorkers: "Starting {x} workers",
+        E.WorkerResult: "{x.worker_id}: {x.messages_total}",
+        E.SampleResult: (
+            "Total: {x.messages_total}\n"
+            "Total mps: {x.messages_per_second:.3f}\n"
+        ),
+        E.MaximumFound: (
+            "Found Maximum:\n"
+            "Total: {x.messages_total}\n"
+            "Total mps: {x.messages_per_second:.3f}"
+        )
+    }
+
+    def subscribe_to(self, p):
+        for e in self._fmt.keys():
+            p.subscribe(e, self.print)
+        p.subscribe(E.Waiting, self.print)
+
+    def print(self, e, x, ):
+        if e == E.Waiting:
+            self._waiting(x)
         else:
-            print(f"{e.duration}", file=_ostream)
-    elif isinstance(e, es.WorkerResult):
-        print(f"{e.result.worker_id}: {e.result.messages_total}", file=_ostream)
-    elif isinstance(e, es.SampleResult):
-        print(f"Total: {e.result.messages_total}", file=_ostream)
-        print(f"Total mps: {e.result.messages_per_second:.3f}\n", file=_ostream)
-    elif isinstance(e, es.MaximumFound):
-        print("Found Maximum:", file=_ostream)
-        print(f"Total: {e.result.messages_total}", file=_ostream)
-        print(f"Total mps: {e.result.messages_per_second:.3f}", file=_ostream)
-    else:
-        raise NotImplementedError(f"Do not understand event: {e!r}")
+            print(self._fmt[e].format(x=x), file=self.ostream)
+
+    def _waiting(self, x):
+        if x is None:
+            print("Waiting", file=self.ostream)
+        else:
+            print(f"{x}", file=self.ostream)
+

@@ -5,7 +5,7 @@ from multiprocessing import Process, Queue, Event, Barrier
 from jmcgmqp.core.runtime import Instance
 from jmcgmqp.core.config import Config
 from jmcgmqp.core.primitives import WorkerResult, Results, SampleDescription
-from jmcgmqp.core import event
+from jmcgmqp.core.event import Event as E
 import jmcgmqp.mq_system as mqs
 
 def worker(
@@ -47,7 +47,7 @@ def sample(app: Instance, connector: mqs.Connector, n: int) -> Results:
     """
     assert isinstance(app, Instance)
     assert isinstance(connector, mqs.Connector)
-    app.observer.publish(event.SamplingWorkers(n))
+    app.observer.publish(E.SamplingWorkers, n)
     q = Queue()
     exit_flag = Event()
     error = Event()
@@ -69,10 +69,10 @@ def sample(app: Instance, connector: mqs.Connector, n: int) -> Results:
 
         b.wait()
 
-        app.observer.publish(event.Waiting(None))
+        app.observer.publish(E.Waiting, None)
         for i in range(app.config.DURATION, 0, -1):
             check(error)
-            app.observer.publish(event.Waiting(i))
+            app.observer.publish(E.Waiting, i)
             time.sleep(1)
 
         exit_flag.set()
@@ -84,9 +84,9 @@ def sample(app: Instance, connector: mqs.Connector, n: int) -> Results:
         for _ in range(0, n):
             wr = q.get()
             xs.append(wr)
-            app.observer.publish(event.WorkerResult(wr))
+            app.observer.publish(E.WorkerResult, wr)
         r = Results(xs)
-        app.observer.publish(event.SampleResult(r))
+        app.observer.publish(E.SampleResult, r)
         return r
     except:
         for p in ps:

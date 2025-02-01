@@ -6,7 +6,7 @@ from prometheus_client import push_to_gateway
 
 from jmcgmqp.core.runtime import Runtime_labels, Instance
 from jmcgmqp.core.primitives import Results
-from jmcgmqp.core import event
+from jmcgmqp.core.event import Event as E
 from jmcgmqp.core.config import Config
 
 registry = CollectorRegistry()
@@ -46,18 +46,20 @@ def push(config: Config):
 class Observer:
     app: Instance
 
-    def __call__(self, e: event.Event):
-        if isinstance(e, event.WorkerResult):
-            labels = {
-                'worker_id': e.result.worker_id,
-                'n_workers': e.result.sdesc.n_workers,
-                'algorithm': e.result.sdesc.algorithm,
-                'mq_system': e.result.sdesc.mq_system,
-            }
-            labels.update(self.app.runtime.metric_labels())
+    def subscribe_to(self, p):
+        p.subscribe(E.WorkerResult, self.on_result)
 
-            messages_total.labels(**labels).set(e.result.messages_total)
-            messages_per_second.labels(**labels).set(e.result.messages_per_second)
-            duration_seconds.labels(**labels).set(e.result.duration_seconds)
+    def on_result(self, e: E, x):
+        labels = {
+            'worker_id': x.worker_id,
+            'n_workers': x.sdesc.n_workers,
+            'algorithm': x.sdesc.algorithm,
+            'mq_system': x.sdesc.mq_system,
+        }
+        labels.update(self.app.runtime.metric_labels())
 
-            push(self.app.config)
+        messages_total.labels(**labels).set(x.messages_total)
+        messages_per_second.labels(**labels).set(x.messages_per_second)
+        duration_seconds.labels(**labels).set(x.duration_seconds)
+
+        push(self.app.config)

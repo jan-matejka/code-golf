@@ -9,7 +9,7 @@ from pytest import raises
 from jmcgmqp.core.runtime import Runtime, Instance
 from jmcgmqp.core.config import Config
 from jmcgmqp.core.primitives import SampleDescription, WorkerResult
-from jmcgmqp.core import event
+from jmcgmqp.core.event import Event as E
 
 from . import Observer
 from .model import Model
@@ -97,14 +97,14 @@ def test_observer(telemetry_pg, m):
 
     sdesc = SampleDescription(2, 'multiprocessing', 'postgres')
     wr = WorkerResult(sdesc, 3, 10, 10**9)
-    o(event.WorkerResult(wr))
+    o.on_result(E.WorkerResult, wr)
 
     assert len(m.fetch_runtimes()) == 1
     assert len(m.fetch_samples()) == 1
     assert len(m.fetch_workers()) == 1
 
     wr = WorkerResult(sdesc, 4, 20, 10**9)
-    o(event.WorkerResult(wr))
+    o.on_result(E.WorkerResult, wr)
 
     assert len(m.fetch_runtimes()) == 1
     assert len(m.fetch_samples()) == 1

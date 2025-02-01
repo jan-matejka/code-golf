@@ -1,47 +1,34 @@
-from dataclasses import dataclass
+import abc
+import enum
 
 from jmcgmqp.core.primitives import Results, WorkerResult
 
-@dataclass
-class Event:
-    pass
+class Event(enum.Flag):
+    SamplingWorkers = 1
+    """
+    Published with an int object by sampler before it starts sampling given `n`
+    """
 
-@dataclass
-class SamplingWorkers(Event):
+    Waiting = 2
     """
-    Published by sampler before it starts sampling given `n`.
-    """
-    n: int
+    Published with a duration object of type `int | None` object by sampler
+    when it is waiting for workers to perform their message throughput test.
 
-@dataclass
-class Waiting(Event):
+    int duration -> seconds left for workers to perform their throughput test
+    None duration -> before waiting initiation.
     """
-    Published by sampler when it is waiting for workers to perform their
-    message throughput test.
 
-    :ivar duration:
-        int -> seconds left for workers to perform their throughput test.
-        None -> before waiting initiation.
+    WorkerResult = 4
     """
-    duration: int | None
+    Published with WorkerResult by sampler when it receives worker's result.
+    """
 
-@dataclass
-class WorkerResult(Event):
+    SampleResult = 8
     """
-    Published by sampler when it receives worker's result.
+    Published with SampleResult by sampler when it receives all worker's results.
     """
-    result: WorkerResult
 
-@dataclass
-class SampleResult(Event):
+    MaximumFound = 16
     """
-    Published by sampler when it receives all worker's results.
+    Published with SampleResult by main when it a maximum throughput is found.
     """
-    result: Results
-
-@dataclass
-class MaximumFound(Event):
-    """
-    Published by main when it a maximum throughput is found.
-    """
-    result: Results

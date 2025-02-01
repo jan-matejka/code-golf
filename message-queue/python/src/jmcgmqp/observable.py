@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Callable
+import abc
+from typing import *
 import logging
 
 from jmcgmqp.core.event import Event
@@ -7,21 +7,28 @@ from jmcgmqp.core.event import Event
 log = logging.getLogger(__name__)
 
 Observer = Callable[[Event], None]
+Callback = Callable[[Event, Any],None]
 
 class Observable:
     _log: logging.Logger = None
-    observers = None
+    _calbacks = None
 
-    def __init__(self, _log=log):
+    def __init__(self, events, _log=log):
         self._log = _log
-        self.observers = []
+        self._callbacks = {e: [] for e in events}
 
-    def subscribe(self, o: Observer):
-        self.observers.append(o)
+    def subscribe(self, e: Event, cb: Callback):
+        self._callbacks[e].append(cb)
 
-    def publish(self, event):
-        for o in self.observers:
+    def publish(self, e: Event, data: object):
+        assert len(list(e)) == 1, "not supported"
+        for cb in self._callbacks[e]:
             try:
-                o(event)
-            except Exception as e:
-                self._log.exception(e)
+                cb(e, data)
+            except Exception as exc:
+                self._log.exception(exc)
+
+class Observer(abc.ABC):
+    @abc.abstractmethod
+    def subscribe_to(self, p: Observable): # pragma: no cover
+        raise NotImplementedError

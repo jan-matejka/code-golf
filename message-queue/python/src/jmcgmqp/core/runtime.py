@@ -6,6 +6,7 @@ import platform
 from uuid import UUID, uuid1
 
 from jmcgmqp.core.config import Config
+from jmcgmqp.core.event import Event as E
 from jmcgmqp.observable import Observable
 
 log = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class Instance:
     config: "Config" = None
 
     def __post_init__(self):
-        self.observer = Observable()
+        self.observer = Observable(E)
         self.runtime = Runtime.new()
         self.config = Config()
         log.info(f"Config: {asdict(self.config)}")

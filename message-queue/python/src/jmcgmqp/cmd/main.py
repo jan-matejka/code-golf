@@ -16,9 +16,9 @@ log = logging.getLogger(__name__)
 
 def main():
     app = Instance()
-    app.observer.subscribe(stdout.observer)
-    app.observer.subscribe(tele.prometheus.Observer(app))
-    app.observer.subscribe(tele.pg.Observer(app))
+    stdout.Observer().subscribe_to(app.observer)
+    tele.prometheus.Observer(app).subscribe_to(app.observer)
+    tele.pg.Observer(app).subscribe_to(app.observer)
 
     mq_connector = mqs.pg.Connector(app.config)
     sampler = partial(mp.sample, app, mq_connector)
