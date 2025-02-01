@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from prometheus_client import CollectorRegistry
 from prometheus_client import Gauge
 from prometheus_client import push_to_gateway
@@ -47,18 +49,22 @@ def test_cmd(app):
     ).inc()
     push(app.config)
 
-def observer(app: Instance, e: event.Event):
-    if isinstance(e, event.WorkerResult):
-        labels = {
-            'worker_id': e.result.worker_id,
-            'n_workers': e.result.sdesc.n_workers,
-            'algorithm': e.result.sdesc.algorithm,
-            'mq_system': e.result.sdesc.mq_system,
-        }
-        labels.update(app.runtime.metric_labels())
+@dataclass
+class Observer:
+    app: Instance
 
-        messages_total.labels(**labels).set(e.result.messages_total)
-        messages_per_second.labels(**labels).set(e.result.messages_per_second)
-        duration_seconds.labels(**labels).set(e.result.duration_seconds)
+    def __call__(self, e: event.Event):
+        if isinstance(e, event.WorkerResult):
+            labels = {
+                'worker_id': e.result.worker_id,
+                'n_workers': e.result.sdesc.n_workers,
+                'algorithm': e.result.sdesc.algorithm,
+                'mq_system': e.result.sdesc.mq_system,
+            }
+            labels.update(self.app.runtime.metric_labels())
 
-        push(app.config)
+            messages_total.labels(**labels).set(e.result.messages_total)
+            messages_per_second.labels(**labels).set(e.result.messages_per_second)
+            duration_seconds.labels(**labels).set(e.result.duration_seconds)
+
+            push(self.app.config)

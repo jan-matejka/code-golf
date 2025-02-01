@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 def main():
     app = Instance()
     app.observer.subscribe(stdout.observer)
-    app.observer.subscribe(partial(tele.prometheus.observer, app))
+    app.observer.subscribe(tele.prometheus.Observer(app))
     app.observer.subscribe(tele.pg.Observer(app))
 
     if app.config.TEST_PROMETHEUS:
