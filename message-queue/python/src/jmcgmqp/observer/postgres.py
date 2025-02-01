@@ -3,10 +3,10 @@ from functools import cache
 
 import psycopg # current debian stable = 3.1.7
 
-from jmcgmqp import event
-from jmcgmqp.primitives import WorkerResult, SampleDescription
-from jmcgmqp.runtime import Instance, Runtime
-from jmcgmqp.config import Config
+from jmcgmqp.core import event
+from jmcgmqp.core.primitives import WorkerResult, SampleDescription
+from jmcgmqp.core.runtime import Instance, Runtime
+from jmcgmqp.core.config import Config
 
 class Model:
     def __init__(self, config: Config):

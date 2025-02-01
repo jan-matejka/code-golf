@@ -3,10 +3,10 @@ import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 
-from jmcgmqp.runtime import Instance
-from jmcgmqp.config import Config
-from jmcgmqp.primitives import WorkerResult, Results, SampleDescription
-from jmcgmqp import event
+from jmcgmqp.core.runtime import Instance
+from jmcgmqp.core.config import Config
+from jmcgmqp.core.primitives import WorkerResult, Results, SampleDescription
+from jmcgmqp.core import event
 
 def worker(
     config: Config,

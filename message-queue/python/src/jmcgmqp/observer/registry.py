@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Callable
 import logging
 
-from jmcgmqp.event import Event
+from jmcgmqp.core.event import Event
 
 log = logging.getLogger(__name__)
 

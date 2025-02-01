@@ -6,11 +6,11 @@ from psycopg import errors
 import pytest
 from pytest import raises
 
-from jmcgmqp.runtime import Runtime, Instance
-from jmcgmqp.config import Config
+from jmcgmqp.core.runtime import Runtime, Instance
+from jmcgmqp.core.config import Config
 from jmcgmqp.observer.postgres import Model, Observer
-from jmcgmqp.primitives import SampleDescription, WorkerResult
-from jmcgmqp import event
+from jmcgmqp.core.primitives import SampleDescription, WorkerResult
+from jmcgmqp.core import event
 
 @pytest.fixture
 def m(telemetry_pg):

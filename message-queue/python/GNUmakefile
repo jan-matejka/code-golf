@@ -17,7 +17,7 @@ endif
 .PHONY: build
 build: ## Build
 
-	ln -snf src/jmcgmqp/main.py main
+	ln -snf src/jmcgmqp/cmd/main.py main
 
 .PHONY: check-unit
 check-unit: ## Run unit tests tests

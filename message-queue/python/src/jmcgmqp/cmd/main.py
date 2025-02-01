@@ -4,10 +4,11 @@ import sys
 import logging
 from functools import partial
 
-from algorithm import find_maximum
+from jmcgmqp.core.algorithm import find_maximum
 from jmcgmqp.observer.prometheus import test_cmd
-from jmcgmqp.runtime import Instance
-from jmcgmqp import event, multiprocess as mp
+from jmcgmqp.core.runtime import Instance
+from jmcgmqp.core import event
+from jmcgmqp.mt_system import process as mp
 from jmcgmqp.observer import stdout
 from jmcgmqp.observer import prometheus
 from jmcgmqp.observer import postgres

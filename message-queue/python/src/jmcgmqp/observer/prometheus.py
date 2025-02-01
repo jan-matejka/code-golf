@@ -2,10 +2,10 @@ from prometheus_client import CollectorRegistry
 from prometheus_client import Gauge
 from prometheus_client import push_to_gateway
 
-from jmcgmqp.runtime import Runtime_labels, Instance
-from jmcgmqp.primitives import Results
-from jmcgmqp import event
-from jmcgmqp.config import Config
+from jmcgmqp.core.runtime import Runtime_labels, Instance
+from jmcgmqp.core.primitives import Results
+from jmcgmqp.core import event
+from jmcgmqp.core.config import Config
 
 registry = CollectorRegistry()
 

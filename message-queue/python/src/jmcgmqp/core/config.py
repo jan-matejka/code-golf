@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import os
 
-from jmcgmqp.base_config import BaseConfig
+from jmcgmqp.core.base_config import BaseConfig
 
 @dataclass
 class Config(BaseConfig):

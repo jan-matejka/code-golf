@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from jmcgmqp.primitives import Results, WorkerResult
+from jmcgmqp.core.primitives import Results, WorkerResult
 
 @dataclass
 class Event:

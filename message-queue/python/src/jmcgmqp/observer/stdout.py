@@ -1,6 +1,6 @@
 import sys
 
-from jmcgmqp import event as es
+from jmcgmqp.core import event as es
 
 def observer(e: es.Event, _ostream=sys.stdout):
     if isinstance(e, es.SamplingWorkers):
