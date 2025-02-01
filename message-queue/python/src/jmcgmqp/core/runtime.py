@@ -6,18 +6,18 @@ import platform
 from uuid import UUID, uuid1
 
 from jmcgmqp.core.config import Config
-from jmcgmqp.observer import Registry
+from jmcgmqp.observable import Observable
 
 log = logging.getLogger(__name__)
 
 @dataclass
 class Instance:
-    observer: Registry = None
+    observer: Observable = None
     runtime: "Runtime" = None
     config: "Config" = None
 
     def __post_init__(self):
-        self.observer = Registry()
+        self.observer = Observable()
         self.runtime = Runtime.new()
         self.config = Config()
         log.info(f"Config: {asdict(self.config)}")

@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 Observer = Callable[[Event], None]
 
-class Registry:
+class Observable:
     _log: logging.Logger = None
     observers = None
 
