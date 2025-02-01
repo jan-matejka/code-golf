@@ -12,7 +12,7 @@ sdesc = SampleDescription(4, 'foo', 'bar')
 
 @pytest.mark.parametrize('event, x, message', (
     (E.SamplingWorkers, 4, "Starting 4 workers\n"),
-    (E.Waiting, None, "Waiting\n"),
+    (E.WaitingInit, None, "Waiting\n"),
     (E.Waiting, 2, "2\n"),
     (E.WorkerResult, WorkerResult(sdesc, 3, 10, 10**9), "3: 10\n"),
     (E.SampleResult, Results([WorkerResult(sdesc, 3, 15, 10**9)]),

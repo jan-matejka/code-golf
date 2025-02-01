@@ -18,23 +18,14 @@ class Observer:
             "Found Maximum:\n"
             "Total: {x.messages_total}\n"
             "Total mps: {x.messages_per_second:.3f}"
-        )
+        ),
+        E.WaitingInit: "Waiting",
+        E.Waiting: "{x}"
     }
 
     def subscribe_to(self, p):
         for e in self._fmt.keys():
             p.subscribe(e, self.print)
-        p.subscribe(E.Waiting, self.print)
 
     def print(self, e, x, ):
-        if e == E.Waiting:
-            self._waiting(x)
-        else:
-            print(self._fmt[e].format(x=x), file=self.ostream)
-
-    def _waiting(self, x):
-        if x is None:
-            print("Waiting", file=self.ostream)
-        else:
-            print(f"{x}", file=self.ostream)
-
+        print(self._fmt[e].format(x=x), file=self.ostream)

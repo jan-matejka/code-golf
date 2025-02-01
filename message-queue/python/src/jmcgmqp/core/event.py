@@ -11,11 +11,9 @@ class Event(enum.Flag):
 
     Waiting = 2
     """
-    Published with a duration object of type `int | None` object by sampler
-    when it is waiting for workers to perform their message throughput test.
-
-    int duration -> seconds left for workers to perform their throughput test
-    None duration -> before waiting initiation.
+    Published with a duration by sampler when it is waiting for workers to
+    perform their message throughput test. The duration is an int of seconds
+    remaning.
     """
 
     WorkerResult = 4
@@ -31,4 +29,10 @@ class Event(enum.Flag):
     MaximumFound = 16
     """
     Published with SampleResult by main when it a maximum throughput is found.
+    """
+
+    WaitingInit = 32
+    """
+    Published with None before initiating waiting for given DURATION for workers to
+    mesure their throughput.
     """

@@ -69,7 +69,7 @@ def sample(app: Instance, connector: mqs.Connector, n: int) -> Results:
 
         b.wait()
 
-        app.observer.publish(E.Waiting, None)
+        app.observer.publish(E.WaitingInit, None)
         for i in range(app.config.DURATION, 0, -1):
             check(error)
             app.observer.publish(E.Waiting, i)
