@@ -1,5 +1,4 @@
 import time
-import psycopg # current debian stable = 3.1.7
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 
@@ -7,9 +6,10 @@ from jmcgmqp.core.runtime import Instance
 from jmcgmqp.core.config import Config
 from jmcgmqp.core.primitives import WorkerResult, Results, SampleDescription
 from jmcgmqp.core import event
+import jmcgmqp.mq_system as mqs
 
 def worker(
-    config: Config,
+    connector: mqs.Connector,
     sdesc: SampleDescription,
     worker_id: int,
     q: Queue,
@@ -18,24 +18,18 @@ def worker(
     b: Barrier
 ):
     try:
-        #if worker_id > 4:
-        #    raise RuntimeError("whatever")
-        conn = psycopg.connect(config.POSTGRES)
-        i = 0
-        conn.execute("select 1")
-    except:
+        sender = connector.connect()
+    except Exception:
         tb.print_exc()
         error.set()
-        b.wait()
-    else:
+    finally:
         b.wait()
 
     start = time.time_ns()
 
+    i = 0
     while not exit_flag.is_set():
-        with conn.cursor() as c:
-            c.execute('insert into public.queue (data) values (%s)', (i,))
-            conn.commit()
+        sender(i)
         i += 1
 
     end = time.time_ns()
@@ -43,17 +37,17 @@ def worker(
     r = WorkerResult(sdesc, worker_id, i, end-start)
     q.put(r)
 
-
 def check(error):
     if error.is_set():
         raise RuntimeError('Worker error')
 
-def sample(app: Instance, n: int) -> Results:
+def sample(app: Instance, connector: mqs.Connector, n: int) -> Results:
     """
     Run `n` workers and collect the results.
     """
+    assert isinstance(app, Instance)
+    assert isinstance(connector, mqs.Connector)
     app.observer.publish(event.SamplingWorkers(n))
-    c = app.config
     q = Queue()
     exit_flag = Event()
     error = Event()
@@ -63,7 +57,9 @@ def sample(app: Instance, n: int) -> Results:
         sdesc = SampleDescription(n, 'multiprocessing', 'postgres')
         for i in range(1, n+1):
             check(error)
-            p = Process(target=worker, args=(app.config, sdesc, i, q, exit_flag, error, b))
+            p = Process(target=worker, args=(
+                connector, sdesc, i, q, exit_flag, error, b)
+            )
             ps.append(p)
             try:
                 p.start()
@@ -74,7 +70,7 @@ def sample(app: Instance, n: int) -> Results:
         b.wait()
 
         app.observer.publish(event.Waiting(None))
-        for i in range(c.DURATION, 0, -1):
+        for i in range(app.config.DURATION, 0, -1):
             check(error)
             app.observer.publish(event.Waiting(i))
             time.sleep(1)

@@ -12,6 +12,7 @@ from jmcgmqp.mt_system import process as mp
 from jmcgmqp.observer import stdout
 from jmcgmqp.observer import prometheus
 from jmcgmqp.observer import postgres
+import jmcgmqp.mq_system as mqs
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +25,9 @@ def main():
         test_cmd(app)
         sys.exit(1)
 
-    max_ = find_maximum(partial(mp.sample, app), app.config.POWER)
+    mq_connector = mqs.pg.Connector(app.config)
+    sampler = partial(mp.sample, app, mq_connector)
+    max_ = find_maximum(sampler, app.config.POWER)
     app.observer.publish(event.MaximumFound(max_))
 
 if __name__ == "__main__":
