@@ -8,9 +8,11 @@ from pytest import raises
 
 from jmcgmqp.core.runtime import Runtime, Instance
 from jmcgmqp.core.config import Config
-from jmcgmqp.observer.postgres import Model, Observer
 from jmcgmqp.core.primitives import SampleDescription, WorkerResult
 from jmcgmqp.core import event
+
+from . import Observer
+from .model import Model
 
 @pytest.fixture
 def m(telemetry_pg):

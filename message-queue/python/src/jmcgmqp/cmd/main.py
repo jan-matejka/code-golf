@@ -11,7 +11,7 @@ from jmcgmqp.core import event
 from jmcgmqp.mt_system import process as mp
 from jmcgmqp.observer import stdout
 from jmcgmqp.observer import prometheus
-from jmcgmqp.observer import postgres
+import jmcgmqp.telemetry as tele
 import jmcgmqp.mq_system as mqs
 
 log = logging.getLogger(__name__)
@@ -20,7 +20,8 @@ def main():
     app = Instance()
     app.observer.subscribe(stdout.observer)
     app.observer.subscribe(partial(prometheus.observer, app))
-    app.observer.subscribe(postgres.Observer(app))
+    app.observer.subscribe(tele.pg.Observer(app))
+
     if app.config.TEST_PROMETHEUS:
         test_cmd(app)
         sys.exit(1)

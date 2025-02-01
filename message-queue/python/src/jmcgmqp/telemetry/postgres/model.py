@@ -3,9 +3,8 @@ from functools import cache
 
 import psycopg # current debian stable = 3.1.7
 
-from jmcgmqp.core import event
 from jmcgmqp.core.primitives import WorkerResult, SampleDescription
-from jmcgmqp.core.runtime import Instance, Runtime
+from jmcgmqp.core.runtime import Runtime
 from jmcgmqp.core.config import Config
 
 class Model:
@@ -94,15 +93,3 @@ class Model:
         with self._conn.cursor(row_factory=psycopg.rows.dict_row) as c:
             c.execute("select * from results.sample")
             return c.fetchall()
-
-class Observer:
-    def __init__(self, app: Instance, _model=Model):
-        self._app = app
-        self._model = _model(app.config)
-
-    def __call__(self, e: event.Event):
-        if isinstance(e, event.WorkerResult):
-            wr = e.result
-            runtime_id = self._model.runtime_id(self._app.runtime)
-            sample_id = self._model.sample_id(wr.sdesc, runtime_id)
-            self._model.worker_result(wr, sample_id)
