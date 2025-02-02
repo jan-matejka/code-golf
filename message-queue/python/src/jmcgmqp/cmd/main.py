@@ -7,7 +7,7 @@ from functools import partial
 from jmcgmqp.core.algorithm import find_maximum
 from jmcgmqp.core.runtime import Instance
 from jmcgmqp.core.event import Event as E
-from jmcgmqp.mt_system import process as mp
+from jmcgmqp import mt_system
 from jmcgmqp.core import stdout
 import jmcgmqp.telemetry as tele
 import jmcgmqp.mq_system as mqs
@@ -18,7 +18,9 @@ def main():
     app = Instance()
 
     mq_connector = mqs.pg.Connector(app.config)
-    sampler = mp.Sampler(app, mq_connector)
+
+    mts = getattr(mt_system, app.config.MT_SYSTEM)
+    sampler = mts.Sampler(app, mq_connector)
 
     stdout.Observer().subscribe_to(sampler.observable)
     tele.prometheus.Observer(app).subscribe_to(sampler.observable)
