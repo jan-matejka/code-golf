@@ -7,6 +7,7 @@ from jmcgmqp.core.runtime import Instance
 from jmcgmqp.core.config import Config
 from jmcgmqp.core.primitives import WorkerResult, Results, SampleDescription
 from jmcgmqp.core.event import Event as E
+from jmcgmqp.observable import Observable
 import jmcgmqp.mq_system as mqs
 
 def worker(
@@ -46,6 +47,7 @@ def check(error):
 class Sampler:
     app: Instance
     connector: mqs.Connector
+    observable: Observable = Observable(E)
 
     def __post_init__(self):
         assert isinstance(self.app, Instance)
@@ -58,7 +60,7 @@ class Sampler:
         """
         Run `n` workers and collect the results.
         """
-        self.app.observer.publish(E.SamplingWorkers, n)
+        self.observable.publish(E.SamplingWorkers, n)
         q = Queue()
         exit_flag = Event()
         error = Event()
@@ -80,10 +82,10 @@ class Sampler:
 
             b.wait()
 
-            self.app.observer.publish(E.WaitingInit, None)
+            self.observable.publish(E.WaitingInit, None)
             for i in range(self.app.config.DURATION, 0, -1):
                 check(error)
-                self.app.observer.publish(E.Waiting, i)
+                self.observable.publish(E.Waiting, i)
                 time.sleep(1)
 
             exit_flag.set()
@@ -95,9 +97,9 @@ class Sampler:
             for _ in range(0, n):
                 wr = q.get()
                 xs.append(wr)
-                self.app.observer.publish(E.WorkerResult, wr)
+                self.observable.publish(E.WorkerResult, wr)
             r = Results(xs)
-            self.app.observer.publish(E.SampleResult, r)
+            self.observable.publish(E.SampleResult, r)
             return r
         except:
             for p in ps:
