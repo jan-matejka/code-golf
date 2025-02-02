@@ -45,7 +45,7 @@ cases = (
 def test_find_maximum(facade, sequence, result, power):
     sample = create_autospec(Sampler, spec_set=True)
     sample.side_effect = list(sequence.values())
-    assert find_maximum(sample, power) == result
+    assert facade(sample, power) == result
     assert sample.call_args_list == [call(x) for x in sequence.keys()]
 
 @pytest.mark.parametrize('sequence, result, power', cases)
