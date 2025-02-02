@@ -9,12 +9,12 @@ import jmcgmqp.mq_system as mqs
 @dc.dataclass
 class Sampler(abc.ABC):
     app: Instance
-    connector: mqs.Connector
+    connector: mqs.abc.Connector
     observable: Observable = Observable(E)
 
     def __post_init__(self):
         assert isinstance(self.app, Instance)
-        assert isinstance(self.connector, mqs.Connector)
+        assert isinstance(self.connector, mqs.abc.Connector)
 
     def __call__(self, *args, **kw):
         return self.sample(*args, **kw)

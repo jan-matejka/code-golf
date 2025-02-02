@@ -10,7 +10,7 @@ import jmcgmqp.mq_system as mqs
 from . import abc
 
 def worker(
-    connector: mqs.Connector,
+    connector: mqs.abc.Connector,
     sdesc: SampleDescription,
     worker_id: int,
     q: Queue,

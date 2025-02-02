@@ -1,21 +1,20 @@
-from dataclasses import dataclass
+import dataclasses as dc
 from functools import partial
 
 import psycopg # current debian stable = 3.1.7
 
 from jmcgmqp.core.config import Config
-import jmcgmqp.mq_system as mqs
+from . import abc
 
-def Connector(config: Config) -> mqs.Connector:
-    return mqs.Connector(connect, config)
-
-def connect(config):
-    #if worker_id > 4:
-    #    raise RuntimeError("whatever")
-    conn = psycopg.connect(config.POSTGRES)
-    i = 0
-    conn.execute("select 1")
-    return partial(send_message, conn)
+@dc.dataclass
+class Connector(abc.Connector):
+    def connect(self):
+        #if worker_id > 4:
+        #    raise RuntimeError("whatever")
+        conn = psycopg.connect(self.config.POSTGRES)
+        i = 0
+        conn.execute("select 1")
+        return partial(send_message, conn)
 
 def send_message(conn, i):
     with conn.cursor() as c:

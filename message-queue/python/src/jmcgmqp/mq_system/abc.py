@@ -1,15 +1,15 @@
-from dataclasses import dataclass
+import abc
+import dataclasses as dc
 from typing import *
 
 from jmcgmqp.core.config import Config
 
 Sender = Callable[[int], None]
 
-@dataclass
-class Connector:
-    _connect: Callable[[Config],[Sender]]
+@dc.dataclass
+class Connector(abc.ABC):
     config: Config
     name: str = 'postgres'
 
     def connect(self) -> Sender:
-        return self._connect(self.config)
+        raise NotImplementedError # pragma: no cover
