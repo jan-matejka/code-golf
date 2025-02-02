@@ -9,6 +9,7 @@ Sender = Callable[[int],[]]
 class Connector:
     _connect: Callable[[Config],[Sender]]
     config: Config
+    name: str = 'postgres'
 
     def connect(self) -> Sender:
         return self._connect(self.config)

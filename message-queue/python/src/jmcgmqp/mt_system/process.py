@@ -67,7 +67,11 @@ class Sampler:
         b = Barrier(n+1)
         ps = []
         try:
-            sdesc = SampleDescription(n, 'multiprocessing', 'postgres')
+            sdesc = SampleDescription(
+                n,
+                'multiprocessing',
+                self.connector.name,
+            )
             for i in range(1, n+1):
                 check(error)
                 p = Process(target=worker, args=(
