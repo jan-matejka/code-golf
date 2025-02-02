@@ -3,12 +3,11 @@ import time
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
 
-from jmcgmqp.core.runtime import Instance
-from jmcgmqp.core.config import Config
 from jmcgmqp.core.primitives import WorkerResult, Results, SampleDescription
 from jmcgmqp.core.event import Event as E
-from jmcgmqp.observable import Observable
 import jmcgmqp.mq_system as mqs
+
+from . import abc
 
 def worker(
     connector: mqs.Connector,
@@ -44,22 +43,8 @@ def check(error):
         raise RuntimeError('Worker error')
 
 @dc.dataclass
-class Sampler:
-    app: Instance
-    connector: mqs.Connector
-    observable: Observable = Observable(E)
-
-    def __post_init__(self):
-        assert isinstance(self.app, Instance)
-        assert isinstance(self.connector, mqs.Connector)
-
-    def __call__(self, *args, **kw):
-        return self.sample(*args, **kw)
-
-    def sample(self, n: int) -> Results:
-        """
-        Run `n` workers and collect the results.
-        """
+class Sampler(abc.Sampler):
+    def sample(self, n):
         self.observable.publish(E.SamplingWorkers, n)
         q = Queue()
         exit_flag = Event()
