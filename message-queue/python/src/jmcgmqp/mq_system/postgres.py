@@ -15,7 +15,7 @@ class Connector(abc.Connector):
         conn = psycopg.connect(self.config.POSTGRES)
         i = 0
         conn.execute("select 1")
-        return partial(send_message, conn)
+        return Sender(conn)
 
     async def connect_async(self):
         conn = await aiopg.connect(self.config.POSTGRES)
@@ -28,18 +28,24 @@ class Connector(abc.Connector):
 
 _sql = 'insert into public.queue (data) values (%s)'
 
-def send_message(conn, i):
-    with conn.cursor() as c:
-        c.execute(_sql, (i,))
-        conn.commit()
+@dc.dataclass
+class BaseSender:
+    def close(self):
+        self.conn.close()
 
 @dc.dataclass
-class SenderAsync:
+class Sender(BaseSender):
+    conn: psycopg.Connection
+
+    def __call__(self, i):
+        with self.conn.cursor() as c:
+            c.execute(_sql, (i,))
+            conn.commit()
+
+@dc.dataclass
+class SenderAsync(BaseSender):
     conn: aiopg.Connection
 
     async def __call__(self, i):
         async with self.conn.cursor() as c:
             await c.execute(_sql, (i, ))
-
-    def close(self):
-        self.conn.close()
