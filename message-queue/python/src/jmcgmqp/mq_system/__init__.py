@@ -1,2 +1,2 @@
-from .connector import Connector
+from . import abc
 from . import postgres as pg
