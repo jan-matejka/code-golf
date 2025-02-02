@@ -9,7 +9,7 @@ from . import abc
 
 @dc.dataclass
 class Connector(abc.Connector):
-    def connect(self):
+    async def connect(self):
         #if worker_id > 4:
         #    raise RuntimeError("whatever")
         conn = psycopg.connect(self.config.POSTGRES)
@@ -37,10 +37,10 @@ class BaseSender:
 class Sender(BaseSender):
     conn: psycopg.Connection
 
-    def __call__(self, i):
+    async def __call__(self, i):
         with self.conn.cursor() as c:
             c.execute(_sql, (i,))
-            conn.commit()
+            self.conn.commit()
 
 @dc.dataclass
 class SenderAsync(BaseSender):
