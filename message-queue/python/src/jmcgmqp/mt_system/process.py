@@ -38,10 +38,6 @@ def worker(
     r = WorkerResult(sdesc, worker_id, i, end-start)
     q.put(r)
 
-def check(error):
-    if error.is_set():
-        raise RuntimeError('Worker error')
-
 @dc.dataclass
 class Sampler(abc.Sampler):
     def sample(self, n):
@@ -58,7 +54,6 @@ class Sampler(abc.Sampler):
                 self.connector.name,
             )
             for i in range(1, n+1):
-                check(error)
                 p = Process(target=worker, args=(
                     self.connector, sdesc, i, q, exit_flag, error, b)
                 )
@@ -67,13 +62,14 @@ class Sampler(abc.Sampler):
                     p.start()
                 except:
                     error.set()
-                    check(error)
+                    raise
+                abc.check(error)
 
             b.wait()
+            abc.check(error)
 
             self.observable.publish(E.WaitingInit, None)
             for i in range(self.app.config.DURATION, 0, -1):
-                check(error)
                 self.observable.publish(E.Waiting, i)
                 time.sleep(1)
 
@@ -81,7 +77,7 @@ class Sampler(abc.Sampler):
             for p in ps:
                 p.join()
 
-            check(error)
+            abc.check(error)
             xs = []
             for _ in range(0, n):
                 wr = q.get()

@@ -1,5 +1,9 @@
 import abc
+import asyncio
 import dataclasses as dc
+import multiprocessing as mp
+import multiprocessing.synchronize as mpsync
+
 from jmcgmqp.core.primitives import Results
 from jmcgmqp.core.runtime import Instance
 from jmcgmqp.core.event import Event as E
@@ -25,3 +29,7 @@ class Sampler(abc.ABC):
         Run `n` workers and collect the results.
         """
         raise NotImplementedError # pragma: no cover
+
+def check(error: asyncio.Event | mpsync.Event):
+    if error.is_set():
+        raise RuntimeError('Worker error')

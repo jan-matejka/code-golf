@@ -38,10 +38,6 @@ async def worker(
 
         return WorkerResult(sdesc, worker_id, i, end-start)
 
-def check(error):
-    if error.is_set():
-        raise RuntimeError('Worker error')
-
 @dc.dataclass
 class Sampler(abc.Sampler):
     def sample(self, n):
@@ -66,10 +62,10 @@ class Sampler(abc.Sampler):
                     self.connector, sdesc, i, exit_flag, error, b
                 ))
                 tasks.append(t)
-                check(error)
+                abc.check(error)
 
             await b.wait()
-            check(error)
+            abc.check(error)
 
             self.observable.publish(E.WaitingInit, None)
             for i in range(self.app.config.DURATION, 0, -1):
