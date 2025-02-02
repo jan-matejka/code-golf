@@ -6,7 +6,6 @@ from jmcgmqp.core.event import Event
 
 log = logging.getLogger(__name__)
 
-Observer = Callable[[Event], None]
 Callback = Callable[[Event, Any],None]
 
 class Observable:
