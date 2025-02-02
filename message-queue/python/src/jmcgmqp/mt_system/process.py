@@ -10,7 +10,7 @@ import jmcgmqp.mq_system as mqs
 from . import abc
 
 def worker(
-    connector: mqs.abc.Connector,
+    connector: 'Sampler.connect',
     sdesc: SampleDescription,
     worker_id: int,
     q: Queue,
@@ -19,7 +19,7 @@ def worker(
     b: Barrier
 ):
     try:
-        sender = connector.connect()
+        sender = connector()
     except Exception:
         tb.print_exc()
         error.set()
@@ -40,6 +40,9 @@ def worker(
 
 @dc.dataclass
 class Sampler(abc.Sampler):
+    def connect(self):
+        return self.connector.connect()
+
     def sample(self, n):
         self.observable.publish(E.SamplingWorkers, n)
         q = Queue()
@@ -55,7 +58,7 @@ class Sampler(abc.Sampler):
             )
             for i in range(1, n+1):
                 p = Process(target=worker, args=(
-                    self.connector, sdesc, i, q, exit_flag, error, b)
+                    self.connect, sdesc, i, q, exit_flag, error, b)
                 )
                 ps.append(p)
                 try:

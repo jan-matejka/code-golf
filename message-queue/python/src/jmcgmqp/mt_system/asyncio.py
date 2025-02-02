@@ -11,7 +11,7 @@ import jmcgmqp.mq_system as mqs
 from . import abc
 
 async def worker(
-    connector: mqs.abc.Connector,
+    connector: 'Sampler.connect',
     sdesc: SampleDescription,
     worker_id: int,
     exit_flag: asyncio.Event,
@@ -19,7 +19,7 @@ async def worker(
     b: asyncio.Barrier,
 ):
     try:
-        sender = await connector.connect_async()
+        sender = await connector()
     except Exception:
         tb.print_exc()
         error.set()
@@ -40,6 +40,9 @@ async def worker(
 
 @dc.dataclass
 class Sampler(abc.Sampler):
+    def connect(self):
+        return self.connector.connect_async()
+
     def sample(self, n):
         return asyncio.run(self.sample_async(n))
 
@@ -59,7 +62,7 @@ class Sampler(abc.Sampler):
         try:
             for i in range(1, n+1):
                 t = asyncio.create_task(worker(
-                    self.connector, sdesc, i, exit_flag, error, b
+                    self.connect, sdesc, i, exit_flag, error, b
                 ))
                 tasks.append(t)
                 abc.check(error)
