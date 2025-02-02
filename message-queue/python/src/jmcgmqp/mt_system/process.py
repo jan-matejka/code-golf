@@ -1,3 +1,4 @@
+import dataclasses as dc
 import time
 import traceback as tb
 from multiprocessing import Process, Queue, Event, Barrier
@@ -41,54 +42,64 @@ def check(error):
     if error.is_set():
         raise RuntimeError('Worker error')
 
-def sample(app: Instance, connector: mqs.Connector, n: int) -> Results:
-    """
-    Run `n` workers and collect the results.
-    """
-    assert isinstance(app, Instance)
-    assert isinstance(connector, mqs.Connector)
-    app.observer.publish(E.SamplingWorkers, n)
-    q = Queue()
-    exit_flag = Event()
-    error = Event()
-    b = Barrier(n+1)
-    ps = []
-    try:
-        sdesc = SampleDescription(n, 'multiprocessing', 'postgres')
-        for i in range(1, n+1):
-            check(error)
-            p = Process(target=worker, args=(
-                connector, sdesc, i, q, exit_flag, error, b)
-            )
-            ps.append(p)
-            try:
-                p.start()
-            except:
-                error.set()
+@dc.dataclass
+class Sampler:
+    app: Instance
+    connector: mqs.Connector
+
+    def __post_init__(self):
+        assert isinstance(self.app, Instance)
+        assert isinstance(self.connector, mqs.Connector)
+
+    def __call__(self, *args, **kw):
+        return self.sample(*args, **kw)
+
+    def sample(self, n: int) -> Results:
+        """
+        Run `n` workers and collect the results.
+        """
+        self.app.observer.publish(E.SamplingWorkers, n)
+        q = Queue()
+        exit_flag = Event()
+        error = Event()
+        b = Barrier(n+1)
+        ps = []
+        try:
+            sdesc = SampleDescription(n, 'multiprocessing', 'postgres')
+            for i in range(1, n+1):
                 check(error)
+                p = Process(target=worker, args=(
+                    self.connector, sdesc, i, q, exit_flag, error, b)
+                )
+                ps.append(p)
+                try:
+                    p.start()
+                except:
+                    error.set()
+                    check(error)
 
-        b.wait()
+            b.wait()
 
-        app.observer.publish(E.WaitingInit, None)
-        for i in range(app.config.DURATION, 0, -1):
+            self.app.observer.publish(E.WaitingInit, None)
+            for i in range(self.app.config.DURATION, 0, -1):
+                check(error)
+                self.app.observer.publish(E.Waiting, i)
+                time.sleep(1)
+
+            exit_flag.set()
+            for p in ps:
+                p.join()
+
             check(error)
-            app.observer.publish(E.Waiting, i)
-            time.sleep(1)
-
-        exit_flag.set()
-        for p in ps:
-            p.join()
-
-        check(error)
-        xs = []
-        for _ in range(0, n):
-            wr = q.get()
-            xs.append(wr)
-            app.observer.publish(E.WorkerResult, wr)
-        r = Results(xs)
-        app.observer.publish(E.SampleResult, r)
-        return r
-    except:
-        for p in ps:
-            p.kill()
-        raise
+            xs = []
+            for _ in range(0, n):
+                wr = q.get()
+                xs.append(wr)
+                self.app.observer.publish(E.WorkerResult, wr)
+            r = Results(xs)
+            self.app.observer.publish(E.SampleResult, r)
+            return r
+        except:
+            for p in ps:
+                p.kill()
+            raise

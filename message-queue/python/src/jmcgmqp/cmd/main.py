@@ -21,7 +21,7 @@ def main():
     tele.pg.Observer(app).subscribe_to(app.observer)
 
     mq_connector = mqs.pg.Connector(app.config)
-    sampler = partial(mp.sample, app, mq_connector)
+    sampler = mp.Sampler(app, mq_connector)
     max_ = find_maximum(sampler, app.config.POWER)
     app.observer.publish(event.MaximumFound(max_))
 
