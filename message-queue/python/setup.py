@@ -13,6 +13,7 @@ if CURRENT_PYTHON < REQUIRED_PYTHON:
 requires = [
     "psycopg>=3.1.7,<4",
     "prometheus-client>=0.16.0,<1",
+    "aiopg>=1.4.0,<2",
 ]
 test_requirements = [
     "pytest>=8.3.3,<9",
