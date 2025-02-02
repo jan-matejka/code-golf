@@ -1,4 +1,4 @@
-from jmcgmqp.algorithm import (
+from jmcgmqp.core.algorithm import (
     find_maximum, Sampler, SampleIterator,
     find_maximum2, SampleBiGenerator,
     find_maximum3, find_maximum4, find_maximum22, find_maximum23

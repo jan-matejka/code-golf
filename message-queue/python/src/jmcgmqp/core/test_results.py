@@ -1,5 +1,5 @@
-from jmcgmqp.primitives import Results, SampleDescription
-from jmcgmqp.primitives import WorkerResult
+from jmcgmqp.core.primitives import Results, SampleDescription
+from jmcgmqp.core.primitives import WorkerResult
 
 def test_total_order():
     sdesc = SampleDescription(4, 'foo', 'bar')

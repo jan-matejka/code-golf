@@ -4,7 +4,7 @@ import psycopg
 from pprint import pprint
 
 import pytest
-from jmcgmqp.base_config import BaseConfig
+from jmcgmqp.core.base_config import BaseConfig
 
 @dataclass
 class TestConfig(BaseConfig):

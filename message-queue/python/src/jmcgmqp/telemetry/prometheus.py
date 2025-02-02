@@ -1,11 +1,13 @@
+from dataclasses import dataclass
+
 from prometheus_client import CollectorRegistry
 from prometheus_client import Gauge
 from prometheus_client import push_to_gateway
 
-from jmcgmqp.runtime import Runtime_labels, Instance
-from jmcgmqp.primitives import Results
-from jmcgmqp import event
-from jmcgmqp.config import Config
+from jmcgmqp.core.runtime import Runtime_labels, Instance
+from jmcgmqp.core.primitives import Results
+from jmcgmqp.core.event import Event as E
+from jmcgmqp.core.config import Config
 
 registry = CollectorRegistry()
 
@@ -40,25 +42,24 @@ def push(config: Config):
         registry=registry
     )
 
-def test_cmd(app):
-    test_metric.labels(
-        worker_id='worker_1',
-        **app.runtime.metric_labels(),
-    ).inc()
-    push(app.config)
+@dataclass
+class Observer:
+    app: Instance
 
-def observer(app: Instance, e: event.Event):
-    if isinstance(e, event.WorkerResult):
+    def subscribe_to(self, p):
+        p.subscribe(E.WorkerResult, self.on_result)
+
+    def on_result(self, e: E, x):
         labels = {
-            'worker_id': e.result.worker_id,
-            'n_workers': e.result.sdesc.n_workers,
-            'algorithm': e.result.sdesc.algorithm,
-            'mq_system': e.result.sdesc.mq_system,
+            'worker_id': x.worker_id,
+            'n_workers': x.sdesc.n_workers,
+            'algorithm': x.sdesc.algorithm,
+            'mq_system': x.sdesc.mq_system,
         }
-        labels.update(app.runtime.metric_labels())
+        labels.update(self.app.runtime.metric_labels())
 
-        messages_total.labels(**labels).set(e.result.messages_total)
-        messages_per_second.labels(**labels).set(e.result.messages_per_second)
-        duration_seconds.labels(**labels).set(e.result.duration_seconds)
+        messages_total.labels(**labels).set(x.messages_total)
+        messages_per_second.labels(**labels).set(x.messages_per_second)
+        duration_seconds.labels(**labels).set(x.duration_seconds)
 
-        push(app.config)
+        push(self.app.config)
