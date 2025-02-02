@@ -3,7 +3,7 @@ from typing import *
 
 from jmcgmqp.core.config import Config
 
-Sender = Callable[[int],[]]
+Sender = Callable[[int], None]
 
 @dataclass
 class Connector:

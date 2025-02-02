@@ -4,7 +4,7 @@ from typing import *
 import itertools
 
 T = TypeVar('T')
-Sampler = Callable[[int],[T]]
+Sampler = Callable[[int], T]
 
 @dataclass
 class SampleIterator(Iterator):
@@ -22,7 +22,7 @@ class SampleIterator(Iterator):
     max_step: int | None = None
 
     _prev:T | None = None
-    _next_impl: Callable[[], [T]] = None
+    _next_impl: Callable[[], T] = None
 
     def __post_init__(self):
         self._next_impl = self._next_power
@@ -215,7 +215,7 @@ class SampleBiIterator(Iterator):
     """
     power:int = 0
 
-    _next_impl: Callable[[], [T]] = None
+    _next_impl: Callable[[], T] = None
     _count = None
 
     def __post_init__(self):
@@ -266,7 +266,7 @@ class SampleBiIterator2(Iterator):
     """
     power:int = 0
 
-    _next_impl: Callable[[], [T]] = None
+    _next_impl: Callable[[], T] = None
     _count = None
 
     _prev = None
