@@ -113,6 +113,10 @@ def SampleBiGenerator(
     """
     Same as :ref:`SampleGenerator` except the caller is responsible for calling
     the sampler and then sending the result back to the generator.
+
+    This hypothetically decouples the sampler() call from the generator
+    implementation and it is convenient since sampler() implements observable
+    anyway. I, however, fail to see any practical use for it in this scenario.
     """
     prev = None
     for i in itertools.count(starting_power):
@@ -122,8 +126,8 @@ def SampleBiGenerator(
             break
         prev = r
 
-    for j in range(2**(i-1)+1, 2**(i)):
-        r = yield j
+    for i in range(2**(i-1)+1, 2**i):
+        r = yield i
         yield r # yield to send()
         if prev and prev >= r:
             break
@@ -133,6 +137,9 @@ def SampleBiGenerator(
 def find_maximum2(sample: Sampler, starting_power: int = 0):
     g = SampleBiGenerator(starting_power)
     observable = lambda n: g.send(sample(n))
+    # real code would look like:
+    #   sampler.observable.subscribe(E.SampleResult, g.send)
+    #   max(sampler(n) for n in g)
     return max(observable(n) for n in g)
 
 def SampleBiGenerator2(
