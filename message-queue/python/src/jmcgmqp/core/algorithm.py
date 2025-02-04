@@ -48,19 +48,12 @@ def SampleGenerator(
     starting_power: int = 0,
 ) -> Generator[T, None, None]:
     """
-    Run `sample` with increasing powers until its result decreases.
-    Then run `sample` with increments from last input that returned
-    non-decreasing value.
+    Same idea as SampleIterator except it is a generator.
 
-    Yields the sampling results.
+    This is clearly an improvement as it removes the explicit state handling we
+    need to do in the iterator version. Also from experience, this code was
+    easier to write and is easier to read.
     """
-    # I'm not sure this is any better. Sure, we could have simpler unit test
-    # for SampleGenerator and separate one for find_maximum, if we have the
-    # find_maximum facade at all. But is it worth?
-    #
-    # We could also look into refactoring the sample out by sending the result
-    # back into the generator.
-
     prev = None
     for i in itertools.count(starting_power):
         r = sample(2**i)
@@ -77,7 +70,11 @@ def SampleGenerator(
             break
         yield r
 
-def find_maximum(sample: Sampler, starting_power: int = 0) -> T:
+def find_maximum(
+    sample: Sampler,
+    starting_power: int = 0,
+    it_factory=SampleGenerator
+) -> T:
     """
     Run `sample` with increasing powers until its result decreases.
     Then run `sample` with increments from last input that returned
@@ -85,8 +82,30 @@ def find_maximum(sample: Sampler, starting_power: int = 0) -> T:
 
     :returns: the last non-decreasing result.
     """
-    return max(SampleGenerator(sample, starting_power))
+    return max(it_factory(sample, starting_power))
 
+def SampleGenerator2(
+    sample: Sampler,
+    starting_power: int = 0,
+) -> Generator[T, None, None]:
+    """
+    Literally the same as SampleGenerator but refactored into using a
+    subgenerator.
+
+    This is worse in every regard except it is kinda cool.
+    """
+    def _scale(it, prev=None):
+        for n in it:
+            r = sample(n)
+            if prev and prev >= r:
+                yield r
+                return n, prev
+            prev = r
+            yield r
+
+    n, prev = yield from _scale(2**i for i in itertools.count(starting_power))
+    m = n >> 1
+    yield from _scale(iter(range(m+1, n)), prev)
 
 def SampleBiGenerator(
     starting_power: int = 0,

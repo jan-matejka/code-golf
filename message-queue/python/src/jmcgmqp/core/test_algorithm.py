@@ -1,5 +1,7 @@
+from functools import partial
+
 from jmcgmqp.core.algorithm import (
-    find_maximum, Sampler, SampleIterator,
+    find_maximum, Sampler, SampleIterator, SampleGenerator2,
     find_maximum2, SampleBiGenerator,
     find_maximum3, find_maximum4, find_maximum22, find_maximum23
 )
@@ -35,6 +37,8 @@ cases = (
 
 @pytest.mark.parametrize('facade', (
     find_maximum,
+    partial(find_maximum, it_factory=SampleGenerator2),
+    partial(find_maximum, it_factory=SampleIterator),
     find_maximum2,
     find_maximum3,
     find_maximum4,
