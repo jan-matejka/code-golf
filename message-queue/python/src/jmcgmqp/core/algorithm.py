@@ -9,56 +9,36 @@ Sampler = Callable[[int], T]
 @dataclass
 class SampleIterator(Iterator):
     """
-    Basicly the same as :ref:`SampleGenerator` except it is an Iterator.
+    Same as :ref:`SampleGenerator` except it is an Iterator.
 
-    It's ugly, it's harder to write, and harder to read. But it poses an
-    interesting question of wheter iterator or generator is preferred and if it
-    improves if we move campler call outside and turns this into sampler
-    observer.
+    The main idea here is it takes the sampler as an argument and then samples
+    until the scaling yields negative performance and returns all the sampling
+    results so it can be plugged into max().
     """
     sampler: Sampler
     power:int = 0
-    step: int | None = None
-    max_step: int | None = None
-
     _prev:T | None = None
-    _next_impl: Callable[[], T] = None
+    _step: int = 0
 
     def __post_init__(self):
-        self._next_impl = self._next_power
+        self._it = (2**i for i in itertools.count(self.power))
 
     def __next__(self):
-        # Note: we can not simply re-assign __next__ itself because next()
-        # resolves it statically via Py_TYPE() to the class method (probably
-        # for performance reasons).
-        return self._next_impl()
+        if self._step == 2:
+            raise StopIteration
 
-    def _next_power(self):
-        r = self.sampler(2**self.power)
+        n = next(self._it)
+        r = self.sampler(n)
         if self._prev and self._prev >= r:
-            self.step = 2**(self.power - 1) + 1
-            self.max_step = 2**self.power
-            self._next_impl = self._next_step
-        else:
-            self.power += 1
-            self._prev = r
-        return r
-
-    def _next_step(self):
-        if self.step == self.max_step:
-            self._next_impl = self._next_stop
-            raise StopIteration()
-
-        r = self.sampler(self.step)
-        if self._prev and self._prev >= r:
-            self._next_impl = self._next_stop
+            if self._step == 1 or (self._step == 0 and n == 2):
+                self._step = 2
+            else:
+                self._step = 1
+                m = n >> 1
+                self._it = iter(range(m+1, n))
         else:
             self._prev = r
-            self.step += 1
         return r
-
-    def _next_stop(self):
-        raise StopIteration()
 
     def __iter__(self):
         return self
