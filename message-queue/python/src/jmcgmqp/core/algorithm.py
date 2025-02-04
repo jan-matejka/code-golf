@@ -140,12 +140,23 @@ def find_maximum2(sample: Sampler, starting_power: int = 0):
     #   max(sampler(n) for n in g)
     return max(observable(n) for n in g)
 
-def SampleBiGenerator2(
+def SampleBiGeneratorLast(
     starting_power: int = 0,
 ) -> Generator[T, None, None]:
     """
-    Basicly same as :ref:`SampleBiGenerator` but this is made to yield the
+    Same as :ref:`SampleBiGenerator` but this is made to yield the
     maximum as last element of the generator.
+
+    The idea here is that we can use last() as the consumer instead of max().
+
+    But this is just silly. We have to bend over backwards to make it work out
+    to yield the correct last value.
+
+    The primary factor affecting this design is that first loop can't yield to
+    send in its last iteration because we don't know if the current prev value
+    because we don't know if it won't end up higher than the next sample or if
+    there exists next n to sample. It is hard to explain, you have to follow
+    the yields and care for exiting first loop with i=1 as well.
     """
     prev = None
     for i in itertools.count(starting_power):
@@ -153,7 +164,7 @@ def SampleBiGenerator2(
         if prev and prev >= r:
             break
         else:
-            yield # yield to send()
+            yield r # yield to send
         prev = r
 
     for i in range(2**(i-1)+1, 2**(i)):
@@ -168,15 +179,48 @@ def SampleBiGenerator2(
 
     yield prev
 
+def SampleBiGeneratorLast2(
+    starting_power: int = 0,
+) -> Generator[T, None, None]:
+    """
+    This implements identical behavior to SimpleBiGeneratorLast with increased
+    readability by having each yield have the corresponding yield to send right
+    after it at the cost of slightly more involved cases.
+    """
+    prev = None
+    for i in itertools.count(starting_power):
+        r = yield 2**i
+        if prev and prev >= r:
+            yield prev
+            break
+        else:
+            yield r
+            prev = r
+
+    if i == 1:
+        return
+
+    for i in range(2**(i-1)+1, 2**(i)):
+        r = yield i
+        if prev and prev >= r:
+            yield prev
+            return
+        else:
+            yield r
+            prev = r
+
 def last(it: Iterator[T]):
     for x in it:
         ...
     return x
 
-def find_maximum22(sample: Sampler, starting_power: int = 0):
-    g = SampleBiGenerator2(starting_power)
-    rs = (g.send(sample(n)) for n in g)
-    return last(rs)
+def find_maximum22(
+    sample: Sampler,
+    starting_power: int = 0,
+    it_factory=SampleBiGeneratorLast,
+):
+    g = it_factory(starting_power)
+    return last(g.send(sample(n)) for n in g)
 
 def powers(i: int = 0):
     prev = None
@@ -200,7 +244,7 @@ def steps(prev, i):
 
 def SampleBiGenerator3(starting_power: int = 0) -> Generator[T, None, None]:
     """
-    Same as :ref:`SampleBiGenerator2` but refactored into subgenerators.
+    Same as :ref:`SampleBiGeneratorLast` but refactored into subgenerators.
     """
     prev, i = (yield from powers(starting_power))
     r = (yield from steps(prev, i))
