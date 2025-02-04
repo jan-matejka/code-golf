@@ -132,8 +132,12 @@ def SampleBiGenerator(
         if prev and prev >= r:
             break
 
-def find_maximum2(sample: Sampler, starting_power: int = 0):
-    g = SampleBiGenerator(starting_power)
+def find_maximum2(
+    sample: Sampler,
+    starting_power: int = 0,
+    it_factory=SampleBiGenerator,
+):
+    g = it_factory(starting_power)
     observable = lambda n: g.send(sample(n))
     # real code would look like:
     #   sampler.observable.subscribe(E.SampleResult, g.send)
@@ -257,6 +261,7 @@ class SampleBiIterator(Iterator):
     and updating this iterator.
     """
     power:int = 0
+    _prev = None
 
     _count = None
     _stop = 0
@@ -273,6 +278,17 @@ class SampleBiIterator(Iterator):
         else:
             return next(self._count)
 
+    def notify(self, r):
+        if self._prev is None or r > self._prev:
+            self._prev = r
+        else:
+            self.step()
+
+    def send(self, r):
+        # API compatibility with generators
+        self.notify(r)
+        return r
+
     def step(self):
         if self._stop == 1:
             self._stop = 2
@@ -286,41 +302,3 @@ class SampleBiIterator(Iterator):
 
     def __iter__(self):
         return self
-
-def find_maximum3(sample: Sampler, starting_power: int = 0):
-    it = SampleBiIterator(starting_power)
-    prev = None
-    for n in it:
-        r = sample(n)
-        if prev is None or r > prev:
-            prev = r
-        else:
-            it.step()
-    return prev
-
-@dataclass
-class SampleBiIterator2(SampleBiIterator):
-    """
-    Same as SampleBiIterator but its observing the result of sampler so it can
-    actually be plugged into max().
-    """
-    _prev = None
-
-    def notify(self, r):
-        if self._prev is None or r > self._prev:
-            self._prev = r
-        else:
-            self.step()
-
-def find_maximum4(sample: Sampler, starting_power: int = 0):
-    it = SampleBiIterator2(starting_power)
-    def observable(*args, **kw):
-        r = sample(*args, **kw)
-        it.notify(r)
-        return r
-
-    # Note: with real code this would look like:
-    #   it = SampleBiIterator2(starting_power)
-    #   sampler.observable.subscribe(E.SampleResult, it.notify)
-    #   return max(sampler(n) for n in it)
-    return max(observable(n) for n in it)
