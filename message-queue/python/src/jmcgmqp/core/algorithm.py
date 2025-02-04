@@ -206,12 +206,9 @@ def SampleBiGenerator3(starting_power: int = 0) -> Generator[T, None, None]:
     r = (yield from steps(prev, i))
     yield r
 
-def compose(f, g):
-    return lambda *args, **kw: f(g(*args, **kw))
-
 def find_maximum23(sample: Sampler, starting_power: int = 0):
     g = SampleBiGenerator3(starting_power)
-    return last(compose(g.send, sample)(n) for n in g)
+    return last(g.send(sample(n)) for n in g)
 
 @dataclass
 class SampleBiIterator(Iterator):
