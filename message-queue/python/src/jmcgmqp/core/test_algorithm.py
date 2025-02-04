@@ -3,7 +3,7 @@ from functools import partial
 from jmcgmqp.core.algorithm import (
     find_maximum, Sampler, SampleIterator, SampleGenerator2,
     find_maximum2, SampleBiGenerator, SampleBiGeneratorLast2,
-    find_maximum3, find_maximum4, find_maximum22, find_maximum23
+    find_maximum3, find_maximum4, find_maximum22
 )
 
 from collections import OrderedDict
@@ -44,7 +44,7 @@ cases = (
     find_maximum4,
     find_maximum22,
     partial(find_maximum22, it_factory=SampleBiGeneratorLast2),
-    find_maximum23,
+    partial(find_maximum22, it_factory=SampleBiGeneratorLast3),
 ))
 @pytest.mark.parametrize('sequence, result, power', cases)
 def test_find_maximum(facade, sequence, result, power):

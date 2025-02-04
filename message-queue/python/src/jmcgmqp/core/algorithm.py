@@ -242,17 +242,13 @@ def steps(prev, i):
             prev = r
     return prev
 
-def SampleBiGenerator3(starting_power: int = 0) -> Generator[T, None, None]:
+def SampleBiGeneratorLast3(starting_power: int = 0) -> Generator[T, None, None]:
     """
     Same as :ref:`SampleBiGeneratorLast` but refactored into subgenerators.
     """
     prev, i = (yield from powers(starting_power))
     r = (yield from steps(prev, i))
     yield r
-
-def find_maximum23(sample: Sampler, starting_power: int = 0):
-    g = SampleBiGenerator3(starting_power)
-    return last(g.send(sample(n)) for n in g)
 
 @dataclass
 class SampleBiIterator(Iterator):
