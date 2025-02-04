@@ -132,8 +132,6 @@ def SampleBiGenerator(
         if prev and prev >= r:
             break
 
-    return prev
-
 def find_maximum2(sample: Sampler, starting_power: int = 0):
     g = SampleBiGenerator(starting_power)
     observable = lambda n: g.send(sample(n))
