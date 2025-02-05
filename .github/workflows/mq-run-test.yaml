@@ -22,6 +22,7 @@ on:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     container:
       image: ghcr.io/${{ github.repository_owner }}/code-golf_message-queue_producer-${{ inputs.name }}:${{ inputs.container_tag }}
       credentials:
