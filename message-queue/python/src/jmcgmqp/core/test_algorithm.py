@@ -1,7 +1,9 @@
+from functools import partial
+
 from jmcgmqp.core.algorithm import (
-    find_maximum, Sampler, SampleIterator,
-    find_maximum2, SampleBiGenerator,
-    find_maximum3, find_maximum4, find_maximum22, find_maximum23
+    find_maximum, Sampler, SampleIterator, SampleGenerator2,
+    find_maximum2, SampleBiGenerator, SampleBiGeneratorLast2,
+    find_maximum22, SampleBiIterator, SampleBiGeneratorLast3,
 )
 
 from collections import OrderedDict
@@ -35,17 +37,19 @@ cases = (
 
 @pytest.mark.parametrize('facade', (
     find_maximum,
+    partial(find_maximum, it_factory=SampleGenerator2),
+    partial(find_maximum, it_factory=SampleIterator),
     find_maximum2,
-    find_maximum3,
-    find_maximum4,
+    partial(find_maximum2, it_factory=SampleBiIterator),
     find_maximum22,
-    find_maximum23,
+    partial(find_maximum22, it_factory=SampleBiGeneratorLast2),
+    partial(find_maximum22, it_factory=SampleBiGeneratorLast3),
 ))
 @pytest.mark.parametrize('sequence, result, power', cases)
 def test_find_maximum(facade, sequence, result, power):
     sample = create_autospec(Sampler, spec_set=True)
     sample.side_effect = list(sequence.values())
-    assert find_maximum(sample, power) == result
+    assert facade(sample, power) == result
     assert sample.call_args_list == [call(x) for x in sequence.keys()]
 
 @pytest.mark.parametrize('sequence, result, power', cases)

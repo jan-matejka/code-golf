@@ -9,56 +9,36 @@ Sampler = Callable[[int], T]
 @dataclass
 class SampleIterator(Iterator):
     """
-    Basicly the same as :ref:`SampleGenerator` except it is an Iterator.
+    Same as :ref:`SampleGenerator` except it is an Iterator.
 
-    It's ugly, it's harder to write, and harder to read. But it poses an
-    interesting question of wheter iterator or generator is preferred and if it
-    improves if we move campler call outside and turns this into sampler
-    observer.
+    The main idea here is it takes the sampler as an argument and then samples
+    until the scaling yields negative performance and returns all the sampling
+    results so it can be plugged into max().
     """
     sampler: Sampler
     power:int = 0
-    step: int | None = None
-    max_step: int | None = None
-
     _prev:T | None = None
-    _next_impl: Callable[[], T] = None
+    _step: int = 0
 
     def __post_init__(self):
-        self._next_impl = self._next_power
+        self._it = (2**i for i in itertools.count(self.power))
 
     def __next__(self):
-        # Note: we can not simply re-assign __next__ itself because next()
-        # resolves it statically via Py_TYPE() to the class method (probably
-        # for performance reasons).
-        return self._next_impl()
+        if self._step == 2:
+            raise StopIteration
 
-    def _next_power(self):
-        r = self.sampler(2**self.power)
+        n = next(self._it)
+        r = self.sampler(n)
         if self._prev and self._prev >= r:
-            self.step = 2**(self.power - 1) + 1
-            self.max_step = 2**self.power
-            self._next_impl = self._next_step
-        else:
-            self.power += 1
-            self._prev = r
-        return r
-
-    def _next_step(self):
-        if self.step == self.max_step:
-            self._next_impl = self._next_stop
-            raise StopIteration()
-
-        r = self.sampler(self.step)
-        if self._prev and self._prev >= r:
-            self._next_impl = self._next_stop
+            if self._step == 1 or (self._step == 0 and n == 2):
+                self._step = 2
+            else:
+                self._step = 1
+                m = n >> 1
+                self._it = iter(range(m+1, n))
         else:
             self._prev = r
-            self.step += 1
         return r
-
-    def _next_stop(self):
-        raise StopIteration()
 
     def __iter__(self):
         return self
@@ -68,19 +48,12 @@ def SampleGenerator(
     starting_power: int = 0,
 ) -> Generator[T, None, None]:
     """
-    Run `sample` with increasing powers until its result decreases.
-    Then run `sample` with increments from last input that returned
-    non-decreasing value.
+    Same idea as SampleIterator except it is a generator.
 
-    Yields the sampling results.
+    This is clearly an improvement as it removes the explicit state handling we
+    need to do in the iterator version. Also from experience, this code was
+    easier to write and is easier to read.
     """
-    # I'm not sure this is any better. Sure, we could have simpler unit test
-    # for SampleGenerator and separate one for find_maximum, if we have the
-    # find_maximum facade at all. But is it worth?
-    #
-    # We could also look into refactoring the sample out by sending the result
-    # back into the generator.
-
     prev = None
     for i in itertools.count(starting_power):
         r = sample(2**i)
@@ -97,7 +70,11 @@ def SampleGenerator(
             break
         yield r
 
-def find_maximum(sample: Sampler, starting_power: int = 0) -> T:
+def find_maximum(
+    sample: Sampler,
+    starting_power: int = 0,
+    it_factory=SampleGenerator
+) -> T:
     """
     Run `sample` with increasing powers until its result decreases.
     Then run `sample` with increments from last input that returned
@@ -105,8 +82,30 @@ def find_maximum(sample: Sampler, starting_power: int = 0) -> T:
 
     :returns: the last non-decreasing result.
     """
-    return max(SampleGenerator(sample, starting_power))
+    return max(it_factory(sample, starting_power))
 
+def SampleGenerator2(
+    sample: Sampler,
+    starting_power: int = 0,
+) -> Generator[T, None, None]:
+    """
+    Literally the same as SampleGenerator but refactored into using a
+    subgenerator.
+
+    This is worse in every regard except it is kinda cool.
+    """
+    def _scale(it, prev=None):
+        for n in it:
+            r = sample(n)
+            if prev and prev >= r:
+                yield r
+                return n, prev
+            prev = r
+            yield r
+
+    n, prev = yield from _scale(2**i for i in itertools.count(starting_power))
+    m = n >> 1
+    yield from _scale(iter(range(m+1, n)), prev)
 
 def SampleBiGenerator(
     starting_power: int = 0,
@@ -114,6 +113,10 @@ def SampleBiGenerator(
     """
     Same as :ref:`SampleGenerator` except the caller is responsible for calling
     the sampler and then sending the result back to the generator.
+
+    This hypothetically decouples the sampler() call from the generator
+    implementation and it is convenient since sampler() implements observable
+    anyway. I, however, fail to see any practical use for it in this scenario.
     """
     prev = None
     for i in itertools.count(starting_power):
@@ -123,25 +126,41 @@ def SampleBiGenerator(
             break
         prev = r
 
-    for j in range(2**(i-1)+1, 2**(i)):
-        r = yield j
+    for i in range(2**(i-1)+1, 2**i):
+        r = yield i
         yield r # yield to send()
         if prev and prev >= r:
             break
 
-    return prev
-
-def find_maximum2(sample: Sampler, starting_power: int = 0):
-    g = SampleBiGenerator(starting_power)
+def find_maximum2(
+    sample: Sampler,
+    starting_power: int = 0,
+    it_factory=SampleBiGenerator,
+):
+    g = it_factory(starting_power)
     observable = lambda n: g.send(sample(n))
+    # real code would look like:
+    #   sampler.observable.subscribe(E.SampleResult, g.send)
+    #   max(sampler(n) for n in g)
     return max(observable(n) for n in g)
 
-def SampleBiGenerator2(
+def SampleBiGeneratorLast(
     starting_power: int = 0,
 ) -> Generator[T, None, None]:
     """
-    Basicly same as :ref:`SampleBiGenerator` but this is made to yield the
+    Same as :ref:`SampleBiGenerator` but this is made to yield the
     maximum as last element of the generator.
+
+    The idea here is that we can use last() as the consumer instead of max().
+
+    But this is just silly. We have to bend over backwards to make it work out
+    to yield the correct last value.
+
+    The primary factor affecting this design is that first loop can't yield to
+    send in its last iteration because we don't know if the current prev value
+    because we don't know if it won't end up higher than the next sample or if
+    there exists next n to sample. It is hard to explain, you have to follow
+    the yields and care for exiting first loop with i=1 as well.
     """
     prev = None
     for i in itertools.count(starting_power):
@@ -149,63 +168,91 @@ def SampleBiGenerator2(
         if prev and prev >= r:
             break
         else:
-            yield # yield to send()
+            yield r # yield to send
         prev = r
 
-    for j in range(2**(i-1)+1, 2**(i)):
+    for i in range(2**(i-1)+1, 2**(i)):
         yield
         # ^ yield to send, either after the break in previous loop or after
         # the yield from previous iteration in this one.
-        r = yield j
+        r = yield i
         if prev and prev >= r:
             break
+        else:
+            prev = r
 
     yield prev
+
+def SampleBiGeneratorLast2(
+    starting_power: int = 0,
+) -> Generator[T, None, None]:
+    """
+    This implements identical behavior to SimpleBiGeneratorLast with increased
+    readability by having each yield have the corresponding yield to send right
+    after it at the cost of slightly more involved cases.
+    """
+    prev = None
+    for i in itertools.count(starting_power):
+        r = yield 2**i
+        if prev and prev >= r:
+            yield prev
+            break
+        else:
+            yield r
+            prev = r
+
+    if i == 1:
+        return
+
+    for i in range(2**(i-1)+1, 2**(i)):
+        r = yield i
+        if prev and prev >= r:
+            yield prev
+            return
+        else:
+            yield r
+            prev = r
 
 def last(it: Iterator[T]):
     for x in it:
         ...
     return x
 
-def find_maximum22(sample: Sampler, starting_power: int = 0):
-    g = SampleBiGenerator(starting_power)
-    rs = (g.send(sample(n)) for n in g)
-    return last(rs)
+def find_maximum22(
+    sample: Sampler,
+    starting_power: int = 0,
+    it_factory=SampleBiGeneratorLast,
+):
+    g = it_factory(starting_power)
+    return last(g.send(sample(n)) for n in g)
 
 def powers(i: int = 0):
-    for i in itertools.count(starting_power):
+    prev = None
+    for i in itertools.count(i):
         r = yield 2**i
         if prev and prev >= r:
-            break
+            return prev, i-1
         else:
-            yield # yield to send()
-        prev = r
-
-    return prev, i-1
+            yield r # yield to send()
+            prev = r
 
 def steps(prev, i):
-    for j in range(2**i+1, 2**(i+1)):
-        r = yield j
-        yield # yield to send()
-        if prev and prev >= r:
+    for i in range((2**i)+1, 2**(i+1)):
+        yield prev # yield to send()
+        r = yield i
+        if prev >= r:
             break
-
+        else:
+            prev = r
     return prev
 
-def SampleBiGenerator3(starting_power: int = 0) -> Generator[T, None, None]:
+def SampleBiGeneratorLast3(starting_power: int = 0) -> Generator[T, None, None]:
     """
-    Same as :ref:`SampleBiGenerator2` but refactored into subgenerators.
+    Same as :ref:`SampleBiGeneratorLast` but refactored into subgenerators.
     """
     prev, i = (yield from powers(starting_power))
     r = (yield from steps(prev, i))
     yield r
-
-def compose(f, g):
-    return lambda *args, **kw: f(g(*args, **kw))
-
-def find_maximum23(sample: Sampler, starting_power: int = 0):
-    g = SampleBiGenerator(starting_power)
-    return last(compose(g.send, sample) for n in g)
 
 @dataclass
 class SampleBiIterator(Iterator):
@@ -214,102 +261,44 @@ class SampleBiIterator(Iterator):
     and updating this iterator.
     """
     power:int = 0
-
-    _next_impl: Callable[[], T] = None
-    _count = None
-
-    def __post_init__(self):
-        self._next_impl = self._next_power
-        self._count = itertools.count(self.power)
-
-    def __next__(self):
-        # Note: we can not simply re-assign __next__ itself because next()
-        # resolves it statically via Py_TYPE() to the class method (probably
-        # for performance reasons).
-        return self._next_impl()
-
-    def _next_power(self):
-        return 2**next(self._power_count)
-
-    def step(self):
-        self._count = itertools.count(2**(self._next_power()-2)+1)
-        self._next_impl = self._next_step
-
-    def _next_step(self):
-        return next(self._next_step)
-
-    def __iter__(self):
-        return self
-
-def find_maximum3(sample: Sampler, starting_power: int = 0):
-    it = SampleBiIterator(starting_power)
-    prev = None
-    fst = True
-    for n in it:
-        r = sample(n)
-        if prev is None or r > prev:
-            prev = r
-        elif r <= prev and fst:
-            it.step()
-            fst = False
-        else:
-            return prev
-
-@dataclass
-class SampleBiIterator2(Iterator):
-    """
-    Same as SampleBiIterator but its observing the result of sampler so it can
-    actually be plugged into max().
-
-    This could actually also be a facade on top of SampleBiIterator as the only
-    difference is the addition of notify(), _prev and _next_stop.
-    """
-    power:int = 0
-
-    _next_impl: Callable[[], T] = None
-    _count = None
-
     _prev = None
 
+    _count = None
+    _stop = 0
+
     def __post_init__(self):
-        self._next_impl = self._next_power
-        self._count = itertools.count(self.power)
+        self._count = (2**i for i in itertools.count(self.power))
 
     def __next__(self):
         # Note: we can not simply re-assign __next__ itself because next()
         # resolves it statically via Py_TYPE() to the class method (probably
         # for performance reasons).
-        return self._next_impl()
+        if self._stop == 2:
+            raise StopIteration
+        else:
+            return next(self._count)
 
-    def _next_power(self):
-        return 2**next(self._power_count)
+    def notify(self, r):
+        if self._prev is None or r > self._prev:
+            self._prev = r
+        else:
+            self.step()
+
+    def send(self, r):
+        # API compatibility with generators
+        self.notify(r)
+        return r
 
     def step(self):
-        self._count = itertools.count(2**(self._next_power()-2)+1)
-        self._next_impl = self._next_step
-
-    def _next_step(self):
-        return next(self._next_step)
+        if self._stop == 1:
+            self._stop = 2
+        else:
+            i = next(self._count) >> 2
+            if self._stop == 0 and i == 1:
+                self._stop = 2
+            else:
+                self._stop = 1
+                self._count = iter(range(i+1, i << 1))
 
     def __iter__(self):
         return self
-
-    def notify(self, r):
-        if r > self.prev:
-            self.prev = r
-        elif self._next_impl is self._next_power:
-            self._next_impl = self._next_step
-        elif self._next_impl is self._next_step:
-            self._next_impl = self._next_stop
-
-    def _next_stop(self):
-        raise StopIteration
-
-def find_maximum4(sample: Sampler, starting_power: int = 0):
-    it = SampleBiIterator2(starting_power)
-    def observable(*args, **kw):
-        r = sample(*args, **kw)
-        it.notify(r)
-        return r
-
-    return max(observable(n) for n in it)
