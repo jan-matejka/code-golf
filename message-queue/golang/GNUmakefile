@@ -19,4 +19,6 @@ format:  ## Format code
 .PHONY: check
 check: ## Run tests
 
-	cd src && go test -v ./...
+	cd src && go test -cover -coverprofile=coverage.out -v ./...
+	cd src && go tool cover -func coverage.out
+	cd src && go tool cover -html coverage.out -o coverage.html
