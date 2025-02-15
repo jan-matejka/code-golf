@@ -3,7 +3,12 @@ ARG registry=localhost
 ARG tag=latest
 FROM ${registry}/code-golf_message-queue_base-debian:${tag}
 
-RUN apt-get install -y \
+RUN \
+  echo 'deb http://deb.debian.org/debian bookworm-backports main' \
+  >/etc/apt/sources.list.d/backports.list
+
+RUN apt-get update
+RUN apt-get install -t bookworm-backports -y \
   golang
 
 USER user
