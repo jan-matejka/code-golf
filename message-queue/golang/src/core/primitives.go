@@ -1,8 +1,10 @@
 package core
 
+import "cmp"
 import "fmt"
 import "time"
 import "math"
+import "slices"
 import "strconv"
 
 type SampleDesc struct {
@@ -79,4 +81,12 @@ func (rs *Results) Print() {
 
 	fmt.Printf("Total: %d\n", rs.MessagesTotal)
 	fmt.Printf("Total mps: %f\n\n", rs.MessagesPerSecond)
+}
+
+func CompareResults(x, y *Results) int {
+	return cmp.Compare(x.MessagesPerSecond, y.MessagesPerSecond)
+}
+
+func MaxResults(xs []*Results) *Results {
+	return slices.MaxFunc(xs, CompareResults)
 }
