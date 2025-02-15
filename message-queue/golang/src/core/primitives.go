@@ -84,7 +84,15 @@ func (rs *Results) Print() {
 }
 
 func CompareResults(x, y *Results) int {
-	return cmp.Compare(x.MessagesPerSecond, y.MessagesPerSecond)
+	if x == nil && y == nil {
+		return 0
+	} else if x == nil {
+		return -1
+	} else if y == nil {
+		return 1
+	} else {
+		return cmp.Compare(x.MessagesPerSecond, y.MessagesPerSecond)
+	}
 }
 
 func MaxResults(xs []*Results) *Results {
