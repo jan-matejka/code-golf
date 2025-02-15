@@ -19,5 +19,4 @@ format:  ## Format code
 .PHONY: check
 check: ## Run tests
 
-	cd src && go test
-	cd src/observer && go test
+	cd src && go test ./...
