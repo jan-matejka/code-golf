@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jan-matejka/code-golf/message-queue/golang/src"
-	"github.com/jan-matejka/code-golf/message-queue/golang/src/observer"
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
 	"sync"
 	"time"
 )
@@ -85,13 +85,13 @@ func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *jmc
 }
 
 type Sampler struct {
-	pgm        *postgres.PgMetrics
+	pgm        *telemetry.PgMetrics
 	app        *jmcgmqp.Instance
 	pool       *pgxpool.Pool
 	Observable *jmcgmqp.Publisher
 }
 
-func NewSampler(pgm *postgres.PgMetrics, app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
+func NewSampler(pgm *telemetry.PgMetrics, app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
 	return &Sampler{pgm, app, pool, jmcgmqp.NewPublisher()}
 }
 

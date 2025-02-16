@@ -5,7 +5,7 @@ import "os"
 import "context"
 
 import "github.com/jan-matejka/code-golf/message-queue/golang/src"
-import "github.com/jan-matejka/code-golf/message-queue/golang/src/observer"
+import "github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
 import "github.com/jan-matejka/code-golf/message-queue/golang/src/sampler"
 
 import "github.com/jackc/pgx/v4/pgxpool"
@@ -25,7 +25,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	pgm, err := postgres.NewPgMetrics(app.Config)
+	pgm, err := telemetry.NewPgMetrics(app.Config)
 	if err != nil {
 		jmcgmqp.Die("Unable to connect to postgres metrics: %v\n", err)
 	}
