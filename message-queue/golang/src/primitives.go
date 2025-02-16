@@ -3,6 +3,25 @@ package jmcgmqp
 import "fmt"
 import "time"
 import "math"
+import "strconv"
+
+type SampleDesc struct {
+	N_workers int
+	Algorithm string
+	Mq_system string
+}
+
+func (s SampleDesc) Map() map[string]string {
+	return map[string]string{
+		"n_workers": strconv.Itoa(s.N_workers),
+		"algorithm": s.Algorithm,
+		"mq_system": s.Mq_system,
+	}
+}
+
+func SampleDescFieldNames() []string {
+	return []string{"n_workers", "algorithm", "mq_system"}
+}
 
 type WorkerResult struct {
 	WorkerId      int

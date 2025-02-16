@@ -1,6 +1,5 @@
 package jmcgmqp
 
-import "strconv"
 import "runtime"
 import "time"
 import "github.com/google/uuid"
@@ -81,22 +80,4 @@ func (r Runtime) Map() map[string]string {
 
 func RuntimeFieldNames() []string {
 	return []string{"ctime", "uuid", "lang", "lang_version", "runtime", "os", "kernel", "arch"}
-}
-
-type SampleDesc struct {
-	N_workers int
-	Algorithm string
-	Mq_system string
-}
-
-func (s SampleDesc) Map() map[string]string {
-	return map[string]string{
-		"n_workers": strconv.Itoa(s.N_workers),
-		"algorithm": s.Algorithm,
-		"mq_system": s.Mq_system,
-	}
-}
-
-func SampleDescFieldNames() []string {
-	return []string{"n_workers", "algorithm", "mq_system"}
 }
