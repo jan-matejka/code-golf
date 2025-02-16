@@ -85,18 +85,21 @@ func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *jmc
 }
 
 type Sampler struct {
-	pgm  *postgres.PgMetrics
-	app  *jmcgmqp.Instance
-	pool *pgxpool.Pool
+	pgm        *postgres.PgMetrics
+	app        *jmcgmqp.Instance
+	pool       *pgxpool.Pool
+	Observable *jmcgmqp.Publisher
 }
 
 func NewSampler(pgm *postgres.PgMetrics, app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
-	return &Sampler{pgm, app, pool}
+	return &Sampler{pgm, app, pool, jmcgmqp.NewPublisher()}
 }
 
 func (s Sampler) Run(n int) *jmcgmqp.Results {
-	r := sample_workers(s.app, n, s.pool)
 	sampleDesc := jmcgmqp.SampleDesc{n, "goroutines", "postgres"}
+	s.Observable.Notify(jmcgmqp.SamplingWorkers, sampleDesc)
+	r := sample_workers(s.app, n, s.pool)
+	s.Observable.Notify(jmcgmqp.SampleResults, r)
 	jmcgmqp.PushMetrics(s.app, sampleDesc, r)
 	err := s.pgm.Push(context.Background(), s.app.Runtime, sampleDesc, r)
 	if err != nil {
