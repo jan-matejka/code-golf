@@ -20,4 +20,16 @@ COPY --chown=user \
   /home/user/mq/src/
 
 WORKDIR mq
-RUN cd src && go mod download -x
+# This is very silly. The thing is, my .zshrc points GOPATH to ~/.local/go and
+# that is what gets used in the development container since that is an
+# interactive shell.
+# However, the problem is when running in GHA which runs in non-interactive
+# posix sh and as far as I can tell there is no profile file for
+# non-interactive/non-login shell for dash sh.
+# Anyway, we are just gonna continue with GOPATH unset in sh and symlink the
+# one from my zshrc to the default one so it works in both.
+RUN ln -s /home/user/go /home/user/.local/go
+RUN \
+  cd src && \
+  go mod download -x && \
+  go install -x github.com/rakyll/gotest
