@@ -13,9 +13,10 @@ import (
 )
 
 type FakeSampler struct {
-	results   []*core.Results
-	n_workers []int
-	i         int
+	results    []*core.Results
+	n_workers  []int
+	i          int
+	observable *core.Publisher
 }
 
 func (s *FakeSampler) Run(workers int) *core.Results {
@@ -24,8 +25,12 @@ func (s *FakeSampler) Run(workers int) *core.Results {
 	if s.i >= len(s.results) {
 		return nil
 	} else {
+		s.observable.Notify(core.SampleResults, s.results[s.i])
 		return s.results[s.i]
 	}
+}
+func (s FakeSampler) Observable() *core.Publisher {
+	return s.observable
 }
 
 func TestFindMaximum(t *testing.T) {
@@ -51,7 +56,7 @@ func TestFindMaximum(t *testing.T) {
 			results[5].Add(core.NewWorkerResult(1, 34, 1_000_000_000)) // 6
 
 			var r *core.Results
-			s := &FakeSampler{results, []int{}, -1}
+			s := &FakeSampler{results, []int{}, -1, core.NewPublisher()}
 			r = tc.max(s)
 			if r.MessagesTotal != 35 {
 				t.Fatalf("max(sample).MessagesTotal=%v, want 35", r)

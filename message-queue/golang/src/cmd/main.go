@@ -30,8 +30,8 @@ func main() {
 	}
 
 	sampler := jmcgmqp.NewSampler(app, pool)
-	app.Prometheus.Observe(sampler.Observable)
-	pgm.Observe(sampler.Observable)
+	app.Prometheus.Observe(sampler.Observable())
+	pgm.Observe(sampler.Observable())
 
 	r := jmcgmqp.FindMaximum(sampler)
 	if r == nil {

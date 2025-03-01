@@ -105,11 +105,13 @@ type NIterator2 struct {
 	state int
 	// The last N that has been generated and yielded.
 	lastN int
+	// The last sampling result.
+	prev *core.Results
 }
 
 func NewNIterator2() *NIterator2 {
 	next, stop := iter.Pull(powers())
-	return &NIterator2{next, []func(){stop}, 0, 0}
+	return &NIterator2{next, []func(){stop}, 0, 0, nil}
 }
 
 func (it *NIterator2) Iter() iter.Seq[int] {
@@ -149,41 +151,37 @@ func (it NIterator2) stop() {
 	}
 }
 
-type SampleIterator struct {
-	it *NIterator
+func (it *NIterator2) onResult(_ core.Event, data any) {
+	r, ok := data.(*core.Results)
+	if !ok {
+		panic(core.FailedToCastError{data, "*core.Results"})
+	}
+	if it.prev == nil || r.MessagesPerSecond > it.prev.MessagesPerSecond {
+		it.prev = r
+	} else {
+		it.Step()
+	}
 }
 
-func NewSampleIterator() *SampleIterator {
-	it := new(SampleIterator)
-	it.it = &NIterator{}
-	return it
+func (it *NIterator2) observe(s SamplerIFace) {
+	s.Observable().Register(core.SampleResults, it.onResult)
 }
 
-func (it *SampleIterator) Step() {
-	it.it.Step()
-}
-
-func (it *SampleIterator) Iter(sample sampler, starting_power int) iter.Seq[*core.Results] {
+func Sample(sampler SamplerIFace, starting_power int) iter.Seq[*core.Results] {
+	n_it := NewNIterator2()
+	n_it.observe(sampler)
 	return func(yield func(*core.Results) bool) {
-		var prev *core.Results
-		for n := range it.it.Iter() {
-			r := sample(n)
+		for n := range n_it.Iter() {
+			r := sampler.Run(n)
 			if !yield(r) {
 				return
-			}
-			m := core.MaxResults([]*core.Results{prev, r})
-			if r == m {
-				prev = m
-			} else {
-				it.Step()
 			}
 		}
 	}
 }
 
 func FindMaximum2(sampler SamplerIFace) *core.Results {
-	it := NewSampleIterator()
-	rs := slices.Collect(it.Iter(sampler.Run, 0))
+	rs := slices.Collect(Sample(sampler, 0))
 	m := core.MaxResults(rs)
 	return m
 }

@@ -88,22 +88,27 @@ func sample_workers(app *Instance, workers int, pool *pgxpool.Pool) *core.Result
 
 type SamplerIFace interface {
 	Run(int) *core.Results
+	Observable() *core.Publisher
 }
 
 type Sampler struct {
 	app        *Instance
 	pool       *pgxpool.Pool
-	Observable *core.Publisher
+	observable *core.Publisher
 }
 
 func NewSampler(app *Instance, pool *pgxpool.Pool) *Sampler {
 	return &Sampler{app, pool, core.NewPublisher()}
 }
 
+func (s Sampler) Observable() *core.Publisher {
+	return s.observable
+}
+
 func (s Sampler) Run(n int) *core.Results {
 	sampleDesc := core.SampleDesc{n, "goroutines", "postgres"}
-	s.Observable.Notify(core.SamplingWorkers, sampleDesc)
+	s.observable.Notify(core.SamplingWorkers, sampleDesc)
 	r := sample_workers(s.app, n, s.pool)
-	s.Observable.Notify(core.SampleResults, r)
+	s.observable.Notify(core.SampleResults, r)
 	return r
 }
