@@ -5,31 +5,35 @@ import (
 	"testing"
 )
 
+import (
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
+)
+
 func TestFindMaximum(t *testing.T) {
-	var results []*Results
-	results = append(results, NewResults())
-	results = append(results, NewResults())
-	results = append(results, NewResults())
-	results = append(results, NewResults())
-	results = append(results, NewResults())
-	results = append(results, NewResults())
-	results[0].Add(NewWorkerResult(1, 10, 1_000_000_000)) // 1
-	results[1].Add(NewWorkerResult(1, 20, 1_000_000_000)) // 2
-	results[2].Add(NewWorkerResult(1, 30, 1_000_000_000)) // 4
-	results[3].Add(NewWorkerResult(1, 29, 1_000_000_000)) // 8
-	results[4].Add(NewWorkerResult(1, 35, 1_000_000_000)) // 5
-	results[5].Add(NewWorkerResult(1, 34, 1_000_000_000)) // 6
+	var results []*core.Results
+	results = append(results, core.NewResults())
+	results = append(results, core.NewResults())
+	results = append(results, core.NewResults())
+	results = append(results, core.NewResults())
+	results = append(results, core.NewResults())
+	results = append(results, core.NewResults())
+	results[0].Add(core.NewWorkerResult(1, 10, 1_000_000_000)) // 1
+	results[1].Add(core.NewWorkerResult(1, 20, 1_000_000_000)) // 2
+	results[2].Add(core.NewWorkerResult(1, 30, 1_000_000_000)) // 4
+	results[3].Add(core.NewWorkerResult(1, 29, 1_000_000_000)) // 8
+	results[4].Add(core.NewWorkerResult(1, 35, 1_000_000_000)) // 5
+	results[5].Add(core.NewWorkerResult(1, 34, 1_000_000_000)) // 6
 
 	var n_workers []int
 	var i int = -1
 
-	sample := func(workers int) *Results {
+	sample := func(workers int) *core.Results {
 		n_workers = append(n_workers, workers)
 		i += 1
 		return results[i]
 	}
 
-	var r *Results
+	var r *core.Results
 	r = FindMaximum(sample)
 	if r.MessagesTotal != 35 {
 		t.Fatalf("FindMaximum(sample) = %v, want nil", r)

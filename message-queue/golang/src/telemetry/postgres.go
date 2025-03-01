@@ -4,9 +4,15 @@ import (
 	"context"
 )
 
-import "github.com/jackc/pgx/v4/pgxpool"
-import "github.com/jackc/pgx/v4"
-import "github.com/jan-matejka/code-golf/message-queue/golang/src"
+import (
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+)
+
+import (
+	"github.com/jan-matejka/code-golf/message-queue/golang/src"
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
+)
 
 type PgMetrics struct {
 	pool       *pgxpool.Pool
@@ -26,8 +32,8 @@ func NewPgMetrics(cg *jmcgmqp.Config) (*PgMetrics, error) {
 func (p *PgMetrics) Push(
 	ctx context.Context,
 	runtime *jmcgmqp.Runtime,
-	sample jmcgmqp.SampleDesc,
-	rs *jmcgmqp.Results,
+	sample core.SampleDesc,
+	rs *core.Results,
 ) error {
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
@@ -96,7 +102,7 @@ func runtimeId(ctx context.Context, tx pgx.Tx, r *jmcgmqp.Runtime) (int, error) 
 	return id, nil
 }
 
-func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample jmcgmqp.SampleDesc) (int, error) {
+func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample core.SampleDesc) (int, error) {
 	// TBD: pgxv5 supports named arguments
 	q := `
   with
@@ -135,7 +141,7 @@ func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample jmcgmqp.Sam
 	return id, nil
 }
 
-func workerResult(ctx context.Context, tx pgx.Tx, sample_id int, wr *jmcgmqp.WorkerResult) error {
+func workerResult(ctx context.Context, tx pgx.Tx, sample_id int, wr *core.WorkerResult) error {
 	q := `
   insert into results.worker
   (sample_id, worker_id, messages_total, duration_ns)

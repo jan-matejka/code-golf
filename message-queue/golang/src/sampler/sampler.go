@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jan-matejka/code-golf/message-queue/golang/src"
-	"github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
 	"sync"
 	"time"
+)
+
+import (
+	"github.com/jan-matejka/code-golf/message-queue/golang/src"
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
 )
 
 func insert(pool *pgxpool.Pool, i int) {
@@ -27,7 +31,7 @@ func insert(pool *pgxpool.Pool, i int) {
 	}
 }
 
-func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, end chan<- *jmcgmqp.WorkerResult) {
+func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, end chan<- *core.WorkerResult) {
 	wg.Done()
 	wg.Wait()
 
@@ -38,7 +42,7 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 		select {
 		case <-quit:
 			duration := time.Since(start)
-			r := jmcgmqp.NewWorkerResult(id, i, duration)
+			r := core.NewWorkerResult(id, i, duration)
 			end <- r
 			return
 		default:
@@ -48,16 +52,16 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 	}
 }
 
-func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *jmcgmqp.Results {
+func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *core.Results {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
-	end_channels := make([]chan *jmcgmqp.WorkerResult, workers, workers)
+	end_channels := make([]chan *core.WorkerResult, workers, workers)
 
 	var wg sync.WaitGroup
 	wg.Add(workers + 1)
 	for i := range quit_channels {
 		quit_channels[i] = make(chan bool)
-		end_channels[i] = make(chan *jmcgmqp.WorkerResult)
+		end_channels[i] = make(chan *core.WorkerResult)
 		go worker(&wg, i, quit_channels[i], pool, end_channels[i])
 	}
 
@@ -74,7 +78,7 @@ func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *jmc
 		quit_channels[i] <- true
 	}
 
-	rs := jmcgmqp.NewResults()
+	rs := core.NewResults()
 	for i := range end_channels {
 		r := <-end_channels[i]
 		rs.Add(r)
@@ -95,8 +99,8 @@ func NewSampler(pgm *telemetry.PgMetrics, app *jmcgmqp.Instance, pool *pgxpool.P
 	return &Sampler{pgm, app, pool, jmcgmqp.NewPublisher()}
 }
 
-func (s Sampler) Run(n int) *jmcgmqp.Results {
-	sampleDesc := jmcgmqp.SampleDesc{n, "goroutines", "postgres"}
+func (s Sampler) Run(n int) *core.Results {
+	sampleDesc := core.SampleDesc{n, "goroutines", "postgres"}
 	s.Observable.Notify(jmcgmqp.SamplingWorkers, sampleDesc)
 	r := sample_workers(s.app, n, s.pool)
 	s.Observable.Notify(jmcgmqp.SampleResults, r)
