@@ -11,7 +11,6 @@ import (
 import (
 	"github.com/jan-matejka/code-golf/message-queue/golang/src"
 	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
-	"github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
 )
 
 func insert(pool *pgxpool.Pool, i int) {
@@ -89,14 +88,13 @@ func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *cor
 }
 
 type Sampler struct {
-	pgm        *telemetry.PgMetrics
 	app        *jmcgmqp.Instance
 	pool       *pgxpool.Pool
 	Observable *core.Publisher
 }
 
-func NewSampler(pgm *telemetry.PgMetrics, app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
-	return &Sampler{pgm, app, pool, core.NewPublisher()}
+func NewSampler(app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
+	return &Sampler{app, pool, core.NewPublisher()}
 }
 
 func (s Sampler) Run(n int) *core.Results {
@@ -104,6 +102,5 @@ func (s Sampler) Run(n int) *core.Results {
 	s.Observable.Notify(core.SamplingWorkers, sampleDesc)
 	r := sample_workers(s.app, n, s.pool)
 	s.Observable.Notify(core.SampleResults, r)
-	s.pgm.Push(sampleDesc, r)
 	return r
 }

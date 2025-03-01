@@ -30,8 +30,9 @@ func main() {
 		jmcgmqp.Die("Unable to connect to postgres metrics: %v\n", err)
 	}
 
-	sampler := sampler.NewSampler(pgm, app, pool)
+	sampler := sampler.NewSampler(app, pool)
 	app.Prometheus.Observe(sampler.Observable)
+	pgm.Observe(sampler.Observable)
 
 	r := jmcgmqp.FindMaximum(sampler.Run)
 	if r == nil {

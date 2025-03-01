@@ -66,6 +66,11 @@ func (p *PgMetrics) Push(
 	}
 }
 
+func (pm *PgMetrics) Observe(p *core.Publisher) {
+	o := newObserver(pm)
+	o.Observe(p)
+}
+
 func runtimeId(ctx context.Context, tx pgx.Tx, r *core.Runtime) (int, error) {
 	q := `
   insert into results.runtime (
