@@ -72,6 +72,7 @@ func TestNIterator(t *testing.T) {
 	type TC struct {
 		BreakAt int
 		Expect  []int
+		it      *NIterator
 	}
 
 	test := func(tc TC) func(t *testing.T) {
@@ -104,8 +105,7 @@ func TestNIterator(t *testing.T) {
 
 		// actual test function
 		return func(t *testing.T) {
-			it := &NIterator{}
-			rs := slices.Collect(wrap_max(wrap_step(it), len(tc.Expect)+1))
+			rs := slices.Collect(wrap_max(wrap_step(tc.it), len(tc.Expect)+1))
 			if !reflect.DeepEqual(rs, tc.Expect) {
 				t.Fatalf("rs=%v != expect=%v", rs, tc.Expect)
 			}
@@ -113,10 +113,10 @@ func TestNIterator(t *testing.T) {
 	}
 
 	for _, tc := range []TC{
-		TC{1, []int{1}},
-		TC{2, []int{1, 2}},
-		TC{4, []int{1, 2, 4, 3}},
-		TC{8, []int{1, 2, 4, 8, 5, 6, 7}},
+		TC{1, []int{1}, &NIterator{}},
+		TC{2, []int{1, 2}, &NIterator{}},
+		TC{4, []int{1, 2, 4, 3}, &NIterator{}},
+		TC{8, []int{1, 2, 4, 8, 5, 6, 7}, &NIterator{}},
 	} {
 		t.Run(fmt.Sprintf("%v", tc), test(tc))
 	}
