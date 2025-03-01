@@ -92,18 +92,18 @@ type Sampler struct {
 	pgm        *telemetry.PgMetrics
 	app        *jmcgmqp.Instance
 	pool       *pgxpool.Pool
-	Observable *jmcgmqp.Publisher
+	Observable *core.Publisher
 }
 
 func NewSampler(pgm *telemetry.PgMetrics, app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
-	return &Sampler{pgm, app, pool, jmcgmqp.NewPublisher()}
+	return &Sampler{pgm, app, pool, core.NewPublisher()}
 }
 
 func (s Sampler) Run(n int) *core.Results {
 	sampleDesc := core.SampleDesc{n, "goroutines", "postgres"}
-	s.Observable.Notify(jmcgmqp.SamplingWorkers, sampleDesc)
+	s.Observable.Notify(core.SamplingWorkers, sampleDesc)
 	r := sample_workers(s.app, n, s.pool)
-	s.Observable.Notify(jmcgmqp.SampleResults, r)
+	s.Observable.Notify(core.SampleResults, r)
 	s.app.Prometheus.Push(sampleDesc, r)
 	err := s.pgm.Push(context.Background(), s.app.Runtime, sampleDesc, r)
 	if err != nil {

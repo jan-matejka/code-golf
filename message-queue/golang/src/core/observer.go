@@ -1,4 +1,4 @@
-package jmcgmqp
+package core
 
 type Observer func(Event, any)
 

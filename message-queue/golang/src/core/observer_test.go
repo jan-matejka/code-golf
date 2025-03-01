@@ -1,4 +1,4 @@
-package jmcgmqp
+package core
 
 import (
 	"fmt"
@@ -6,17 +6,13 @@ import (
 	"testing"
 )
 
-import (
-	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
-)
-
 func Test(t *testing.T) {
 	p := NewPublisher()
 
-	xs := []*core.Results{}
+	xs := []*Results{}
 
 	observer := func(e Event, data any) {
-		r, ok := data.(*core.Results)
+		r, ok := data.(*Results)
 		if !ok {
 			fmt.Printf("Failed to cast data=%v to *Results\n", data)
 			return
@@ -27,12 +23,12 @@ func Test(t *testing.T) {
 
 	p.Register(SampleResults, observer)
 
-	rs := core.NewResults()
-	rs.Add(core.NewWorkerResult(1, 10, 1_000_000_000))
+	rs := NewResults()
+	rs.Add(NewWorkerResult(1, 10, 1_000_000_000))
 
 	p.Notify(SampleResults, rs)
 
-	expected := []*core.Results{rs}
+	expected := []*Results{rs}
 	if !reflect.DeepEqual(xs, expected) {
 		t.Errorf("got xs=%v != expected=%v", xs, expected)
 	}
