@@ -32,39 +32,38 @@ func NewPgMetrics(cg *core.Config, r *core.Runtime) (*PgMetrics, error) {
 func (p *PgMetrics) Push(
 	sample core.SampleDesc,
 	rs *core.Results,
-) error {
+) {
 	ctx := context.Background()
 
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if p.runtime_id == 0 {
 		runtime_id, err := runtimeId(ctx, tx, p.runtime)
 		if err != nil {
-			return err
+			panic(err)
 		}
 		p.runtime_id = runtime_id
 	}
 
 	sample_id, err := sampleId(ctx, tx, p.runtime_id, sample)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	for _, r := range rs.Workers {
 		err = workerResult(ctx, tx, sample_id, r)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 func runtimeId(ctx context.Context, tx pgx.Tx, r *core.Runtime) (int, error) {

@@ -64,10 +64,7 @@ func TestPush(t *testing.T) {
 
 	ctx := context.Background()
 
-	err = pgm.Push(sdesc, results)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	pgm.Push(sdesc, results)
 
 	q := `
   select
