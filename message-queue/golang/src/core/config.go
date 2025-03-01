@@ -1,4 +1,4 @@
-package jmcgmqp
+package core
 
 import "os"
 import "strconv"

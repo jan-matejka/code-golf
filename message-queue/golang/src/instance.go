@@ -5,7 +5,7 @@ import "github.com/jan-matejka/code-golf/message-queue/golang/src/core"
 
 type Instance struct {
 	Runtime    *core.Runtime
-	Config     *Config
+	Config     *core.Config
 	Prometheus *push.Pusher
 }
 
@@ -16,7 +16,7 @@ func NewInstance() (*Instance, error) {
 	}
 	i := new(Instance)
 	i.Runtime = runtime
-	c, err := NewConfig()
+	c, err := core.NewConfig()
 	if err != nil {
 		return nil, err
 	}

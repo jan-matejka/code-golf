@@ -9,7 +9,6 @@ import (
 import "github.com/jackc/pgx/v4/pgxpool"
 
 import (
-	"github.com/jan-matejka/code-golf/message-queue/golang/src"
 	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
 	"github.com/jan-matejka/code-golf/message-queue/golang/src/test"
 )
@@ -45,7 +44,7 @@ func TestPush(t *testing.T) {
 	}
 	defer pool.Close()
 
-	cg := jmcgmqp.DefaultConfig()
+	cg := core.DefaultConfig()
 	cg.TelemetryPostgres = test.TestConfig.TelemetryPostgresMq
 
 	pgm, err := NewPgMetrics(cg)

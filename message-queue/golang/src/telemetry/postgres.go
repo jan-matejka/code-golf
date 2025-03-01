@@ -10,7 +10,6 @@ import (
 )
 
 import (
-	"github.com/jan-matejka/code-golf/message-queue/golang/src"
 	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
 )
 
@@ -19,7 +18,7 @@ type PgMetrics struct {
 	runtime_id int
 }
 
-func NewPgMetrics(cg *jmcgmqp.Config) (*PgMetrics, error) {
+func NewPgMetrics(cg *core.Config) (*PgMetrics, error) {
 	pool, err := pgxpool.Connect(context.Background(), cg.TelemetryPostgres)
 	if err != nil {
 		return nil, err
