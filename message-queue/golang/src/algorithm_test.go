@@ -72,12 +72,12 @@ func TestNIterator(t *testing.T) {
 	type TC struct {
 		BreakAt int
 		Expect  []int
-		it      *NIterator
+		it      NIteratorFace
 	}
 
 	test := func(tc TC) func(t *testing.T) {
 		// wraps the given NIterator with calling Step() on it at given tc.BreakAt
-		wrap_step := func(it *NIterator) iter.Seq[int] {
+		wrap_step := func(it NIteratorFace) iter.Seq[int] {
 			return func(yield func(int) bool) {
 				for n := range it.Iter() {
 					if !yield(n) {
@@ -117,6 +117,10 @@ func TestNIterator(t *testing.T) {
 		TC{2, []int{1, 2}, &NIterator{}},
 		TC{4, []int{1, 2, 4, 3}, &NIterator{}},
 		TC{8, []int{1, 2, 4, 8, 5, 6, 7}, &NIterator{}},
+		TC{1, []int{1}, NewNIterator2()},
+		TC{2, []int{1, 2}, NewNIterator2()},
+		TC{4, []int{1, 2, 4, 3}, NewNIterator2()},
+		TC{8, []int{1, 2, 4, 8, 5, 6, 7}, NewNIterator2()},
 	} {
 		t.Run(fmt.Sprintf("%v", tc), test(tc))
 	}
