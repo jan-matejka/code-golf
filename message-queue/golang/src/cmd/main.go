@@ -31,6 +31,7 @@ func main() {
 	}
 
 	sampler := sampler.NewSampler(pgm, app, pool)
+	app.Prometheus.Observe(sampler.Observable)
 
 	r := jmcgmqp.FindMaximum(sampler.Run)
 	if r == nil {

@@ -19,6 +19,10 @@ func (s SampleDesc) Map() map[string]string {
 	}
 }
 
+func NullSampleDesc() SampleDesc {
+	return SampleDesc{0, "invalid", "invalid"}
+}
+
 func SampleDescFieldNames() []string {
 	return []string{"n_workers", "algorithm", "mq_system"}
 }

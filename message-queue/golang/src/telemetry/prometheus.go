@@ -93,3 +93,30 @@ func (pm PrometheusMetrics) TestPush() {
 		panic(fmt.Sprintf("Prometheus push failed: %v", err.Error()))
 	}
 }
+
+func (pm *PrometheusMetrics) Observe(p *core.Publisher) {
+	o := &observer{pm, core.NullSampleDesc()}
+	p.Register(core.SamplingWorkers, o.newSDesc)
+	p.Register(core.SampleResults, o.newResult)
+}
+
+type observer struct {
+	pm    *PrometheusMetrics
+	sdesc core.SampleDesc
+}
+
+func (o *observer) newSDesc(e core.Event, data any) {
+	sdesc, ok := data.(core.SampleDesc)
+	if !ok {
+		panic(fmt.Sprintf("Failed to cast sdesc=%v to core.SampleDesc\n", data))
+	}
+	o.sdesc = sdesc
+}
+
+func (o observer) newResult(e core.Event, data any) {
+	r, ok := data.(*core.Results)
+	if !ok {
+		panic(fmt.Sprintf("Failed to cast r=%v to *core.Results\n", data))
+	}
+	o.pm.Push(o.sdesc, r)
+}
