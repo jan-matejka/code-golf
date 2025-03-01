@@ -1,4 +1,4 @@
-package sampler
+package jmcgmqp
 
 import (
 	"context"
@@ -9,24 +9,23 @@ import (
 )
 
 import (
-	"github.com/jan-matejka/code-golf/message-queue/golang/src"
 	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
 )
 
 func insert(pool *pgxpool.Pool, i int) {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
-		jmcgmqp.Die("Tx failed: %v\n", err)
+		Die("Tx failed: %v\n", err)
 	}
 
 	_, err = tx.Exec(context.Background(), "insert into queue (data) values ($1)", fmt.Sprintf("%d", i))
 	if err != nil {
-		jmcgmqp.Die("exec failed %v\n", err)
+		Die("exec failed %v\n", err)
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		jmcgmqp.Die("failed commit %v\n", err)
+		Die("failed commit %v\n", err)
 	}
 }
 
@@ -51,7 +50,7 @@ func worker(wg *sync.WaitGroup, id int, quit <-chan bool, pool *pgxpool.Pool, en
 	}
 }
 
-func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *core.Results {
+func sample_workers(app *Instance, workers int, pool *pgxpool.Pool) *core.Results {
 	fmt.Printf("Spawning %d workers\n", workers)
 	quit_channels := make([]chan bool, workers, workers)
 	end_channels := make([]chan *core.WorkerResult, workers, workers)
@@ -88,12 +87,12 @@ func sample_workers(app *jmcgmqp.Instance, workers int, pool *pgxpool.Pool) *cor
 }
 
 type Sampler struct {
-	app        *jmcgmqp.Instance
+	app        *Instance
 	pool       *pgxpool.Pool
 	Observable *core.Publisher
 }
 
-func NewSampler(app *jmcgmqp.Instance, pool *pgxpool.Pool) *Sampler {
+func NewSampler(app *Instance, pool *pgxpool.Pool) *Sampler {
 	return &Sampler{app, pool, core.NewPublisher()}
 }
 

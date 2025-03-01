@@ -6,7 +6,6 @@ import "context"
 
 import "github.com/jan-matejka/code-golf/message-queue/golang/src"
 import "github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
-import "github.com/jan-matejka/code-golf/message-queue/golang/src/sampler"
 
 import "github.com/jackc/pgx/v4/pgxpool"
 
@@ -30,7 +29,7 @@ func main() {
 		jmcgmqp.Die("Unable to connect to postgres metrics: %v\n", err)
 	}
 
-	sampler := sampler.NewSampler(app, pool)
+	sampler := jmcgmqp.NewSampler(app, pool)
 	app.Prometheus.Observe(sampler.Observable)
 	pgm.Observe(sampler.Observable)
 
