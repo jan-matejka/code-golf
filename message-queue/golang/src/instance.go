@@ -1,12 +1,14 @@
 package jmcgmqp
 
-import "github.com/prometheus/client_golang/prometheus/push"
-import "github.com/jan-matejka/code-golf/message-queue/golang/src/core"
+import (
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/telemetry"
+)
 
 type Instance struct {
 	Runtime    *core.Runtime
 	Config     *core.Config
-	Prometheus *push.Pusher
+	Prometheus telemetry.PrometheusMetrics
 }
 
 func NewInstance() (*Instance, error) {
@@ -22,6 +24,6 @@ func NewInstance() (*Instance, error) {
 	}
 	i.Config = c
 
-	i.Prometheus = NewPusher()
+	i.Prometheus = telemetry.NewPrometheusMetrics(runtime)
 	return i, nil
 }

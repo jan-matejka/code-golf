@@ -104,7 +104,7 @@ func (s Sampler) Run(n int) *core.Results {
 	s.Observable.Notify(jmcgmqp.SamplingWorkers, sampleDesc)
 	r := sample_workers(s.app, n, s.pool)
 	s.Observable.Notify(jmcgmqp.SampleResults, r)
-	jmcgmqp.PushMetrics(s.app, sampleDesc, r)
+	s.app.Prometheus.Push(sampleDesc, r)
 	err := s.pgm.Push(context.Background(), s.app.Runtime, sampleDesc, r)
 	if err != nil {
 		jmcgmqp.Die("%v", err)

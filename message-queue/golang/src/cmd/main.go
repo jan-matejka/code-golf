@@ -16,7 +16,7 @@ func main() {
 		jmcgmqp.Die("Couldnt construct instance: %v\n", err)
 	}
 	if app.Config.Test_prometheus == 1 {
-		jmcgmqp.TestPusher(app)
+		app.Prometheus.TestPush()
 		os.Exit(0)
 	}
 	pool, err := pgxpool.Connect(context.Background(), "postgres://mq@localhost/mq?pool_max_conns=2048")
