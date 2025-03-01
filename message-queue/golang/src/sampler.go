@@ -86,6 +86,10 @@ func sample_workers(app *Instance, workers int, pool *pgxpool.Pool) *core.Result
 	return rs
 }
 
+type SamplerIFace interface {
+	Run(int) *core.Results
+}
+
 type Sampler struct {
 	app        *Instance
 	pool       *pgxpool.Pool

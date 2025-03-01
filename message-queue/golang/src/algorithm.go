@@ -181,9 +181,9 @@ func (it *SampleIterator) Iter(sample sampler, starting_power int) iter.Seq[*cor
 	}
 }
 
-func FindMaximum2(sample sampler) *core.Results {
+func FindMaximum2(sampler SamplerIFace) *core.Results {
 	it := NewSampleIterator()
-	rs := slices.Collect(it.Iter(sample, 0))
+	rs := slices.Collect(it.Iter(sampler.Run, 0))
 	m := core.MaxResults(rs)
 	return m
 }
@@ -191,8 +191,8 @@ func FindMaximum2(sample sampler) *core.Results {
 // Run `sample` with increasing powers until its result decreases.
 // Then run `sample` with increments from last input that returned non-decreasing value.
 // Returns the last non-decreasing result or nil if no result was obtained.
-func FindMaximum(sample sampler) *core.Results {
-	return findMaximum2(sample, 0)
+func FindMaximum(sampler SamplerIFace) *core.Results {
+	return findMaximum2(sampler.Run, 0)
 }
 
 func findMaximum2(sample sampler, starting_power int) *core.Results {

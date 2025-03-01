@@ -12,9 +12,25 @@ import (
 	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
 )
 
+type FakeSampler struct {
+	results   []*core.Results
+	n_workers []int
+	i         int
+}
+
+func (s *FakeSampler) Run(workers int) *core.Results {
+	s.n_workers = append(s.n_workers, workers)
+	s.i += 1
+	if s.i >= len(s.results) {
+		return nil
+	} else {
+		return s.results[s.i]
+	}
+}
+
 func TestFindMaximum(t *testing.T) {
 	type TC struct {
-		max  func(sampler) *core.Results
+		max  func(SamplerIFace) *core.Results
 		name string
 	}
 
@@ -34,28 +50,16 @@ func TestFindMaximum(t *testing.T) {
 			results[4].Add(core.NewWorkerResult(1, 35, 1_000_000_000)) // 5
 			results[5].Add(core.NewWorkerResult(1, 34, 1_000_000_000)) // 6
 
-			var n_workers []int
-			var i int = -1
-
-			sample := func(workers int) *core.Results {
-				n_workers = append(n_workers, workers)
-				i += 1
-				if i >= len(results) {
-					return nil
-				} else {
-					return results[i]
-				}
-			}
-
 			var r *core.Results
-			r = tc.max(sample)
+			s := &FakeSampler{results, []int{}, -1}
+			r = tc.max(s)
 			if r.MessagesTotal != 35 {
 				t.Fatalf("max(sample).MessagesTotal=%v, want 35", r)
 			}
 
 			expect := []int{1, 2, 4, 8, 5, 6}
-			if !reflect.DeepEqual(n_workers, expect) {
-				t.Fatalf("Expected %v, got %v", expect, n_workers)
+			if !reflect.DeepEqual(s.n_workers, expect) {
+				t.Fatalf("Expected %##v, got %##v", expect, s.n_workers)
 			}
 		}
 	}

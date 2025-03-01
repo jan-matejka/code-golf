@@ -33,7 +33,7 @@ func main() {
 	app.Prometheus.Observe(sampler.Observable)
 	pgm.Observe(sampler.Observable)
 
-	r := jmcgmqp.FindMaximum(sampler.Run)
+	r := jmcgmqp.FindMaximum(sampler)
 	if r == nil {
 		jmcgmqp.Die("No successful run")
 	}
