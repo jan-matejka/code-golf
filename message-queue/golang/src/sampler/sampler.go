@@ -104,7 +104,7 @@ func (s Sampler) Run(n int) *core.Results {
 	s.Observable.Notify(core.SamplingWorkers, sampleDesc)
 	r := sample_workers(s.app, n, s.pool)
 	s.Observable.Notify(core.SampleResults, r)
-	err := s.pgm.Push(context.Background(), sampleDesc, r)
+	err := s.pgm.Push(sampleDesc, r)
 	if err != nil {
 		jmcgmqp.Die("%v", err)
 	}

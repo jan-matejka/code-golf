@@ -63,7 +63,8 @@ func TestPush(t *testing.T) {
 	results.Add(core.NewWorkerResult(2, 30, 40))
 
 	ctx := context.Background()
-	err = pgm.Push(ctx, sdesc, results)
+
+	err = pgm.Push(sdesc, results)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

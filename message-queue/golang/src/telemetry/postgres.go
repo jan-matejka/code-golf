@@ -30,10 +30,11 @@ func NewPgMetrics(cg *core.Config, r *core.Runtime) (*PgMetrics, error) {
 }
 
 func (p *PgMetrics) Push(
-	ctx context.Context,
 	sample core.SampleDesc,
 	rs *core.Results,
 ) error {
+	ctx := context.Background()
+
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return err
