@@ -53,7 +53,7 @@ func TestPush(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	r, err := jmcgmqp.NewRuntime()
+	r, err := core.NewRuntime()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -78,7 +78,7 @@ func TestPush(t *testing.T) {
 	defer rows.Close()
 	i := 0
 	var runtime_id int
-	var r2 jmcgmqp.Runtime
+	var r2 core.Runtime
 	for rows.Next() {
 		err = rows.Scan(
 			&runtime_id,

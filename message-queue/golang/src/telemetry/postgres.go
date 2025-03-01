@@ -31,7 +31,7 @@ func NewPgMetrics(cg *jmcgmqp.Config) (*PgMetrics, error) {
 
 func (p *PgMetrics) Push(
 	ctx context.Context,
-	runtime *jmcgmqp.Runtime,
+	runtime *core.Runtime,
 	sample core.SampleDesc,
 	rs *core.Results,
 ) error {
@@ -67,7 +67,7 @@ func (p *PgMetrics) Push(
 	return nil
 }
 
-func runtimeId(ctx context.Context, tx pgx.Tx, r *jmcgmqp.Runtime) (int, error) {
+func runtimeId(ctx context.Context, tx pgx.Tx, r *core.Runtime) (int, error) {
 	q := `
   insert into results.runtime (
       ctime, uuid, lang, lang_version, runtime, os, kernel, arch

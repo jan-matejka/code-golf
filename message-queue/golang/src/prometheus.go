@@ -16,28 +16,28 @@ var (
 		Name: "test",
 		Help: "Test metric",
 	},
-		append(append([]string{"worker_id"}, RuntimeFieldNames()...), core.SampleDescFieldNames()...),
+		append(append([]string{"worker_id"}, core.RuntimeFieldNames()...), core.SampleDescFieldNames()...),
 	)
 
 	MessagesTotal = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "messages_total",
 		Help: "Messages sent",
 	},
-		append(append([]string{"worker_id"}, RuntimeFieldNames()...), core.SampleDescFieldNames()...),
+		append(append([]string{"worker_id"}, core.RuntimeFieldNames()...), core.SampleDescFieldNames()...),
 	)
 
 	MessagesPerSecond = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "messages_per_second",
 		Help: "Messages per second sent",
 	},
-		append(append([]string{"worker_id"}, RuntimeFieldNames()...), core.SampleDescFieldNames()...),
+		append(append([]string{"worker_id"}, core.RuntimeFieldNames()...), core.SampleDescFieldNames()...),
 	)
 
 	DurationSeconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "duration_seconds",
 		Help: "Work duration in seconds",
 	},
-		append(append([]string{"worker_id"}, RuntimeFieldNames()...), core.SampleDescFieldNames()...),
+		append(append([]string{"worker_id"}, core.RuntimeFieldNames()...), core.SampleDescFieldNames()...),
 	)
 )
 
