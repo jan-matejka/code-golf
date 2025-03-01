@@ -47,12 +47,12 @@ func TestPush(t *testing.T) {
 	cg := core.DefaultConfig()
 	cg.TelemetryPostgres = test.TestConfig.TelemetryPostgresMq
 
-	pgm, err := NewPgMetrics(cg)
+	r, err := core.NewRuntime()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	r, err := core.NewRuntime()
+	pgm, err := NewPgMetrics(cg, r)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -63,7 +63,7 @@ func TestPush(t *testing.T) {
 	results.Add(core.NewWorkerResult(2, 30, 40))
 
 	ctx := context.Background()
-	err = pgm.Push(ctx, r, sdesc, results)
+	err = pgm.Push(ctx, sdesc, results)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

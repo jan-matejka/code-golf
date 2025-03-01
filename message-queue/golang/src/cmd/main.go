@@ -25,7 +25,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	pgm, err := telemetry.NewPgMetrics(app.Config)
+	pgm, err := telemetry.NewPgMetrics(app.Config, app.Runtime)
 	if err != nil {
 		jmcgmqp.Die("Unable to connect to postgres metrics: %v\n", err)
 	}

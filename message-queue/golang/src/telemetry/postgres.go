@@ -16,21 +16,21 @@ import (
 type PgMetrics struct {
 	pool       *pgxpool.Pool
 	runtime_id int
+	runtime    *core.Runtime
 }
 
-func NewPgMetrics(cg *core.Config) (*PgMetrics, error) {
+func NewPgMetrics(cg *core.Config, r *core.Runtime) (*PgMetrics, error) {
 	pool, err := pgxpool.Connect(context.Background(), cg.TelemetryPostgres)
 	if err != nil {
 		return nil, err
 	}
 
-	pgm := &PgMetrics{pool, 0}
+	pgm := &PgMetrics{pool, 0, r}
 	return pgm, nil
 }
 
 func (p *PgMetrics) Push(
 	ctx context.Context,
-	runtime *core.Runtime,
 	sample core.SampleDesc,
 	rs *core.Results,
 ) error {
@@ -40,7 +40,7 @@ func (p *PgMetrics) Push(
 	}
 
 	if p.runtime_id == 0 {
-		runtime_id, err := runtimeId(ctx, tx, runtime)
+		runtime_id, err := runtimeId(ctx, tx, p.runtime)
 		if err != nil {
 			return err
 		}
