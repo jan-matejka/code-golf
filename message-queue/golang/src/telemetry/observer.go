@@ -18,19 +18,10 @@ func (o *observer) Observe(p *core.Publisher) {
 	p.Register(core.SampleResults, o.newResult)
 }
 
-type FailedToCastError struct {
-	data any
-	to   string
-}
-
-func newFailedToCastError(data, any, to string) FailedToCastError {
-	return FailedToCastError{data, to}
-}
-
 func (o *observer) newSDesc(e core.Event, data any) {
 	sdesc, ok := data.(core.SampleDesc)
 	if !ok {
-		panic(FailedToCastError{data, "core.SampleDesc"})
+		panic(core.FailedToCastError{data, "core.SampleDesc"})
 	}
 	o.sdesc = sdesc
 }
@@ -38,7 +29,7 @@ func (o *observer) newSDesc(e core.Event, data any) {
 func (o *observer) newResult(e core.Event, data any) {
 	r, ok := data.(*core.Results)
 	if !ok {
-		panic(FailedToCastError{data, "*core.Results"})
+		panic(core.FailedToCastError{data, "*core.Results"})
 	}
 	o.p.Push(o.sdesc, r)
 }

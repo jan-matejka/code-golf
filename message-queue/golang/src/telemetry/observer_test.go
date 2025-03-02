@@ -48,19 +48,19 @@ func Test_newSDesc_panic(t *testing.T) {
 	type TC struct {
 		method func(core.Event, any)
 		event  core.Event
-		err    FailedToCastError
+		err    core.FailedToCastError
 	}
 
 	for _, tc := range []TC{
 		TC{
 			o.newSDesc,
 			core.SamplingWorkers,
-			FailedToCastError{4, "core.SampleDesc"},
+			core.FailedToCastError{4, "core.SampleDesc"},
 		},
 		TC{
 			o.newResult,
 			core.SampleResults,
-			FailedToCastError{4, "*core.Results"},
+			core.FailedToCastError{4, "*core.Results"},
 		},
 	} {
 		test := func(t *testing.T) {
