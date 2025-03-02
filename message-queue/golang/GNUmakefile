@@ -1,4 +1,5 @@
 MAKEFLAGS += -r
+GOTEST ?= gotest
 include ../mqp-base.mk
 
 .PHONY: all
@@ -19,5 +20,6 @@ format:  ## Format code
 .PHONY: check
 check: ## Run tests
 
-	cd src && go test
-	cd src/observer && go test
+	cd src && $(GOTEST) -cover -coverprofile=coverage.out -v ./...
+	cd src && go tool cover -func coverage.out
+	cd src && go tool cover -html coverage.out -o coverage.html

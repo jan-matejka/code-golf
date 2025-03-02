@@ -1,2 +1,4 @@
 *.t.err
 main
+coverage.out
+coverage.html

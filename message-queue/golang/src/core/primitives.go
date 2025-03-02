@@ -1,8 +1,33 @@
-package jmcgmqp
+package core
 
+import "cmp"
 import "fmt"
 import "time"
 import "math"
+import "slices"
+import "strconv"
+
+type SampleDesc struct {
+	N_workers int
+	Algorithm string
+	Mq_system string
+}
+
+func (s SampleDesc) Map() map[string]string {
+	return map[string]string{
+		"n_workers": strconv.Itoa(s.N_workers),
+		"algorithm": s.Algorithm,
+		"mq_system": s.Mq_system,
+	}
+}
+
+func NullSampleDesc() SampleDesc {
+	return SampleDesc{0, "invalid", "invalid"}
+}
+
+func SampleDescFieldNames() []string {
+	return []string{"n_workers", "algorithm", "mq_system"}
+}
 
 type WorkerResult struct {
 	WorkerId      int
@@ -56,4 +81,20 @@ func (rs *Results) Print() {
 
 	fmt.Printf("Total: %d\n", rs.MessagesTotal)
 	fmt.Printf("Total mps: %f\n\n", rs.MessagesPerSecond)
+}
+
+func CompareResults(x, y *Results) int {
+	if x == nil && y == nil {
+		return 0
+	} else if x == nil {
+		return -1
+	} else if y == nil {
+		return 1
+	} else {
+		return cmp.Compare(x.MessagesPerSecond, y.MessagesPerSecond)
+	}
+}
+
+func MaxResults(xs []*Results) *Results {
+	return slices.MaxFunc(xs, CompareResults)
 }

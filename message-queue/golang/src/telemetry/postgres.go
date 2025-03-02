@@ -1,67 +1,77 @@
-package postgres
+package telemetry
 
 import (
 	"context"
 )
 
-import "github.com/jackc/pgx/v4/pgxpool"
-import "github.com/jackc/pgx/v4"
-import "github.com/jan-matejka/code-golf/message-queue/golang/src"
+import (
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+)
+
+import (
+	"github.com/jan-matejka/code-golf/message-queue/golang/src/core"
+)
 
 type PgMetrics struct {
 	pool       *pgxpool.Pool
 	runtime_id int
+	runtime    *core.Runtime
 }
 
-func NewPgMetrics(cg *jmcgmqp.Config) (*PgMetrics, error) {
+func NewPgMetrics(cg *core.Config, r *core.Runtime) (*PgMetrics, error) {
 	pool, err := pgxpool.Connect(context.Background(), cg.TelemetryPostgres)
 	if err != nil {
 		return nil, err
 	}
 
-	pgm := &PgMetrics{pool, 0}
+	pgm := &PgMetrics{pool, 0, r}
 	return pgm, nil
 }
 
 func (p *PgMetrics) Push(
-	ctx context.Context,
-	runtime *jmcgmqp.Runtime,
-	sample jmcgmqp.SampleDesc,
-	rs *jmcgmqp.Results,
-) error {
+	sample core.SampleDesc,
+	rs *core.Results,
+) {
+	ctx := context.Background()
+
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	if p.runtime_id == 0 {
-		runtime_id, err := runtimeId(ctx, tx, runtime)
+		runtime_id, err := runtimeId(ctx, tx, p.runtime)
 		if err != nil {
-			return err
+			panic(err)
 		}
 		p.runtime_id = runtime_id
 	}
 
 	sample_id, err := sampleId(ctx, tx, p.runtime_id, sample)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	for _, r := range rs.Workers {
 		err = workerResult(ctx, tx, sample_id, r)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
-func runtimeId(ctx context.Context, tx pgx.Tx, r *jmcgmqp.Runtime) (int, error) {
+func (pm *PgMetrics) Observe(p *core.Publisher) {
+	o := newObserver(pm)
+	o.Observe(p)
+}
+
+func runtimeId(ctx context.Context, tx pgx.Tx, r *core.Runtime) (int, error) {
 	q := `
   insert into results.runtime (
       ctime, uuid, lang, lang_version, runtime, os, kernel, arch
@@ -96,7 +106,7 @@ func runtimeId(ctx context.Context, tx pgx.Tx, r *jmcgmqp.Runtime) (int, error) 
 	return id, nil
 }
 
-func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample jmcgmqp.SampleDesc) (int, error) {
+func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample core.SampleDesc) (int, error) {
 	// TBD: pgxv5 supports named arguments
 	q := `
   with
@@ -135,7 +145,7 @@ func sampleId(ctx context.Context, tx pgx.Tx, runtime_id int, sample jmcgmqp.Sam
 	return id, nil
 }
 
-func workerResult(ctx context.Context, tx pgx.Tx, sample_id int, wr *jmcgmqp.WorkerResult) error {
+func workerResult(ctx context.Context, tx pgx.Tx, sample_id int, wr *core.WorkerResult) error {
 	q := `
   insert into results.worker
   (sample_id, worker_id, messages_total, duration_ns)

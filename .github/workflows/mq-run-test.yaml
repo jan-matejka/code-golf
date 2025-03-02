@@ -68,4 +68,5 @@ jobs:
           # can run in job container. Anyway, we have our user in our
           # containers so set HOME to the correct one. wtf.
           HOME: /home/user
+          GOTEST: /home/user/go/bin/gotest
         run: ${{ inputs.command }}
