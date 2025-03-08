@@ -20,7 +20,7 @@ SRCS := $(filter-out %_test.cpp,$(all_srcs))
 OBJS = $(subst .cpp,.o,$(SRCS))
 
 test_srcs := $(filter %_test.cpp,$(all_srcs))
-test_objs = $(subst .cpp,.o,$(test_srcs)) $(filter-out ./src/main.o,$(OBJS))
+test_objs = $(subst .cpp,.o,$(test_srcs)) $(filter-out ./src/cmd/main.o,$(OBJS))
 
 .PHONY: all
 all: build test

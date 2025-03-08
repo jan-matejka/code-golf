@@ -13,13 +13,13 @@
 #include <optional>
 
 #include <boost/algorithm/string.hpp>
-#include "./algorithm.hpp"
-#include "./config.hpp"
-#include "./runtime.hpp"
-#include "./telemetry/prometheus.hpp"
-#include "./log.hpp"
-#include "./primitives.hpp"
-#include "./instance.hpp"
+#include "../algorithm.hpp"
+#include "../config.hpp"
+#include "../runtime.hpp"
+#include "../telemetry/prometheus.hpp"
+#include "../log.hpp"
+#include "../primitives.hpp"
+#include "../instance.hpp"
 
 using namespace std;
 using namespace pqxx;
