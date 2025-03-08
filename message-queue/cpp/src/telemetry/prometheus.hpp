@@ -1,5 +1,5 @@
-#ifndef PROMETHEUS_HPP
-#define PROMETHEUS_HPP
+#ifndef TELEMETRY_PROMETHEUS_HPP
+#define TELEMETRY_PROMETHEUS_HPP
 
 #include <string>
 #include <memory>
@@ -9,10 +9,10 @@
 #include <prometheus/registry.h>
 #include <prometheus/gateway.h>
 
-#include "./config.hpp"
-#include "./log.hpp"
-#include "./config.hpp"
-#include "./primitives.hpp"
+#include "../config.hpp"
+#include "../log.hpp"
+#include "../config.hpp"
+#include "../primitives.hpp"
 
 using namespace std;
 using namespace prometheus;

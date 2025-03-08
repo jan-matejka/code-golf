@@ -18,7 +18,7 @@
 #include "./log.hpp"
 #include "./config.hpp"
 #include "./primitives.hpp"
-#include "./prometheus.hpp"
+#include "./telemetry/prometheus.hpp"
 
 using namespace std;
 

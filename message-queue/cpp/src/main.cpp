@@ -16,7 +16,7 @@
 #include "./algorithm.hpp"
 #include "./config.hpp"
 #include "./runtime.hpp"
-#include "./prometheus.hpp"
+#include "./telemetry/prometheus.hpp"
 #include "./log.hpp"
 #include "./primitives.hpp"
 #include "./instance.hpp"

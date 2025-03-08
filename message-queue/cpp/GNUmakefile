@@ -14,7 +14,7 @@ LDLIBS+=-lfmt
 # debian: libgtest-dev
 test_LDLIBS=$(LDLIBS) -lgtest -lgtest_main
 
-all_srcs := $(shell find ./src/*.cpp -type f)
+all_srcs := $(shell find ./src -name '*.cpp' -type f)
 
 SRCS := $(filter-out %_test.cpp,$(all_srcs))
 OBJS = $(subst .cpp,.o,$(SRCS))
@@ -52,4 +52,4 @@ check: test
 .PHONY: clean
 clean:
 
-	$(RM) src/*.o main test
+	find ./src -type f \( -name '*.o' -or -name main -or -name test \) -print -delete

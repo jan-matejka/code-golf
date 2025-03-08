@@ -1,5 +1,5 @@
-#ifndef PROMETHEUS_CPP
-#define PROMETHEUS_CPP
+#ifndef TELEMETRY_PROMETHEUS_CPP
+#define TELEMETRY_PROMETHEUS_CPP
 
 #include "./prometheus.hpp"
 

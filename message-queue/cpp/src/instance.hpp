@@ -6,7 +6,7 @@
 #include "./config.hpp"
 #include "./postgres.hpp"
 #include "./primitives.hpp"
-#include "./prometheus.hpp"
+#include "./telemetry/prometheus.hpp"
 #include "./runtime.hpp"
 
 using namespace std;
