@@ -4,8 +4,8 @@
 #include <prometheus/labels.h>
 
 #include "./config.hpp"
-#include "./postgres.hpp"
 #include "./primitives.hpp"
+#include "./telemetry/postgres.hpp"
 #include "./telemetry/prometheus.hpp"
 #include "./runtime.hpp"
 

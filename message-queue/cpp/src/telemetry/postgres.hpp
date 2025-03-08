@@ -1,13 +1,13 @@
-#ifndef POSTGRES_CPP
-#define POSTGRES_CPP
+#ifndef TELEMETRY_POSTGRES_CPP
+#define TELEMETRY_POSTGRES_CPP
 
 #include <optional>
 
 #include <pqxx/pqxx>
 
-#include "config.hpp"
-#include "runtime.hpp"
-#include "primitives.hpp"
+#include "../config.hpp"
+#include "../runtime.hpp"
+#include "../primitives.hpp"
 
 using namespace std;
 using namespace pqxx;

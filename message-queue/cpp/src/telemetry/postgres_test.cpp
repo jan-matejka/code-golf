@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "postgres.hpp"
-#include "pg_test.hpp"
-#include "config.hpp"
+#include "../pg_test.hpp"
+#include "../config.hpp"
 
 namespace {
 TEST(Results, Push) {
