@@ -1,3 +1,6 @@
+#ifndef TELEMETRY_POSTGRES_CPP
+#define TELEMETRY_POSTGRES_CPP
+
 #include "postgres.hpp"
 #include <chrono>
 
@@ -92,3 +95,5 @@ void Postgres::Push(
     CreateWorker(sample_id, wr);
   }
 }
+
+#endif

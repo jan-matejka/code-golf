@@ -1,5 +1,5 @@
-#ifndef TELEMETRY_POSTGRES_CPP
-#define TELEMETRY_POSTGRES_CPP
+#ifndef TELEMETRY_POSTGRES_HPP
+#define TELEMETRY_POSTGRES_HPP
 
 #include <optional>
 
