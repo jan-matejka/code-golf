@@ -143,8 +143,13 @@ void SetAndPushMetrics(
   app.pg.Push(app.runtime, sdesc, rs);
 }
 
-optional<Results> sample_workers(
-  Instance &app,
+class Sampler {
+  Instance& app;
+
+public:
+  Sampler(Instance &app) : app(app) {};
+
+optional<Results> run(
   int n
 ) {
   INFO("Starting " << n << " workers");
@@ -223,6 +228,7 @@ optional<Results> sample_workers(
 
   return rs;
 }
+};
 
 
 int _main(void) {
@@ -234,8 +240,11 @@ int _main(void) {
     return 0;
   }
 
-  auto sampler = bind(sample_workers, ref(app), _1);
-  auto max = FindMaximum(sampler, app.config.power);
+  auto sampler = Sampler(ref(app));
+  auto max = FindMaximum(
+    bind(&Sampler::run, &sampler, _1),
+    app.config.power
+  );
   if (max.has_value()) {
     INFO("Found maximum:");
     max.value().Print();
