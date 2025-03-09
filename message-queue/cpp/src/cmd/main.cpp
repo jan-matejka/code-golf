@@ -19,9 +19,9 @@ int _main(void) {
     return 0;
   }
 
-  auto sampler = Sampler(ref(app));
+  auto sampler = Sampler<>(ref(app));
   auto max = FindMaximum(
-    bind(&Sampler::run, &sampler, _1),
+    bind(&Sampler<>::run, &sampler, _1),
     app.config.power
   );
   if (max.has_value()) {

@@ -92,13 +92,15 @@ void SetAndPushMetrics(
   app.pg.Push(app.runtime, sdesc, rs);
 }
 
-Sampler::Sampler(Instance &app) : app(app) {}
+template<class W>
+Sampler<W>::Sampler(Instance &app) : app(app) {}
 
-optional<Results> Sampler::run(int n) {
+template<class W>
+optional<Results> Sampler<W>::run(int n) {
   INFO("Starting " << n << " workers");
   bool exit = false;
   auto results = make_shared<queue<optional<WorkerResult>>>();
-  vector<shared_ptr<Worker>> workers;
+  vector<shared_ptr<W>> workers;
   barrier b(n+1);
   auto c = app.config;
 
@@ -106,9 +108,9 @@ optional<Results> Sampler::run(int n) {
     mutex mut;
     std::vector<shared_ptr<jthread>> threads;
     for (int worker_id : ranges::views::iota(1, n+1)) {
-      shared_ptr<Worker> worker;
+      shared_ptr<W> worker;
       try {
-        worker = make_shared<Worker>(
+        worker = make_shared<W>(
           worker_id, ref(exit), ref(results), ref(b), ref(mut)
         );
       }catch(...) {
@@ -130,7 +132,7 @@ optional<Results> Sampler::run(int n) {
         throw;
       }
       workers.push_back(worker);
-      shared_ptr<jthread> w = make_shared<jthread>(&Worker::operator(), worker);
+      shared_ptr<jthread> w = make_shared<jthread>(&W::operator(), worker);
       threads.push_back(w);
     }
 

@@ -73,6 +73,9 @@ public:
   boost::signals2::signal<void (Results)> sample_result;
 };
 
+// Sampler was made into template so we can use it with fake worker in tests.
+// It didn't work out. I don't remember why. Anyway, I'm keeping it for now.
+template<class W = Worker>
 class Sampler {
   Instance& app;
 
@@ -82,5 +85,7 @@ public:
   Sampler(Instance &app);
   optional<Results> run(int n);
 };
+
+template class Sampler<Worker>;
 
 #endif
