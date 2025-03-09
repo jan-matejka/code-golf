@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 
+#include <boost/signals2/signal.hpp>
 #include <boost/algorithm/string.hpp>
 #include "../algorithm.hpp"
 #include "../config.hpp"
@@ -143,10 +144,16 @@ void SetAndPushMetrics(
   app.pg.Push(app.runtime, sdesc, rs);
 }
 
+class Observable {
+public:
+  boost::signals2::signal<void (Results)> sample_result;
+};
+
 class Sampler {
   Instance& app;
 
 public:
+  Observable observable;
   Sampler(Instance &app) : app(app) {};
 
 optional<Results> run(
@@ -224,6 +231,7 @@ optional<Results> run(
   cout << endl;
 
   auto sdesc = SampleDesc(n, "threading", "postgres");
+  observable.sample_result(rs);
   SetAndPushMetrics(app, rs, sdesc);
 
   return rs;
