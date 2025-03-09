@@ -25,6 +25,11 @@
 #include "../primitives.hpp"
 #include "../instance.hpp"
 
+using namespace std;
+using namespace pqxx;
+using namespace std::placeholders;
+using namespace chrono;
+
 class Worker {
   int worker_id;
   bool& exit;
@@ -78,11 +83,16 @@ public:
 template<class W = Worker>
 class Sampler {
   Instance& app;
+  function<void(milliseconds)> sleep_for;
 
 public:
   Observable observable;
 
-  Sampler(Instance &app);
+  Sampler(Instance&);
+  Sampler(
+    Instance&
+  , function<void(milliseconds)>
+  );
   optional<Results> run(int n);
 };
 

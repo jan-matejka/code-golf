@@ -93,7 +93,20 @@ void SetAndPushMetrics(
 }
 
 template<class W>
-Sampler<W>::Sampler(Instance &app) : app(app) {}
+Sampler<W>::Sampler(
+  Instance &app
+, function<void(milliseconds)> sleep_for
+)
+: app(app)
+, sleep_for(sleep_for)
+{}
+
+template<class W>
+Sampler<W>::Sampler(
+  Instance &app
+)
+: Sampler(app, [](milliseconds dur){ this_thread::sleep_for(dur); })
+{}
 
 template<class W>
 optional<Results> Sampler<W>::run(int n) {
@@ -142,7 +155,7 @@ optional<Results> Sampler<W>::run(int n) {
     INFO("Waiting");
     for(auto i : ranges::views::iota(0, c.duration)) {
       INFO((c.duration-i) << "s");
-      this_thread::sleep_for(chrono::seconds(1));
+      sleep_for(chrono::seconds(1));
     }
 
     exit = true;
@@ -154,7 +167,7 @@ optional<Results> Sampler<W>::run(int n) {
     for(int j = 0; results->empty(); j++) {
       if (j % 1000 == 0)
         INFO("awaiting results from " << results.get() << ": " << n-i << " left");
-      this_thread::sleep_for(chrono::milliseconds(1));
+      sleep_for(chrono::milliseconds(1));
     }
     auto r = results->front();
     if (r.has_value()) {
