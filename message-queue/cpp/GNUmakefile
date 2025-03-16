@@ -23,7 +23,7 @@ test_srcs := $(filter %_test.cpp,$(all_srcs))
 test_objs = $(subst .cpp,.o,$(test_srcs)) $(filter-out ./src/cmd/main.o,$(OBJS))
 
 .PHONY: all
-all: build test
+all: build test check
 
 .PHONY: build
 build: main ## Build
