@@ -3,6 +3,7 @@
 #include "../algorithm.hpp"
 #include "../log.hpp"
 #include "../instance.hpp"
+#include "../mq_system/postgres.hpp"
 #include "../mt_system/thread.hpp"
 #include "../telemetry/prometheus.hpp"
 
@@ -19,7 +20,8 @@ int _main(void) {
     return 0;
   }
 
-  auto sampler = Sampler<>(ref(app));
+  auto pgmq = mqs::postgres::mq(app.config);
+  auto sampler = Sampler<>(ref(app), pgmq);
   auto max = FindMaximum(
     bind(&Sampler<>::run, &sampler, _1),
     app.config.power

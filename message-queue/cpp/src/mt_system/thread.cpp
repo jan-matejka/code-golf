@@ -3,12 +3,6 @@
 
 #include "./thread.hpp"
 
-void Worker::insert(int i) {
-  work tx(conn);
-  tx.exec("insert into queue (data) values (" + tx.quote(i) + ")");
-  tx.commit();
-}
-
 WorkerResult Worker::sample() {
   WVERBOSE(worker_id, "starting");
   WVERBOSE(worker_id, "got result q " << result.get());
@@ -21,7 +15,7 @@ WorkerResult Worker::sample() {
 
   int i=0;
   while(!exit) {
-    insert(i++);
+    sender->send(i++);
   }
 
   auto end = chrono::steady_clock::now();
@@ -31,17 +25,18 @@ WorkerResult Worker::sample() {
 
 Worker::Worker(
   int worker_id,
+  unique_ptr<mqs::abc::sender> s,
   bool& exit,
   shared_ptr<queue<optional<WorkerResult>>>& result,
   barrier<>& barr,
   mutex& mut
 ) try :
   worker_id(worker_id),
+  sender(move(s)),
   exit(exit),
   result(result),
   barr(barr),
-  mut(mut),
-  conn(connection("postgres://mq@localhost/mq"))
+  mut(mut)
 {
 }catch(...) {
   barr.arrive_and_drop();
@@ -49,10 +44,6 @@ Worker::Worker(
 }
 
 Worker::~Worker() {
-  try {
-    conn.disconnect();
-  }catch(...) {}
-
   if (!barriers_passed)
     barr.arrive_and_drop();
 }
@@ -95,17 +86,20 @@ void SetAndPushMetrics(
 template<class W>
 Sampler<W>::Sampler(
   Instance &app
+, mqs::abc::mq& mq
 , function<void(milliseconds)> sleep_for
 )
 : app(app)
+, mq(mq)
 , sleep_for(sleep_for)
 {}
 
 template<class W>
 Sampler<W>::Sampler(
   Instance &app
+, mqs::abc::mq& mq
 )
-: Sampler(app, [](milliseconds dur){ this_thread::sleep_for(dur); })
+: Sampler(app, mq, [](milliseconds dur){ this_thread::sleep_for(dur); })
 {}
 
 template<class W>
@@ -123,8 +117,9 @@ optional<Results> Sampler<W>::run(int n) {
     for (int worker_id : ranges::views::iota(1, n+1)) {
       shared_ptr<W> worker;
       try {
+        unique_ptr<mqs::abc::sender> sender = unique_ptr<mqs::abc::sender>(mq.connect());
         worker = make_shared<W>(
-          worker_id, ref(exit), ref(results), ref(b), ref(mut)
+          worker_id, move(sender), ref(exit), ref(results), ref(b), ref(mut)
         );
       }catch(...) {
         exit = true;

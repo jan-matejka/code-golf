@@ -4,7 +4,6 @@
 #include <barrier>
 #include <cmath>
 #include <iostream>
-#include <pqxx/pqxx>
 #include <thread>
 #include <mutex>
 #include <chrono>
@@ -24,6 +23,7 @@
 #include "../log.hpp"
 #include "../primitives.hpp"
 #include "../instance.hpp"
+#include "../mq_system/abc.hpp"
 
 using namespace std;
 using namespace pqxx;
@@ -32,20 +32,20 @@ using namespace chrono;
 
 class Worker {
   int worker_id;
+  unique_ptr<mqs::abc::sender> sender;
   bool& exit;
   shared_ptr<queue<optional<WorkerResult>>>& result;
-  barrier<>& barr;
   bool barriers_passed = false;
+  barrier<>& barr;
   mutex &mut;
-  connection conn;
 
-  void insert(int i);
   WorkerResult sample();
   void push(optional<WorkerResult> wr);
 
 public:
   Worker(
     int worker_id,
+    unique_ptr<mqs::abc::sender> s,
     bool& exit,
     shared_ptr<queue<optional<WorkerResult>>>& result,
     barrier<>& barr,
@@ -83,14 +83,16 @@ public:
 template<class W = Worker>
 class Sampler {
   Instance& app;
+  mqs::abc::mq& mq;
   function<void(milliseconds)> sleep_for;
 
 public:
   Observable observable;
 
-  Sampler(Instance&);
+  Sampler(Instance&, mqs::abc::mq& mq);
   Sampler(
     Instance&
+  , mqs::abc::mq&
   , function<void(milliseconds)>
   );
   optional<Results> run(int n);
