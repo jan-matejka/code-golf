@@ -6,6 +6,8 @@
 
 using namespace std;
 
+namespace telemetry::postgres {
+
 Postgres::Postgres(Config &c)
 : conn(connection(c.telemetry_postgres)) {
 }
@@ -94,6 +96,8 @@ void Postgres::Push(
   for(auto& wr : rs.Workers) {
     CreateWorker(sample_id, wr);
   }
+}
+
 }
 
 #endif

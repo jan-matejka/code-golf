@@ -5,7 +5,7 @@
 
 #include "./config.hpp"
 #include "./primitives.hpp"
-#include "./telemetry/postgres.hpp"
+#include "./telemetry.hpp"
 #include "./telemetry/prometheus.hpp"
 #include "./runtime.hpp"
 
@@ -16,7 +16,7 @@ public:
   Config config;
   Runtime runtime;
   Prometheus prometheus;
-  Postgres pg;
+  telemetry::Postgres pg;
   Instance();
 };
 

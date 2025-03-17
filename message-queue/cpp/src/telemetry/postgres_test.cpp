@@ -4,6 +4,7 @@
 #include "../pg_test.hpp"
 #include "../config.hpp"
 
+namespace telemetry::postgres {
 namespace {
 TEST(Results, Push) {
   auto tcg = TestConfig::Instance();
@@ -81,5 +82,6 @@ TEST(Results, Push) {
   from results.sample
   )");
   ASSERT_EQ(size(pq_sample), 2);
+}
 }
 }

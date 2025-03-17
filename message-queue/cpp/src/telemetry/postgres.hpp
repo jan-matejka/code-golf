@@ -12,6 +12,8 @@
 using namespace std;
 using namespace pqxx;
 
+namespace telemetry::postgres {
+
 class Postgres {
   connection conn;
   optional<int> runtime_id = nullopt;
@@ -24,5 +26,7 @@ public:
   ~Postgres();
   void Push(const Runtime&, const SampleDesc&, const Results&);
 };
+
+}
 
 #endif
