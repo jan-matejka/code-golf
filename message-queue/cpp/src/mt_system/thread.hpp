@@ -90,18 +90,18 @@ template<class W = Worker>
 class Sampler {
   Instance& app;
   mqs::abc::mq& mq;
+  logger& log;
   function<void(milliseconds)> sleep_for;
-  logger log;
 
 public:
   Observable observable;
 
-  Sampler(Instance&, mqs::abc::mq& mq);
+  Sampler(Instance&, mqs::abc::mq& mq, logger& log);
   Sampler(
     Instance&
   , mqs::abc::mq&
+  , logger&
   , function<void(milliseconds)>
-  , logger
   );
   optional<Results> run(int n);
 };

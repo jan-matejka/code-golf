@@ -20,13 +20,13 @@ void Results::Add(WorkerResult wr) {
   MessagesPerSecond = Workers.size() * MessagesTotal / DurationSeconds;
 }
 
-void Results::Print() const {
+void Results::Print(logger& log) const {
   for(auto& wr : Workers) {
-    INFO(string(wr));
+    log.info(string(wr));
   }
 
-  INFO(format("Total: {}", MessagesTotal));
-  INFO(format("Total mps: {}", MessagesPerSecond));
+  log.info(fmt::format("Total: {}", MessagesTotal));
+  log.info(fmt::format("Total mps: {}", MessagesPerSecond));
 }
 
 map<string,string> SampleDesc::Map() const {

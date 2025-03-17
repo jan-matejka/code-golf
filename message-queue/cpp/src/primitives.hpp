@@ -46,7 +46,7 @@ public:
   float MessagesPerSecond = 0;
 
   void Add(WorkerResult wr);
-  void Print() const;
+  void Print(logger& log) const;
   operator string() {
     stringstream ss;
     ss << "Results:"

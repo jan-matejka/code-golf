@@ -22,15 +22,16 @@ int _main(void) {
     return 0;
   }
 
+  auto log = logger();
   auto pgmq = mqs::postgres::mq(app.config);
-  auto sampler = Sampler<>(ref(app), pgmq);
+  auto sampler = Sampler<>(ref(app), pgmq, log);
   auto max = FindMaximum(
     bind(&Sampler<>::run, &sampler, _1),
     app.config.power
   );
   if (max.has_value()) {
     INFO("Found maximum:");
-    max.value().Print();
+    max.value().Print(log);
   }else{
     THROW("Maximum is nullopt", nullptr);
   }

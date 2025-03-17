@@ -90,25 +90,26 @@ template<class W>
 Sampler<W>::Sampler(
   Instance &app
 , mqs::abc::mq& mq
+, logger& log
 , function<void(milliseconds)> sleep_for
-, logger log
 )
 : app(app)
 , mq(mq)
-, sleep_for(sleep_for)
 , log(log)
+, sleep_for(sleep_for)
 {}
 
 template<class W>
 Sampler<W>::Sampler(
   Instance &app
 , mqs::abc::mq& mq
+, logger& log
 )
 : Sampler(
   app
 , mq
+, log
 , [](milliseconds dur){ this_thread::sleep_for(dur); }
-, logger()
 )
 {}
 
@@ -185,7 +186,7 @@ optional<Results> Sampler<W>::run(int n) {
     }
   }
 
-  rs.Print();
+  rs.Print(log);
   log.info("\n");
 
   auto sdesc = SampleDesc(n, "threading", "postgres");
