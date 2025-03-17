@@ -91,10 +91,12 @@ Sampler<W>::Sampler(
   Instance &app
 , mqs::abc::mq& mq
 , function<void(milliseconds)> sleep_for
+, logger log
 )
 : app(app)
 , mq(mq)
 , sleep_for(sleep_for)
+, log(log)
 {}
 
 template<class W>
@@ -102,12 +104,17 @@ Sampler<W>::Sampler(
   Instance &app
 , mqs::abc::mq& mq
 )
-: Sampler(app, mq, [](milliseconds dur){ this_thread::sleep_for(dur); })
+: Sampler(
+  app
+, mq
+, [](milliseconds dur){ this_thread::sleep_for(dur); }
+, logger()
+)
 {}
 
 template<class W>
 optional<Results> Sampler<W>::run(int n) {
-  INFO(format("Starting {} workers", n));
+  log.info(fmt::format("Starting {} workers", n));
   bool exit = false;
   auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<W>> workers;
@@ -150,21 +157,21 @@ optional<Results> Sampler<W>::run(int n) {
     // this barrier syncs all threads on ready to send out messages
     b.arrive_and_wait();
 
-    INFO("Waiting");
+    log.info("Waiting");
     for(auto i : ranges::views::iota(0, c.duration)) {
-      INFO(format("{}s", c.duration-i));
+      log.info(fmt::format("{}s",c.duration-i));
       sleep_for(chrono::seconds(1));
     }
 
     exit = true;
   }
 
-  VERBOSE("collecting results");
+  log.verbose("collecting results");
   Results rs;
   for(int i : ranges::views::iota(0, n)) {
     for(int j = 0; results->empty(); j++) {
       if (j % 1000 == 0)
-        INFO(format(
+        log.info(fmt::format(
           "awaiting results from {}: {} left", ptr(results.get()), n-i
         ));
       sleep_for(chrono::milliseconds(1));
@@ -179,7 +186,7 @@ optional<Results> Sampler<W>::run(int n) {
   }
 
   rs.Print();
-  fmt::print("\n");
+  log.info("\n");
 
   auto sdesc = SampleDesc(n, "threading", "postgres");
   observable.sample_result(rs);

@@ -4,6 +4,7 @@
 #include <barrier>
 #include <cmath>
 #include <fmt/format.h>
+#include <iostream>
 #include <thread>
 #include <mutex>
 #include <chrono>
@@ -90,6 +91,7 @@ class Sampler {
   Instance& app;
   mqs::abc::mq& mq;
   function<void(milliseconds)> sleep_for;
+  logger log;
 
 public:
   Observable observable;
@@ -99,6 +101,7 @@ public:
     Instance&
   , mqs::abc::mq&
   , function<void(milliseconds)>
+  , logger
   );
   optional<Results> run(int n);
 };
