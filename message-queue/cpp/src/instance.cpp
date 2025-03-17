@@ -1,7 +1,7 @@
 #include "./instance.hpp"
 
 Instance::Instance()
-: prometheus(Prometheus(config)), pg(telemetry::Postgres(config))
+: prometheus(telemetry::Prometheus(config)), pg(telemetry::Postgres(config))
 {}
 
 prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc) {

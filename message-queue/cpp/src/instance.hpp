@@ -6,7 +6,6 @@
 #include "./config.hpp"
 #include "./primitives.hpp"
 #include "./telemetry.hpp"
-#include "./telemetry/prometheus.hpp"
 #include "./runtime.hpp"
 
 using namespace std;
@@ -15,7 +14,7 @@ class Instance {
 public:
   Config config;
   Runtime runtime;
-  Prometheus prometheus;
+  telemetry::Prometheus prometheus;
   telemetry::Postgres pg;
   Instance();
 };

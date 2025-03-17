@@ -3,6 +3,8 @@
 
 #include "./prometheus.hpp"
 
+namespace telemetry::prometheus {
+
 Gateway mk_gateway(const Config& c) {
   auto job_name = string("mq-producer");
   return Gateway(
@@ -50,4 +52,5 @@ void Prometheus::Push() {
   }
 }
 
+}
 #endif

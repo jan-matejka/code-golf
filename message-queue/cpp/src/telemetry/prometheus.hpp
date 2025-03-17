@@ -17,6 +17,8 @@
 using namespace std;
 using namespace prometheus;
 
+namespace telemetry::prometheus {
+
 class Prometheus {
   shared_ptr<Registry> registry;
   Gateway gateway;
@@ -30,4 +32,5 @@ public:
   void Push();
 };
 
+}
 #endif
