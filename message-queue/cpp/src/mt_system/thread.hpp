@@ -81,7 +81,10 @@ public:
 
 class Observable {
 public:
+  // Fires when Results for given sample have been collected.
   boost::signals2::signal<void (Results)> sample_result;
+  // Fires when Sampler is initiating sampling for given SampleDesc.
+  boost::signals2::signal<void (SampleDesc)> sampling;
 };
 
 // Sampler was made into template so we can use it with fake worker in tests.

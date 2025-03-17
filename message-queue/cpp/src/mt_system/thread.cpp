@@ -122,6 +122,8 @@ optional<Results> Sampler<W>::run(int n) {
   barrier b(n+1);
   auto c = app.config;
 
+  auto sdesc = SampleDesc(n, "threading", "postgres");
+  observable.sampling(sdesc);
   {
     mutex mut;
     std::vector<shared_ptr<jthread>> threads;
@@ -189,7 +191,6 @@ optional<Results> Sampler<W>::run(int n) {
   rs.Print(log);
   log.info("\n");
 
-  auto sdesc = SampleDesc(n, "threading", "postgres");
   observable.sample_result(rs);
   SetAndPushMetrics(app, rs, sdesc);
 
