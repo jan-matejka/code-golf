@@ -19,7 +19,4 @@ public:
   Instance();
 };
 
-prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc);
-
-void PushTestMetric(Instance& app);
 #endif

@@ -16,10 +16,10 @@ class mq : public mqs::abc::mq {
 };
 
 TEST(Sampler, sample_result_signal) {
-  auto app = Instance();
+  auto cg = Config();
   auto mqs = mq();
   auto log = logger::null();
-  auto s = Sampler<Worker>(app, mqs, log, [](milliseconds _){});
+  auto s = Sampler<Worker>(cg, mqs, log, [](milliseconds _){});
   bool obs_called = false;
   auto observer = [&obs_called](Results rs) {
     obs_called = true;

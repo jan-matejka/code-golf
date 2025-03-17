@@ -63,37 +63,14 @@ void Worker::push(optional<WorkerResult> wr) {
   }
 }
 
-void SetAndPushMetrics(
-  Instance &app,
-  const Results &rs,
-  const SampleDesc &sdesc
-) {
-  for(const auto& wr : rs.Workers) {
-    app.prometheus.messages_total
-      .Add(mk_labels(app, wr, sdesc))
-      .Set(wr.MessagesTotal);
-
-    app.prometheus.messages_per_second
-      .Add(mk_labels(app, wr, sdesc))
-      .Set(wr.MessagesPerSecond);
-
-    app.prometheus.duration_seconds
-      .Add(mk_labels(app, wr, sdesc))
-      .Set(wr.DurationSeconds);
-  }
-
-  app.prometheus.Push();
-  app.pg.Push(app.runtime, sdesc, rs);
-}
-
 template<class W>
 Sampler<W>::Sampler(
-  Instance &app
+  Config &config
 , mqs::abc::mq& mq
 , logger& log
 , function<void(milliseconds)> sleep_for
 )
-: app(app)
+: config(config)
 , mq(mq)
 , log(log)
 , sleep_for(sleep_for)
@@ -101,12 +78,12 @@ Sampler<W>::Sampler(
 
 template<class W>
 Sampler<W>::Sampler(
-  Instance &app
+  Config &config
 , mqs::abc::mq& mq
 , logger& log
 )
 : Sampler(
-  app
+  config
 , mq
 , log
 , [](milliseconds dur){ this_thread::sleep_for(dur); }
@@ -120,7 +97,6 @@ optional<Results> Sampler<W>::run(int n) {
   auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<W>> workers;
   barrier b(n+1);
-  auto c = app.config;
 
   auto sdesc = SampleDesc(n, "threading", "postgres");
   observable.sampling(sdesc);
@@ -161,8 +137,8 @@ optional<Results> Sampler<W>::run(int n) {
     b.arrive_and_wait();
 
     log.info("Waiting");
-    for(auto i : ranges::views::iota(0, c.duration)) {
-      log.info(fmt::format("{}s",c.duration-i));
+    for(auto i : ranges::views::iota(0, config.duration)) {
+      log.info(fmt::format("{}s",config.duration-i));
       sleep_for(chrono::seconds(1));
     }
 
@@ -192,7 +168,6 @@ optional<Results> Sampler<W>::run(int n) {
   log.info("\n");
 
   observable.sample_result(rs);
-  SetAndPushMetrics(app, rs, sdesc);
 
   return rs;
 }

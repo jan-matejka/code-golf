@@ -19,15 +19,12 @@
 #include "../algorithm.hpp"
 #include "../config.hpp"
 #include "../runtime.hpp"
-#include "../telemetry/prometheus.hpp"
 #include "../log.hpp"
 #include "../primitives.hpp"
-#include "../instance.hpp"
 #include "../mq_system/abc.hpp"
 
 using namespace fmt;
 using namespace std;
-using namespace pqxx;
 using namespace std::placeholders;
 using namespace chrono;
 
@@ -91,7 +88,7 @@ public:
 // It didn't work out. I don't remember why. Anyway, I'm keeping it for now.
 template<class W = Worker>
 class Sampler {
-  Instance& app;
+  Config& config;
   mqs::abc::mq& mq;
   logger& log;
   function<void(milliseconds)> sleep_for;
@@ -99,9 +96,9 @@ class Sampler {
 public:
   Observable observable;
 
-  Sampler(Instance&, mqs::abc::mq& mq, logger& log);
+  Sampler(Config&, mqs::abc::mq& mq, logger& log);
   Sampler(
-    Instance&
+    Config&
   , mqs::abc::mq&
   , logger&
   , function<void(milliseconds)>

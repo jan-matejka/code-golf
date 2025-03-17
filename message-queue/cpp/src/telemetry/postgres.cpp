@@ -2,6 +2,7 @@
 #define TELEMETRY_POSTGRES_CPP
 
 #include "postgres.hpp"
+
 #include <chrono>
 
 using namespace std;

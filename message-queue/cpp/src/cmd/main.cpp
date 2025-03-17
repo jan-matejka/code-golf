@@ -18,13 +18,15 @@ int _main(void) {
   INFO(format("Config: {}", app.config.str()));
 
   if (app.config.test_prometheus) {
-    PushTestMetric(app);
+    app.prometheus.PushTest(app.runtime);
     return 0;
   }
 
   auto log = logger();
   auto pgmq = mqs::postgres::mq(app.config);
-  auto sampler = Sampler<>(ref(app), pgmq, log);
+  auto sampler = Sampler<>(ref(app.config), pgmq, log);
+  app.pg.observe(app.runtime, sampler);
+  app.prometheus.observe(app.runtime, sampler);
   auto max = FindMaximum(
     bind(&Sampler<>::run, &sampler, _1),
     app.config.power

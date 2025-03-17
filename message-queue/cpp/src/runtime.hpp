@@ -13,12 +13,9 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <prometheus/labels.h>
-
 #include "./log.hpp"
 #include "./config.hpp"
 #include "./primitives.hpp"
-#include "./telemetry/prometheus.hpp"
 
 using namespace std;
 
