@@ -2,6 +2,7 @@
 #define PRIMITIVES_HPP
 
 #include <chrono>
+#include <fmt/format.h>
 #include <string>
 #include <list>
 #include <map>
@@ -11,6 +12,7 @@
 #include "./log.hpp"
 
 using namespace std;
+using namespace fmt;
 
 using WorkDuration = chrono::duration<double>;
 

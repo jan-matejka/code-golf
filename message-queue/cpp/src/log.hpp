@@ -1,17 +1,16 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
-#include <iostream>
-#include <syncstream>
+#include <fmt/format.h>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
 
-#define VERBOSE(x) if(igetenv("VERBOSE", 0)) osyncstream(cout) << x << endl
-#define INFO(x) osyncstream(cout) << x << endl
-#define ERR(x) osyncstream(cerr) << x << endl
-#define WVERBOSE(id, x) VERBOSE("Worker " << id << ": " << x)
-#define WERR(id, x) ERR("Worker " << id << ": " << x)
-#define THROW(x) { stringstream ss; ss << x; throw runtime_error(ss.str()); }
+#define VERBOSE(x) if(igetenv("VERBOSE", 0)) fmt::print("{}\n", x)
+#define INFO(x) fmt::print("{}\n", x)
+#define ERR(x) fmt::print(stderr, "{}\n", x)
+#define WVERBOSE(id, x) VERBOSE(fmt::format("Worker {}: {}", id, x))
+#define WERR(id, x) ERR(fmt::format("Worker {}: ", id, x))
+#define THROW(f, args...) { throw runtime_error(fmt::format(f, args)); }
 
 using namespace std;
 

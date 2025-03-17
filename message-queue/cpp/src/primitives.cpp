@@ -25,8 +25,8 @@ void Results::Print() const {
     INFO(string(wr));
   }
 
-  INFO("Total: " << MessagesTotal);
-  INFO("Total mps: " << MessagesPerSecond);
+  INFO(format("Total: {}", MessagesTotal));
+  INFO(format("Total mps: {}", MessagesPerSecond));
 }
 
 map<string,string> SampleDesc::Map() const {

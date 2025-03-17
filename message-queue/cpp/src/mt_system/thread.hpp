@@ -3,13 +3,12 @@
 
 #include <barrier>
 #include <cmath>
-#include <iostream>
+#include <fmt/format.h>
 #include <thread>
 #include <mutex>
 #include <chrono>
 #include <queue>
 #include <ranges>
-#include <syncstream>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -25,6 +24,7 @@
 #include "../instance.hpp"
 #include "../mq_system/abc.hpp"
 
+using namespace fmt;
 using namespace std;
 using namespace pqxx;
 using namespace std::placeholders;
@@ -58,7 +58,12 @@ public:
     try {
       try {
         auto wr = sample();
-        WVERBOSE(worker_id, "pushing " << wr.MessagesTotal << " into " << result.get());
+        WVERBOSE(
+          worker_id,
+          fmt::format(
+            "pushing {} into {}", wr.MessagesTotal, ptr(result.get())
+          )
+        );
         push(wr);
       } catch (const std::exception &e) {
         WERR(worker_id, e.what());

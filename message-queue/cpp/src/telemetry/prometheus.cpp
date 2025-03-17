@@ -46,7 +46,7 @@ Prometheus::Prometheus(const Config &c)
 void Prometheus::Push() {
   auto status = gateway.PushAdd();
   if (status != 200) {
-    THROW("Prometheus push failed: " << status);
+    THROW("Prometheus push failed: {}", status);
   }
 }
 

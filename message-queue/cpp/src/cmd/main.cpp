@@ -1,3 +1,4 @@
+#include <fmt/format.h>
 #include <functional>
 
 #include "../algorithm.hpp"
@@ -7,13 +8,14 @@
 #include "../mt_system/thread.hpp"
 #include "../telemetry/prometheus.hpp"
 
+using namespace fmt;
 using namespace std;
 using namespace pqxx;
 using namespace std::placeholders;
 
 int _main(void) {
   auto app = Instance();
-  INFO("Config: " << app.config.str());
+  INFO(format("Config: {}", app.config.str()));
 
   if (app.config.test_prometheus) {
     PushTestMetric(app);
@@ -30,7 +32,7 @@ int _main(void) {
     INFO("Found maximum:");
     max.value().Print();
   }else{
-    THROW("Maximum is nullopt");
+    THROW("Maximum is nullopt", nullptr);
   }
 
   return 0;

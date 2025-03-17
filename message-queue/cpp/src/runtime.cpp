@@ -24,7 +24,7 @@ string _kernel() {
   if (uname(&unam) == -1) {
     int errsv = errno;
     auto err = string(strerror(errsv));
-    THROW("utsname failed: " << errsv << ": " << err);
+    THROW("utsname failed: {}: {}", errsv, err);
   }
   return string(unam.release);
 }
@@ -34,7 +34,7 @@ string _arch() {
   if (uname(&unam) == -1) {
     int errsv = errno;
     auto err = string(strerror(errsv));
-    THROW("utsname failed: " << errsv << ": " << err);
+    THROW("utsname failed: {}: {}", errsv, err);
   }
   return string(unam.machine);
 }

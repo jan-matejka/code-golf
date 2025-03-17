@@ -5,7 +5,10 @@
 
 WorkerResult Worker::sample() {
   WVERBOSE(worker_id, "starting");
-  WVERBOSE(worker_id, "got result q " << result.get());
+  WVERBOSE(worker_id, format(
+    "got result q {}",
+    ptr(result.get())
+  ));
   WVERBOSE(worker_id, "ready for work");
 
   barriers_passed = true;
@@ -104,7 +107,7 @@ Sampler<W>::Sampler(
 
 template<class W>
 optional<Results> Sampler<W>::run(int n) {
-  INFO("Starting " << n << " workers");
+  INFO(format("Starting {} workers", n));
   bool exit = false;
   auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<W>> workers;
@@ -149,7 +152,7 @@ optional<Results> Sampler<W>::run(int n) {
 
     INFO("Waiting");
     for(auto i : ranges::views::iota(0, c.duration)) {
-      INFO((c.duration-i) << "s");
+      INFO(format("{}s", c.duration-i));
       sleep_for(chrono::seconds(1));
     }
 
@@ -161,7 +164,9 @@ optional<Results> Sampler<W>::run(int n) {
   for(int i : ranges::views::iota(0, n)) {
     for(int j = 0; results->empty(); j++) {
       if (j % 1000 == 0)
-        INFO("awaiting results from " << results.get() << ": " << n-i << " left");
+        INFO(format(
+          "awaiting results from {}: {} left", ptr(results.get()), n-i
+        ));
       sleep_for(chrono::milliseconds(1));
     }
     auto r = results->front();
@@ -174,7 +179,7 @@ optional<Results> Sampler<W>::run(int n) {
   }
 
   rs.Print();
-  cout << endl;
+  fmt::print("\n");
 
   auto sdesc = SampleDesc(n, "threading", "postgres");
   observable.sample_result(rs);

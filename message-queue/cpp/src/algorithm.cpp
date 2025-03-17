@@ -16,7 +16,7 @@ optional<Results> FindMaximum(
 
       prev = rs;
     }else{
-      THROW("failed to sample " << n << " workers");
+      THROW("failed to sample {} workers", n);
     }
   }
 
@@ -30,7 +30,7 @@ optional<Results> FindMaximum(
 
       prev = rs;
     }else{
-      THROW("failed to sample " << n << " workers");
+      THROW("failed to sample {} workers", n);
     }
   }
 
