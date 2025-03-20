@@ -1,18 +1,23 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
-#include <iostream>
-#include <syncstream>
+#include <fmt/format.h>
+#include <fmt/os.h>
+#include <utility>
 #include <sstream>
+#include <stdlib.h>
+#include <iostream>
+#include <fstream>
 #include <boost/algorithm/string.hpp>
 
-#define VERBOSE(x) if(igetenv("VERBOSE", 0)) osyncstream(cout) << x << endl
-#define INFO(x) osyncstream(cout) << x << endl
-#define ERR(x) osyncstream(cerr) << x << endl
-#define WVERBOSE(id, x) VERBOSE("Worker " << id << ": " << x)
-#define WERR(id, x) ERR("Worker " << id << ": " << x)
-#define THROW(x) { stringstream ss; ss << x; throw runtime_error(ss.str()); }
+#define VERBOSE(x) if(igetenv("VERBOSE", 0)) fmt::print("{}\n", x)
+#define INFO(x) fmt::print("{}\n", x)
+#define ERR(x) fmt::print(stderr, "{}\n", x)
+#define WVERBOSE(id, x) VERBOSE(fmt::format("Worker {}: {}", id, x))
+#define WERR(id, x) ERR(fmt::format("Worker {}: ", id, x))
+#define THROW(f, args...) { throw runtime_error(fmt::format(f, args)); }
 
+using namespace fmt;
 using namespace std;
 
 inline int igetenv(const char* x, int def) {
@@ -52,5 +57,18 @@ inline string sgetenv(const char *x, const string def) {
 
   return s;
 }
+
+class logger {
+  FILE* out;
+protected:
+  void print(string);
+public:
+  logger();
+  logger(FILE*);
+  static logger null();
+
+  void info(string s);
+  void verbose(string s);
+};
 
 #endif

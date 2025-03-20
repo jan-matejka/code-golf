@@ -1,7 +1,13 @@
+#ifndef TELEMETRY_POSTGRES_CPP
+#define TELEMETRY_POSTGRES_CPP
+
 #include "postgres.hpp"
+
 #include <chrono>
 
 using namespace std;
+
+namespace telemetry::postgres {
 
 Postgres::Postgres(Config &c)
 : conn(connection(c.telemetry_postgres)) {
@@ -92,3 +98,7 @@ void Postgres::Push(
     CreateWorker(sample_id, wr);
   }
 }
+
+}
+
+#endif

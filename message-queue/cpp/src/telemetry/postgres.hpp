@@ -1,18 +1,19 @@
-#ifndef POSTGRES_CPP
-#define POSTGRES_CPP
-
-#include <optional>
+#ifndef TELEMETRY_POSTGRES_HPP
+#define TELEMETRY_POSTGRES_HPP
 
 #include <pqxx/pqxx>
 
-#include "config.hpp"
-#include "runtime.hpp"
-#include "primitives.hpp"
+#include "../config.hpp"
+#include "../runtime.hpp"
+#include "../primitives.hpp"
+#include "abc.hpp"
 
 using namespace std;
 using namespace pqxx;
 
-class Postgres {
+namespace telemetry::postgres {
+
+class Postgres : public telemetry::abc::pusher_abc {
   connection conn;
   optional<int> runtime_id = nullopt;
   void CreateRuntime(const Runtime&);
@@ -24,5 +25,7 @@ public:
   ~Postgres();
   void Push(const Runtime&, const SampleDesc&, const Results&);
 };
+
+}
 
 #endif

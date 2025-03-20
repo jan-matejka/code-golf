@@ -4,9 +4,8 @@
 #include <prometheus/labels.h>
 
 #include "./config.hpp"
-#include "./postgres.hpp"
 #include "./primitives.hpp"
-#include "./prometheus.hpp"
+#include "./telemetry.hpp"
 #include "./runtime.hpp"
 
 using namespace std;
@@ -15,12 +14,9 @@ class Instance {
 public:
   Config config;
   Runtime runtime;
-  Prometheus prometheus;
-  Postgres pg;
+  telemetry::Prometheus prometheus;
+  telemetry::Postgres pg;
   Instance();
 };
 
-prometheus::Labels mk_labels(const Instance& app, const WorkerResult& wr, const SampleDesc& sdesc);
-
-void PushTestMetric(Instance& app);
 #endif

@@ -6,7 +6,7 @@ RUN apt-get update
 
 RUN apt-get install -y \
   vim procps iproute2 make git zsh ca-certificates \
-  g++ libpq-dev
+  g++ libpq-dev gdb
 
 RUN useradd -m -s /bin/zsh user
 USER user
