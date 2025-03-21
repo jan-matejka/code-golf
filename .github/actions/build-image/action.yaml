@@ -21,8 +21,12 @@ inputs:
     required: true
   base_tag:
     description: Base tag defining what version of the FROM image we build on
-    required: false
+    required:
     default:
+  no_cache:
+    description: Build the image without layer cache
+    required: false
+    default: false
 
 runs:
   using: "composite"
@@ -66,6 +70,9 @@ runs:
         extra="";
         [ -n "${{ inputs.base_tag }}" ] && {
           extra="--build-arg tag=$BASE_TAG"
+        };
+        [ "${{ inputs.no_cache }}" = "true" ] && {
+          extra="$extra --no-cache"
         };
         podman-compose
         -p "${REPO}_${DIR}"
