@@ -23,4 +23,3 @@ RUN set -e;\
 USER root
 RUN set -e; cd /home/user/git/dotfiles/zsh; make install
 RUN usermod -s /bin/zsh root
-# Trigger rebuild

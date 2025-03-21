@@ -53,5 +53,3 @@ check: test
 clean:
 
 	find ./src -type f \( -name '*.o' -or -name main -or -name test \) -print -delete
-
-# Trigger rebuild
