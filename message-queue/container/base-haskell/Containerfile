@@ -25,3 +25,4 @@ RUN stack new dummy
 # RUN cd dummy && stack install --allow-newer hfmt
 # hlint also does not build.
 # cba to deal with this now.
+# Trigger rebuild

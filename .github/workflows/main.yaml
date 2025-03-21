@@ -172,6 +172,7 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
+          no_cache: true
 
   build-base-debian-testing:
     needs:
@@ -187,6 +188,7 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
+          no_cache: true
 
   build-postgres:
     needs:
@@ -237,6 +239,7 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           registry_user: ${{ github.actor }}
           registry_pass: ${{ secrets.GITHUB_TOKEN }}
+          no_cache: true
 
   dispatch-workflow-mq-producer-cpp:
     runs-on: ubuntu-latest
