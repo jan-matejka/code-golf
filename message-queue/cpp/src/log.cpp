@@ -23,10 +23,9 @@ void logger::verbose(string s) {
 }
 
 void logger::print(string s) {
-  s += "\n";
-  fprintf(out, s.c_str());
+  fprintf(out, "%s\n", s.c_str());
   if (ferror(out)) {
-    fprintf(stderr, "Failed to write to log");
+    fprintf(stderr, "%s\n", "Failed to write to log");
   }
 }
 
