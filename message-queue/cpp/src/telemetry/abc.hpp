@@ -22,7 +22,7 @@ class observer_t {
   optional<SampleDesc> sdesc;
 
 public:
-  observer_t(pusher_abc* p, const Runtime rt);
+  observer_t(pusher_abc* p, const Runtime& rt);
   /**
    * Callback.
    */
@@ -37,7 +37,7 @@ class pusher_abc {
   optional<observer_t> observer;
 public:
   virtual void Push(const Runtime&, const SampleDesc&, const Results&) = 0;
-  void observe(Runtime rt, Sampler<Worker>&);
+  void observe(const Runtime& rt, Sampler<Worker>&);
 };
 
 }

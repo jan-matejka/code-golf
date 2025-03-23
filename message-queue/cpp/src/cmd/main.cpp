@@ -25,8 +25,8 @@ int _main(void) {
   auto log = logger();
   auto pgmq = mqs::postgres::mq(app.config);
   auto sampler = Sampler<>(ref(app.config), pgmq, log);
-  app.pg.observe(app.runtime, sampler);
-  app.prometheus.observe(app.runtime, sampler);
+  app.pg.observe(ref(app.runtime), sampler);
+  app.prometheus.observe(ref(app.runtime), sampler);
   auto max = FindMaximum(
     bind(&Sampler<>::run, &sampler, _1),
     app.config.power

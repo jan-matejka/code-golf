@@ -13,20 +13,19 @@ logger::logger()
 : logger(stdout)
 {}
 
-void logger::info(string s) {
+void logger::info(const string& s) {
   print(s);
 }
 
-void logger::verbose(string s) {
+void logger::verbose(const string& s) {
   if(igetenv("VERBOSE", 0))
     print(s);
 }
 
-void logger::print(string s) {
-  s += "\n";
-  fprintf(out, s.c_str());
+void logger::print(const string& s) {
+  fprintf(out, "%s\n", s.c_str());
   if (ferror(out)) {
-    fprintf(stderr, "Failed to write to log");
+    fprintf(stderr, "%s\n", "Failed to write to log");
   }
 }
 
