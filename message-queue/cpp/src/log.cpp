@@ -13,16 +13,16 @@ logger::logger()
 : logger(stdout)
 {}
 
-void logger::info(string s) {
+void logger::info(const string& s) {
   print(s);
 }
 
-void logger::verbose(string s) {
+void logger::verbose(const string& s) {
   if(igetenv("VERBOSE", 0))
     print(s);
 }
 
-void logger::print(string s) {
+void logger::print(const string& s) {
   fprintf(out, "%s\n", s.c_str());
   if (ferror(out)) {
     fprintf(stderr, "%s\n", "Failed to write to log");

@@ -25,8 +25,10 @@ void Results::Print(logger& log) const {
     log.info(string(wr));
   }
 
-  log.info(fmt::format("Total: {}", MessagesTotal));
-  log.info(fmt::format("Total mps: {}", MessagesPerSecond));
+  auto s = fmt::format("Total: {}", MessagesTotal);
+  log.info(s);
+  s = fmt::format("Total mps: {}", MessagesPerSecond);
+  log.info(s);
 }
 
 map<string,string> SampleDesc::Map() const {

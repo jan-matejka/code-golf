@@ -61,14 +61,14 @@ inline string sgetenv(const char *x, const string def) {
 class logger {
   FILE* out;
 protected:
-  void print(string);
+  void print(const string&);
 public:
   logger();
   logger(FILE*);
   static logger null();
 
-  void info(string s);
-  void verbose(string s);
+  void info(const string&);
+  void verbose(const string&);
 };
 
 #endif

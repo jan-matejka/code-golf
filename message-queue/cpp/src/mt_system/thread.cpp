@@ -92,7 +92,8 @@ Sampler<W>::Sampler(
 
 template<class W>
 optional<Results> Sampler<W>::run(int n) {
-  log.info(fmt::format("Starting {} workers", n));
+  auto s = fmt::format("Starting {} workers", n);
+  log.info(s);
   bool exit = false;
   auto results = make_shared<queue<optional<WorkerResult>>>();
   vector<shared_ptr<W>> workers;
@@ -138,7 +139,8 @@ optional<Results> Sampler<W>::run(int n) {
 
     log.info("Waiting");
     for(auto i : ranges::views::iota(0, config.duration)) {
-      log.info(fmt::format("{}s",config.duration-i));
+      s = fmt::format("{}s",config.duration-i);
+      log.info(s);
       sleep_for(chrono::seconds(1));
     }
 
@@ -149,10 +151,12 @@ optional<Results> Sampler<W>::run(int n) {
   Results rs;
   for(int i : ranges::views::iota(0, n)) {
     for(int j = 0; results->empty(); j++) {
-      if (j % 1000 == 0)
-        log.info(fmt::format(
+      if (j % 1000 == 0) {
+        s = fmt::format(
           "awaiting results from {}: {} left", ptr(results.get()), n-i
-        ));
+        );
+        log.info(s);
+      }
       sleep_for(chrono::milliseconds(1));
     }
     auto r = results->front();
