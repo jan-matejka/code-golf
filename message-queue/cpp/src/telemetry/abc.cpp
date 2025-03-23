@@ -7,7 +7,7 @@ using namespace std::placeholders;
 
 namespace telemetry::abc {
 
-void pusher_abc::observe(Runtime rt, Sampler<Worker>& s) {
+void pusher_abc::observe(const Runtime& rt, Sampler<Worker>& s) {
   auto obs = observer_t(this, rt);
   observer.emplace(obs);
   observer_t* o = &(observer.value());
@@ -16,7 +16,7 @@ void pusher_abc::observe(Runtime rt, Sampler<Worker>& s) {
   s.observable.sample_result.connect(bind(&observer_t::results, o, _1));
 }
 
-observer_t::observer_t(pusher_abc* p, Runtime rt)
+observer_t::observer_t(pusher_abc* p, const Runtime& rt)
 : pusher(p), runtime(rt) {}
 
 void observer_t::sampling(SampleDesc sdesc_p) {
