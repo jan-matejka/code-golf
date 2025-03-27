@@ -51,4 +51,18 @@ TEST(FindMaximumTest, Test) {
   list<int> expected = {1, 2, 4, 8, 5, 6};
   ASSERT_EQ(expected, s.calls);
 }
+
+TEST(Powers, GivesPowers) {
+  auto ps = powers();
+  ASSERT_EQ(*ps, 1);
+
+  ps++;
+  ASSERT_EQ(*ps, 2);
+
+  ps++;
+  ASSERT_EQ(*ps, 4);
+
+  ps++;
+  ASSERT_EQ(*ps, 8);
+}
 }
