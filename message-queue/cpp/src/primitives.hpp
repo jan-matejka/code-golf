@@ -58,6 +58,18 @@ public:
   }
 };
 
+inline bool operator<(const Results& lhs, const Results& rhs) {
+  return lhs.MessagesPerSecond < rhs.MessagesPerSecond;
+}
+
+inline bool operator==(const Results& lhs, const Results& rhs) {
+  return (
+    lhs.Duration == rhs.Duration
+    && lhs.MessagesTotal == rhs.MessagesTotal
+    && lhs.Workers.size() == rhs.Workers.size()
+  );
+}
+
 class SampleDesc {
 public:
   int n_workers;
