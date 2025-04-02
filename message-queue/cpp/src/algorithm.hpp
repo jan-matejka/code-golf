@@ -10,11 +10,12 @@
 
 using namespace std;
 
-class powers {
+class int_iter {
+protected:
   int n;
+  function<void(int&)> postinc;
+  int_iter(int, function<void(int&)>);
 public:
-  powers(int p=0) : n(1 << p) {};
-
   int operator*() const {
     return n;
   }
@@ -23,25 +24,36 @@ public:
     return &n;
   }
 
-  // Prefix increment
-  powers& operator++() {
-    n = n << 1;
+  int_iter& operator++() {
+    postinc(n);
     return *this;
   }
 
-  // Postfix increment
-  powers operator++(int) {
-    powers tmp = *this;
+  int_iter operator++(int) {
+    int_iter tmp = *this;
     ++(*this);
     return tmp;
   }
 
-  friend bool operator== (const powers& a, const powers& b) {
+  friend bool operator== (const int_iter& a, const int_iter& b) {
     return a.n == b.n;
   };
-  friend bool operator!= (const powers& a, const powers& b) {
+
+  friend bool operator!= (const int_iter& a, const int_iter& b) {
     return a.n != b.n;
   };
+};
+
+class powers : public int_iter {
+public:
+  powers(int p=0);
+  inline static void postinc(int& n);
+};
+
+class successor : public int_iter {
+public:
+  successor(int first=0);
+  inline static void postinc(int& n);
 };
 
 optional<Results> FindMaximum(

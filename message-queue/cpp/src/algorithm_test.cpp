@@ -53,16 +53,36 @@ TEST(FindMaximumTest, Test) {
 }
 
 TEST(Powers, GivesPowers) {
-  auto ps = powers();
-  ASSERT_EQ(*ps, 1);
+  auto it = powers();
+  ASSERT_EQ(*it, 1);
 
-  ps++;
-  ASSERT_EQ(*ps, 2);
+  it++;
+  ASSERT_EQ(*it, 2);
 
-  ps++;
-  ASSERT_EQ(*ps, 4);
+  it++;
+  ASSERT_EQ(*it, 4);
 
-  ps++;
-  ASSERT_EQ(*ps, 8);
+  it++;
+  ASSERT_EQ(*it, 8);
+}
+
+TEST(successor, gives_successors) {
+  auto it = successor();
+  ASSERT_EQ(*it, 0);
+
+  it++;
+  ASSERT_EQ(*it, 1);
+
+  it++;
+  ASSERT_EQ(*it, 2);
+
+  it++;
+  ASSERT_EQ(*it, 3);
+
+  it = successor(10);
+  ASSERT_EQ(*it, 10);
+
+  it++;
+  ASSERT_EQ(*it, 11);
 }
 }
