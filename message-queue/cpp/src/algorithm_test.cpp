@@ -3,6 +3,8 @@
 #include <optional>
 #include <list>
 
+// #include <fmt/format.h>
+
 #include "algorithm.hpp"
 #include "primitives.hpp"
 
@@ -84,5 +86,46 @@ TEST(successor, gives_successors) {
 
   it++;
   ASSERT_EQ(*it, 11);
+}
+
+TEST(sampler_iterator, works) {
+  auto it = sample_iterator();
+  ASSERT_EQ(*it, 1);
+
+  it++;
+  ASSERT_EQ(*it, 2);
+
+  it++;
+  ASSERT_EQ(*it, 4);
+
+  it.next_iter();
+  ASSERT_EQ(*it, 2);
+
+  it++;
+  ASSERT_EQ(*it, 3);
+
+  it.next_iter();
+
+  EXPECT_THROW(*it, runtime_error);
+
+  it++;
+  EXPECT_THROW(it++, runtime_error);
+}
+
+TEST(sampler_iterator, in_for) {
+  auto it = sample_iterator();
+  int expect_ns[] = {1, 2, 4, 8, 5, 6};
+  for(int cnt=0; it.is_valid(); it++, cnt++) {
+    auto n = *it;
+    ASSERT_EQ(n, expect_ns[cnt]);
+    if (cnt == 3)
+      it.next_iter();
+
+    if (cnt == 5)
+      it.next_iter();
+
+    if (cnt > 5)
+      FAIL() << "We shouldn't get there";
+  }
 }
 }
