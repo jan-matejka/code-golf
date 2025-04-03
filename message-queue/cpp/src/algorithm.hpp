@@ -142,7 +142,14 @@ public:
   };
 };
 
-optional<Results> FindMaximum(
+/**
+ * std::max_element overload for our sampler.
+ *
+ * We could make an interface to fit into std::max_element() but no matter what
+ * we do, it's not gonna fulfil the semantics of forward_iterator.
+ * So instead we gonna overload the max_element definition.
+ */
+optional<Results> max_element(
   function<optional<Results>(int)> sample,
   int starting_power=0
 );

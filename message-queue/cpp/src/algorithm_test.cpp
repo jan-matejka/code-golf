@@ -46,9 +46,9 @@ public:
 };
 
 namespace {
-TEST(FindMaximumTest, Test) {
+TEST(max_element, Test) {
   Sampler s;
-  auto rs = FindMaximum(ref(s));
+  auto rs = max_element(ref(s));
   ASSERT_EQ(rs.value().MessagesPerSecond, 4);
   list<int> expected = {1, 2, 4, 8, 5, 6};
   ASSERT_EQ(expected, s.calls);

@@ -53,7 +53,7 @@ void sample_iterator::next_iter() {
   it = successor(n);
 };
 
-optional<Results> FindMaximum(
+optional<Results> max_element(
   function<optional<Results>(int)> sample,
   int starting_power
 ) {
