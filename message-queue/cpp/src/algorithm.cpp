@@ -57,37 +57,34 @@ optional<Results> FindMaximum(
   function<optional<Results>(int)> sample,
   int starting_power
 ) {
+  auto it = sample_iterator(starting_power);
   optional<Results> prev = nullopt;
-  int i = starting_power;
-  for(;;i++) {
-    int n = pow(2, i);
+  bool stepped=false;
+  for(;it.is_valid(); it++) {
+    int n = *it;
     auto opt = sample(n);
-    if (opt.has_value()) {
-      auto rs = opt.value();
-      if (prev.has_value() && rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
-        break;
-
-      prev = rs;
-    }else{
+    if (!opt.has_value())
       THROW("failed to sample {} workers", n);
+
+    auto rs = opt.value();
+    if (!prev) {
+      prev = rs;
+      continue;
     }
-  }
 
-  i = pow(2, i-1) + 1;
-  for(auto n : ranges::views::iota(i)) {
-    auto opt = sample(n);
-    if (opt.has_value()) {
-      auto rs = opt.value();
-      if (prev.has_value() and rs.MessagesPerSecond <= prev.value().MessagesPerSecond)
-        break;
-
+    if (rs > prev.value()) {
       prev = rs;
-    }else{
-      THROW("failed to sample {} workers", n);
+    } else {
+      if (stepped) {
+        break;
+      } else {
+        it.next_iter();
+        stepped = true;
+      }
     }
   }
 
   return prev;
-}
+};
 
 #endif
