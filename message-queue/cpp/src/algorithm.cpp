@@ -53,8 +53,8 @@ void sample_iterator::next_iter() {
   it = successor(n);
 };
 
-optional<Results> max_element(
-  function<optional<Results>(int)> sample,
+Results max_element(
+  sampler_abc& sampler,
   int starting_power
 ) {
   auto it = sample_iterator(starting_power);
@@ -62,11 +62,7 @@ optional<Results> max_element(
   bool stepped=false;
   for(;it.is_valid(); it++) {
     int n = *it;
-    auto opt = sample(n);
-    if (!opt.has_value())
-      THROW("failed to sample {} workers", n);
-
-    auto rs = opt.value();
+    auto rs = sampler.run(n);
     if (!prev) {
       prev = rs;
       continue;
@@ -84,7 +80,7 @@ optional<Results> max_element(
     }
   }
 
-  return prev;
+  return prev.value();
 };
 
 #endif

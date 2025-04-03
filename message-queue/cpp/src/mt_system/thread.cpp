@@ -91,7 +91,7 @@ Sampler<W>::Sampler(
 {}
 
 template<class W>
-optional<Results> Sampler<W>::run(int n) {
+Results Sampler<W>::run(int n) {
   auto s = fmt::format("Starting {} workers", n);
   log.info(s);
   bool exit = false;
@@ -164,7 +164,7 @@ optional<Results> Sampler<W>::run(int n) {
       rs.Add(r.value());
       results->pop();
     }else{
-      return nullopt;
+      throw runtime_error("Sampling failed");
     }
   }
 

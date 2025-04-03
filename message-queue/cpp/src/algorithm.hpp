@@ -9,6 +9,7 @@
 #include <fmt/format.h>
 
 #include "./primitives.hpp"
+#include "./mt_system/thread.hpp"
 
 using namespace std;
 
@@ -149,9 +150,6 @@ public:
  * we do, it's not gonna fulfil the semantics of forward_iterator.
  * So instead we gonna overload the max_element definition.
  */
-optional<Results> max_element(
-  function<optional<Results>(int)> sample,
-  int starting_power=0
-);
+Results max_element(sampler_abc& sampler, int starting_power=0);
 
 #endif

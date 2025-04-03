@@ -10,10 +10,10 @@
 
 using namespace std;
 
-class Sampler {
+class FakeSampler : public sampler_abc {
 public:
   list<int> calls;
-  optional<Results> operator()(int n) {
+  Results run(int n) {
     calls.push_back(n);
     auto rs = Results();
     switch(n) {
@@ -41,15 +41,16 @@ public:
         throw runtime_error(ss.str());
     }
 
+    observable.sample_result(rs);
     return rs;
   }
 };
 
 namespace {
 TEST(max_element, Test) {
-  Sampler s;
-  auto rs = max_element(ref(s));
-  ASSERT_EQ(rs.value().MessagesPerSecond, 4);
+  FakeSampler s;
+  auto rs = max_element(s);
+  ASSERT_EQ(rs.MessagesPerSecond, 4);
   list<int> expected = {1, 2, 4, 8, 5, 6};
   ASSERT_EQ(expected, s.calls);
 }
