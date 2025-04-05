@@ -47,7 +47,7 @@ public:
 
   void Add(WorkerResult wr);
   void Print(logger& log) const;
-  operator string() {
+  operator string() const {
     stringstream ss;
     ss << "Results:"
       << " MessagesTotal=" << MessagesTotal
@@ -57,6 +57,31 @@ public:
     return ss.str();
   }
 };
+
+
+template <> struct fmt::formatter<Results> : formatter<string_view> {
+  auto format(const Results& rs, format_context& ctx) const
+  -> format_context::iterator {
+    auto s = (string)rs;
+    return formatter<string_view>::format(s, ctx);
+  }
+};
+
+inline bool operator<(const Results& lhs, const Results& rhs) {
+  return lhs.MessagesPerSecond < rhs.MessagesPerSecond;
+}
+
+inline bool operator>(const Results& lhs, const Results& rhs) {
+  return lhs.MessagesPerSecond > rhs.MessagesPerSecond;
+}
+
+inline bool operator==(const Results& lhs, const Results& rhs) {
+  return (
+    lhs.Duration == rhs.Duration
+    && lhs.MessagesTotal == rhs.MessagesTotal
+    && lhs.Workers.size() == rhs.Workers.size()
+  );
+}
 
 class SampleDesc {
 public:

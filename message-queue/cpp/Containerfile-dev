@@ -5,7 +5,8 @@ ARG tag=latest
 FROM ${registry}/code-golf_message-queue_base-debian:${tag}
 
 RUN apt-get install -y \
-  prometheus-cpp-dev libgtest-dev libboost-dev libpqxx-dev libfmt-dev
+  prometheus-cpp-dev libgtest-dev libboost-dev libpqxx-dev libfmt-dev \
+  cppcheck
 
 USER user
 COPY --chown=user ../help.mk /home/

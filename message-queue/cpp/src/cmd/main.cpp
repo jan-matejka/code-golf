@@ -27,16 +27,9 @@ int _main(void) {
   auto sampler = Sampler<>(ref(app.config), pgmq, log);
   app.pg.observe(ref(app.runtime), sampler);
   app.prometheus.observe(ref(app.runtime), sampler);
-  auto max = FindMaximum(
-    bind(&Sampler<>::run, &sampler, _1),
-    app.config.power
-  );
-  if (max.has_value()) {
-    INFO("Found maximum:");
-    max.value().Print(log);
-  }else{
-    THROW("Maximum is nullopt", nullptr);
-  }
+  auto max = max_element(sampler, app.config.power);
+  INFO("Found maximum:");
+  max.Print(log);
 
   return 0;
 }

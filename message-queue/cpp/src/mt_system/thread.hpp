@@ -16,7 +16,6 @@
 
 #include <boost/signals2/signal.hpp>
 #include <boost/algorithm/string.hpp>
-#include "../algorithm.hpp"
 #include "../config.hpp"
 #include "../runtime.hpp"
 #include "../log.hpp"
@@ -84,10 +83,16 @@ public:
   boost::signals2::signal<void (SampleDesc)> sampling;
 };
 
+class sampler_abc {
+public:
+  Observable observable;
+  virtual Results run(int n) = 0;
+};
+
 // Sampler was made into template so we can use it with fake worker in tests.
 // It didn't work out. I don't remember why. Anyway, I'm keeping it for now.
 template<class W = Worker>
-class Sampler {
+class Sampler : public sampler_abc {
   Config& config;
   mqs::abc::mq& mq;
   logger& log;
@@ -103,7 +108,7 @@ public:
   , logger&
   , function<void(milliseconds)>
   );
-  optional<Results> run(int n);
+  Results run(int n);
 };
 
 template class Sampler<Worker>;

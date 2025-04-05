@@ -8,11 +8,14 @@ LDLIBS=
 LDLIBS+=-lpqxx -lcurl
 # debian: prometheus-cpp-dev
 LDLIBS+=-lprometheus-cpp-push -lprometheus-cpp-core
-LDLIBS+=-lz -lstdc++ -lm
+LDLIBS+=-lz -lstdc++
 LDLIBS+=-lfmt
 
 # debian: libgtest-dev
 test_LDLIBS=$(LDLIBS) -lgtest -lgtest_main
+# I have no idea why but -lm needs to be after -lgtest_main otherwise we get
+# undefined reference to nextafter@glibc.
+test_LDLIBS+=-lm
 
 all_srcs := $(shell find ./src -name '*.cpp' -type f)
 
