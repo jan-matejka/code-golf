@@ -3,6 +3,8 @@
 
 #include "./algorithm.hpp"
 
+using namespace std::placeholders;
+
 inline void powers::postinc(int& n) {
   n = n << 1;
 };
@@ -53,34 +55,28 @@ void sample_iterator::next_iter() {
   it = successor(n);
 };
 
+void sample_iterator::connect(sampler_abc& s) {
+  auto sub = bind(&sample_iterator::on_result, this, _1);
+  s.observable.sample_result.connect(sub);
+};
+
 Results max_element(
   sampler_abc& sampler,
   int starting_power
 ) {
   auto it = sample_iterator(starting_power);
-  optional<Results> prev = nullopt;
-  bool stepped=false;
-  for(;it.is_valid(); it++) {
-    int n = *it;
-    auto rs = sampler.run(n);
-    if (!prev) {
-      prev = rs;
-      continue;
-    }
+  it.connect(sampler);
+  optional<Results> max = nullopt;
 
-    if (rs > prev.value()) {
-      prev = rs;
-    } else {
-      if (stepped) {
-        break;
-      } else {
-        it.next_iter();
-        stepped = true;
-      }
+  for(;it.is_valid(); it++) {
+    auto rs = sampler.run(*it);
+    if (!max || rs > max.value()) {
+      max = rs;
+      continue;
     }
   }
 
-  return prev.value();
+  return max.value();
 };
 
 #endif

@@ -141,6 +141,7 @@ public:
      */
     return state <= _invalid;
   };
+  void connect(sampler_abc& s);
 };
 
 /**
