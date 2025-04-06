@@ -5,22 +5,22 @@
 
 using namespace std::placeholders;
 
-inline void powers::postinc(int& n) {
+int_iter::int_iter(int n) : n(n) {};
+
+powers::powers(int p) : int_iter(1 << p) {};
+
+void powers::inc() {
   n = n << 1;
 };
 
-inline void successor::postinc(int& n) {
+successor::successor(int first) : int_iter(first) {};
+
+void successor::inc() {
   n++;
 };
 
-int_iter::int_iter(int n, function<void(int&)> postinc)
-: n(n), postinc(postinc) {};
-
-powers::powers(int p) : int_iter(1 << p, ref(powers::postinc)) {};
-successor::successor(int first) : int_iter(first, ref(successor::postinc)) {};
-
 sample_iterator::sample_iterator(int starting_power)
-: it(powers(starting_power)) {
+: it(make_unique<powers>(starting_power)) {
   // fmt::print("{}: constructed", (string)*this);
 };
 
@@ -50,9 +50,9 @@ void sample_iterator::next_iter() {
   if (state > 1)
     return;
 
-  int n = *it;
+  int n = **it;
   n = n >> 1;
-  it = successor(n);
+  it = make_unique<successor>(n);
 };
 
 void sample_iterator::connect(sampler_abc& s) {

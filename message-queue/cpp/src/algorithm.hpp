@@ -18,8 +18,8 @@ public:
   // n needs to be public so sample_iterator-> can return its address.
   int n;
 protected:
-  function<void(int&)> postinc;
-  int_iter(int, function<void(int&)>);
+  int_iter(int);
+  virtual void inc() = 0;
 public:
   int operator*() const {
     return n;
@@ -30,14 +30,12 @@ public:
   }
 
   int_iter& operator++() {
-    postinc(n);
+    inc();
     return *this;
   }
 
-  int_iter operator++(int) {
-    int_iter tmp = *this;
-    ++(*this);
-    return tmp;
+  void operator++(int) {
+    inc();
   }
 
   friend bool operator== (const int_iter& a, const int_iter& b) {
@@ -47,23 +45,25 @@ public:
   friend bool operator!= (const int_iter& a, const int_iter& b) {
     return a.n != b.n;
   };
+
+  virtual ~int_iter() {};
 };
 
 class powers : public int_iter {
 public:
   powers(int p=0);
-  inline static void postinc(int& n);
+  virtual void inc();
 };
 
 class successor : public int_iter {
 public:
   successor(int first=0);
-  inline static void postinc(int& n);
+  virtual void inc();
 };
 
 
 class sample_iterator {
-  int_iter it;
+  unique_ptr<int_iter> it;
   optional<Results> prev = nullopt;
   int state = 0;
 public:
@@ -72,12 +72,12 @@ public:
   int operator*() const {
     // fmt::print("{}: deref\n", (string)*this);
     check_state();
-    return *it;
+    return **it;
   }
 
   int* operator->() {
     check_state();
-    return &it.n;
+    return &(*it).n;
   }
 
   sample_iterator& operator++() {
@@ -85,27 +85,25 @@ public:
     check_state(2);
     if (!is_valid())
       state++;
-    it++;
+    (*it)++;
     return *this;
   }
 
-  sample_iterator operator++(int) {
+  void operator++(int) {
     // fmt::print("{}: postinc\n", (string)*this);
     check_state(2);
     if (!is_valid())
       state++;
 
-    auto tmp = *this;
-    ++it;
-    return tmp;
+    ++(*it);
   }
 
   friend bool operator== (const sample_iterator& a, const sample_iterator& b) {
-    return a.it.n == b.it.n;
+    return **a.it == **b.it;
   };
 
   friend bool operator!= (const sample_iterator& a, const sample_iterator& b) {
-    return a.it.n != b.it.n;
+    return **a.it != **b.it;
   };
 
   operator string() const {
@@ -114,7 +112,7 @@ public:
       "<sample_iterator id={} state={} n={}>",
       addr,
       state,
-      *it
+      **it
     );
   };
 
