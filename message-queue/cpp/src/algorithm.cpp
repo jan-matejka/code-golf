@@ -9,13 +9,13 @@ int_iter::int_iter(int n) : n(n) {};
 
 powers::powers(int p) : int_iter(1 << p) {};
 
-void powers::postinc() {
+void powers::inc() {
   n = n << 1;
 };
 
 successor::successor(int first) : int_iter(first) {};
 
-void successor::postinc() {
+void successor::inc() {
   n++;
 };
 

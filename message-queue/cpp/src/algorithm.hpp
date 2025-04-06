@@ -19,7 +19,7 @@ public:
   int n;
 protected:
   int_iter(int);
-  virtual void postinc() = 0;
+  virtual void inc() = 0;
 public:
   int operator*() const {
     return n;
@@ -30,12 +30,12 @@ public:
   }
 
   int_iter& operator++() {
-    postinc();
+    inc();
     return *this;
   }
 
   void operator++(int) {
-    postinc();
+    inc();
   }
 
   friend bool operator== (const int_iter& a, const int_iter& b) {
@@ -52,13 +52,13 @@ public:
 class powers : public int_iter {
 public:
   powers(int p=0);
-  virtual void postinc();
+  virtual void inc();
 };
 
 class successor : public int_iter {
 public:
   successor(int first=0);
-  virtual void postinc();
+  virtual void inc();
 };
 
 
