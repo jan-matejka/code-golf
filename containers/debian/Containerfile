@@ -40,4 +40,5 @@ mkdir -p git/dotfiles
 git clone -q https://github.com/jan-matejka/dotfiles-zsh.git git/dotfiles/zsh
 make -C git/dotfiles/zsh install
 make -C git/dotfiles/zsh install HOME=/home/user USER=user
+install -d --owner=user /app /test
 EOF

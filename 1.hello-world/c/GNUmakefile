@@ -1,6 +1,6 @@
-ROOT = ../..
-PROB = ..
-include ../../base.mk
+BASE_MK ?= ../../base.mk
+include $(BASE_MK)
+
 exe = $$PWD/main
 clean_files = main main.o
 

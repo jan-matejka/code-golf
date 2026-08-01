@@ -1,0 +1,7 @@
+services:
+  hello-world-c:
+    build:
+      context: ./
+      dockerfile: 1.hello-world/c/Containerfile
+      args:
+        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
