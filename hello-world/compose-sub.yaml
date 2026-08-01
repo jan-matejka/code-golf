@@ -4,3 +4,4 @@ include:
  - haskell/compose-sub.yaml
  - python/compose-sub.yaml
  - rust/compose-sub.yaml
+ - sh/compose-sub.yaml
