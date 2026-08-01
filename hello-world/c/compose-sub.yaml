@@ -5,3 +5,8 @@ services:
       dockerfile: hello-world/c/Containerfile
       args:
         COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - ./hello-world/c/:/app
+      - ./common.mk:/common.mk
+    x-podman.uidmaps:
+      - +1000:@1000
