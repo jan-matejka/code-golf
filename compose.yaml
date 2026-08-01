@@ -1,0 +1,4 @@
+name: code-golf
+
+include:
+  - containers/compose-sub.yaml
