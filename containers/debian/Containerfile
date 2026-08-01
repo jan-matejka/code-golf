@@ -11,13 +11,10 @@ apt-get upgrade -y
 apt-get install -y \
   ca-certificates \
   curl \
-  dub \
-  g++ \
   git \
   gnupg2 \
   iproute2 \
   make \
-  libboost-dev \
   strace \
   zsh
 EOF

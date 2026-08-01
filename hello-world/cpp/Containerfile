@@ -7,6 +7,8 @@ ENV COMMON_MK=/common.mk
 
 FROM ${REGISTRY}/${COMPOSE_PROJECT_NAME}_${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
+RUN apt-get install -y g++
+
 COPY --chown=user hello-world/cpp/ /app
 COPY --chown=user hello-world/test/ /test
 COPY --chown=user common.mk /common.mk
