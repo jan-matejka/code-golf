@@ -1,9 +1,10 @@
-ROOT = ../..
-PROB = ..
-include ../../base.mk
+include ../../common.mk
 exe = $$PWD/main
-clean_files = main main.o
+build_image_name=hello-world-cpp
 
-main:
+build:
 
 	g++ main.cpp -o main
+
+build_image: build_leaf_image
+check: dram
