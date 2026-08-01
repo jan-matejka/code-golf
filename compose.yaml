@@ -2,4 +2,4 @@ name: code-golf
 
 include:
   - containers/compose-sub.yaml
-  - 1.hello-world/compose-sub.yaml
+  - hello-world/compose-sub.yaml
