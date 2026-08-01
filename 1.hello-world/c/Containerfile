@@ -1,27 +1,18 @@
-FROM sh-toolchain
+ARG REGISTRY=localhost
+ARG BASE_IMAGE_TAG=latest
+ARG COMPOSE_PROJECT_NAME
+ARG BASE_IMAGE_NAME=debian
 
-ARG NAME
-ARG PROB
-ARG ROOT
+ENV BASE_MK=/base.mk
 
-ADD $NAME/GNUmakefile $NAME/main.c /work/$NAME
-ADD $PROB/test /work/$PROB/test
-ADD $PROB/GNUmakefile /work/$PROB
-ADD base.mk /work/
+FROM ${REGISTRY}/${COMPOSE_PROJECT_NAME}_${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
-RUN sh /deps.sh update && apt-get install -y gcc libc6-dev
-RUN cd /work/$NAME && make build
+COPY --chown=user 1.hello-world/c/ /app
+COPY --chown=user 1.hello-world/test/ /test
+COPY --chown=user base.mk /base.mk
 
-FROM sh-toolchain
+WORKDIR /app
+RUN make
 
-ARG NAME
-ARG PROB
-ARG ROOT
-
-ADD $NAME/GNUmakefile $NAME/main.c /work/$NAME
-ADD $PROB/test /work/$PROB/test
-ADD $PROB/GNUmakefile /work/$PROB
-ADD base.mk /work/
-
-COPY --from=0 /work/$NAME/main /work/$NAME/main
-WORKDIR /work/$NAME
+USER user
+CMD ["zsh"]
