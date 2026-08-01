@@ -4,7 +4,7 @@ PC=podman-compose -f $(dir $(lastword $(MAKEFILE_LIST)))/compose.yaml
 build_image_name=$(notdir $(CURDIR))
 
 .PHONY: all
-all: build
+all: build check
 
 .PHONY: build
 build: ## Build
