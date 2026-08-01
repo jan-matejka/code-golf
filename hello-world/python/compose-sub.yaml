@@ -1,0 +1,12 @@
+services:
+  hello-world-python:
+    build:
+      context: ./
+      dockerfile: hello-world/python/Containerfile
+      args:
+        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - ./hello-world/python/:/app
+      - ./common.mk:/common.mk
+    x-podman.uidmaps:
+      - +1000:@1000
