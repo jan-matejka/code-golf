@@ -15,4 +15,3 @@ WORKDIR /app
 RUN make container=1
 
 USER user
-CMD ["zsh"]

@@ -42,3 +42,5 @@ make -C git/dotfiles/zsh install
 make -C git/dotfiles/zsh install HOME=/home/user USER=user
 install -d --owner=user /app /test
 EOF
+
+CMD ["zsh"]
