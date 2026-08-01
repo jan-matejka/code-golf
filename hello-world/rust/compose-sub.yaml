@@ -1,0 +1,12 @@
+services:
+  hello-world-rust:
+    build:
+      context: ./
+      dockerfile: hello-world/rust/Containerfile
+      args:
+        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - ./hello-world/rust/:/app
+      - ./common.mk:/common.mk
+    x-podman.uidmaps:
+      - +1000:@1000

@@ -1,0 +1,21 @@
+ARG REGISTRY=localhost
+ARG BASE_IMAGE_TAG=latest
+ARG COMPOSE_PROJECT_NAME
+ARG BASE_IMAGE_NAME=debian
+
+ENV COMMON_MK=/common.mk
+
+FROM ${REGISTRY}/${COMPOSE_PROJECT_NAME}_${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
+
+RUN apt-get update
+RUN apt-get install rustc -y
+
+COPY --chown=user hello-world/rust/ /app
+COPY --chown=user hello-world/test/ /test
+COPY --chown=user common.mk /common.mk
+
+WORKDIR /app
+RUN make container=1
+
+USER user
+CMD ["zsh"]
