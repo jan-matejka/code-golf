@@ -1,9 +1,8 @@
-BASE_MK ?= ../../base.mk
-include $(BASE_MK)
-
+include ../../common.mk
 exe = $$PWD/main
-clean_files = main main.o
+build_image_name=hello-world-c
 
-main:
-
-	gcc main.c -o main
+build: main
+main: main.c
+build_image: build_leaf_image
+check: dram
