@@ -1,3 +1,5 @@
+subdirs := $(shell find -maxdepth 1 -mindepth 1 -type d)
+
 all:
 
-	ls | grep -v 'test\|Makefile' | xargs -i% make -C%
+	printf "%s\n" $(subdirs) | xargs -i% make -C%
