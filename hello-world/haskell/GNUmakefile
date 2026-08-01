@@ -1,9 +1,10 @@
-ROOT = ../..
-PROB = ..
-include ../../base.mk
+include ../../common.mk
 exe = $$PWD/main
-clean_files = main
+build_image_name=hello-world-haskell
 
-main:
+build:
 
 	ghc main.hs
+
+build_image: build_leaf_image
+check: dram
