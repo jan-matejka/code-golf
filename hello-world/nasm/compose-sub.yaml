@@ -1,0 +1,12 @@
+services:
+  hello-world-nasm:
+    build:
+      context: ./
+      dockerfile: hello-world/nasm/Containerfile
+      args:
+        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - ./hello-world/nasm/:/app
+      - ./common.mk:/common.mk
+    x-podman.uidmaps:
+      - +1000:@1000

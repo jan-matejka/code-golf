@@ -1,8 +1,10 @@
-ROOT = ../..
-PROB = ..
-include ../../base.mk
-exe = python3 $$PWD/main
+include ../../common.mk
+exe = $$PWD/main
+build_image_name=hello-world-python
 
-main:
+build:
 
-	cp main.py main
+	install -m 0755 main.py main
+
+build_image: build_leaf_image
+check: dram

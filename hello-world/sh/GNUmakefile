@@ -1,8 +1,10 @@
-ROOT = ../..
-PROB = ..
-include ../../base.mk
-exe = sh $$PWD/main
+include ../../common.mk
+exe = $$PWD/main
+build_image_name=hello-world-sh
 
-main:
+build:
 
-	cp main.sh main
+	install -m 0755 main.sh main
+
+build_image: build_leaf_image
+check: dram

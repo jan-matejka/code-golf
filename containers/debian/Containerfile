@@ -31,7 +31,6 @@ EOF
 
 RUN <<EOF
 set -e
-rm -rf /var/cache/apt/* /var/lib/apt/*
 
 useradd -m --shell /bin/zsh user
 chsh -s /bin/zsh root
@@ -42,3 +41,5 @@ make -C git/dotfiles/zsh install
 make -C git/dotfiles/zsh install HOME=/home/user USER=user
 install -d --owner=user /app /test
 EOF
+
+CMD ["zsh"]

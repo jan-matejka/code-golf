@@ -7,7 +7,7 @@ ENV COMMON_MK=/common.mk
 
 FROM ${REGISTRY}/${COMPOSE_PROJECT_NAME}_${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
-COPY --chown=user hello-world/c/ /app
+COPY --chown=user hello-world/sh/ /app
 COPY --chown=user hello-world/test/ /test
 COPY --chown=user common.mk /common.mk
 
