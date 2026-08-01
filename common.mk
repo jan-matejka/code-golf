@@ -7,14 +7,20 @@ build_image_name=$(notdir $(CURDIR))
 all: build
 
 .PHONY: build
-build: ## Build container images
-
-	printf "%s\n" $(build_dirs) | xargs -r -i@ $(MAKE) -C@
+build: ## Build
 
 .PHONY: clean
 clean: ## Clean work tree
 
 	git clean -fdx
+
+.PHONY: dram
+dram: ## Run dram tests
+
+	dram -e EXE="$(exe)" ../test/test.t
+
+.PHONY: check
+check: ## Run tests
 
 .PHONY: help
 help: ## Print help
@@ -26,4 +32,12 @@ help: ## Print help
 .PHONY: build_image
 build_image: ## Build image
 
+.PHONY: build_leaf_image
+build_leaf_image:
+
 	$(PC) build $(build_image_name)
+
+.PHONY: build_image_recurse
+build_image_recurse: ## Build image recurse into build_dirs
+
+	printf "%s\n" $(build_dirs) | xargs -r -i@ $(MAKE) -C@ build_image

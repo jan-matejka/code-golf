@@ -1,3 +1,2 @@
 include ../../common.mk
-
-build: build_image
+build_image: build_leaf_image

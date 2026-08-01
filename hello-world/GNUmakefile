@@ -1,5 +1,4 @@
-subdirs := $(shell find -maxdepth 1 -mindepth 1 -type d)
-
-all:
-
-	printf "%s\n" $(subdirs) | xargs -i% make -C%
+include ../common.mk
+# build_dirs := $(shell find -maxdepth 1 -mindepth 1 -type d)
+build_dirs=c
+build_image: build_image_recurse
