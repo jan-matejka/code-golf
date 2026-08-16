@@ -1,3 +1,7 @@
+tags
+.env
+.git.container
+
 *.t.err
 main
 coverage.out

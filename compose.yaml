@@ -1,5 +1,8 @@
 name: code-golf
 
 include:
+  - path: claude/compose-sub.yaml
+    project_directory: .
+
   - containers/compose-sub.yaml
   - hello-world/compose-sub.yaml

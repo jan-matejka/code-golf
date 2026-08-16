@@ -1,0 +1,21 @@
+services:
+  claude:
+    image: ghcr.io/jan-matejka/claude:${TAG:-latest}
+    userns_mode: "keep-id:uid=1000,gid=1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    environment:
+      - CONTAINER_HOST=${CLAUDE_REMOTE_PODMAN:-}
+      - CONTAINER_SSHKEY=/home/user/.ssh/id_ed25519
+    volumes:
+      - ${CLAUDE_CONTAINER_CONFIG:-~/.config/jm/claude/conf}:/home/user/.config/claude
+      - ${CLAUDE_CONTAINER_DATA:-~/.local/share/jm/claude/data}:/home/user/.local/share/claude
+      - ${CLAUDE_CONTAINER_APP:-./}:/app
+      - ${CLAUDE_CONTAINER_APP_GIT_DIR:-../master/.git:/src/main/.git}:ro
+      - ./.git.container:/app/.git:ro
+      - ${CLAUDE_KNOWN_HOSTS:-~/.config/jm/claude/known_hosts}:/home/user/.ssh/known_hosts:ro
+      - /etc/hosts:/etc/hosts:ro
+      - ${CLAUDE_SSH_KEY:-/dev/null}:/home/user/.ssh/id_ed25519:ro
