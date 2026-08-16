@@ -5,9 +5,7 @@ services:
       - 3000
     #ports:
     #  - "127.0.0.1:3000:3000"
-    # userns_mode: "keep-id"
-    x-podman.uidmap:
-      - 472:1000:1
+    userns_mode: "keep-id:uid=472,gid=472"
     network_mode: host
     volumes:
       - "./container/grafana/grafana.db:/var/lib/grafana/grafana.db:U"

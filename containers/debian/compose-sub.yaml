@@ -2,3 +2,4 @@ services:
   debian:
     build:
       context: containers/debian
+      dockerfile: Containerfile

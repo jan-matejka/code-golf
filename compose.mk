@@ -1,4 +1,4 @@
-compose_compose=podman-compose -p $(COMPOSE_PROJECT) $1
+compose_compose=podman compose -p $(COMPOSE_PROJECT) $1
 
 .PHONY: compose-$(COMPOSE_SERVICE)-up
 compose-$(COMPOSE_SERVICE)-up: ## Start $* containers

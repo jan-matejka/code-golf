@@ -1,11 +1,12 @@
-x-podman:
-  in_pod: False
-
 include:
-  - pushgateway/compose.yaml
-  - prometheus/compose.yaml
-  - postgres/compose.yaml
-  - postgres-test/compose.yaml
+  - path: pushgateway/compose.yaml
+    project_directory: .
+  - path: prometheus/compose.yaml
+    project_directory: .
+  - path: postgres/compose.yaml
+    project_directory: .
+  - path: postgres-test/compose.yaml
+    project_directory: .
 
 services:
   all:

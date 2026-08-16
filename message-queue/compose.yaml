@@ -1,19 +1,28 @@
-x-podman:
-  in_pod: False
-
 include:
-  - container/base-debian/compose.yaml
-  - container/base-debian-testing/compose.yaml
-  - container/base-haskell/compose.yaml
-  - container/grafana/compose.yaml
-  - container/postgres/compose.yaml
-  - container/postgres-prometheus-exporter/compose.yaml
-  - container/postgres-test/compose.yaml
-  - cpp/compose.yaml
-  - golang/compose.yaml
-  - rust/compose.yaml
-  - python/compose.yaml
-  - haskell/compose.yaml
+  - path: container/base-debian/compose.yaml
+    project_directory: .
+  - path: container/base-debian-testing/compose.yaml
+    project_directory: .
+  - path: container/base-haskell/compose.yaml
+    project_directory: .
+  - path: container/grafana/compose.yaml
+    project_directory: .
+  - path: container/postgres/compose.yaml
+    project_directory: .
+  - path: container/postgres-prometheus-exporter/compose.yaml
+    project_directory: .
+  - path: container/postgres-test/compose.yaml
+    project_directory: .
+  - path: cpp/compose.yaml
+    project_directory: .
+  - path: golang/compose.yaml
+    project_directory: .
+  - path: rust/compose.yaml
+    project_directory: .
+  - path: python/compose.yaml
+    project_directory: .
+  - path: haskell/compose.yaml
+    project_directory: .
 
 services:
   infra:

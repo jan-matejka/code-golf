@@ -4,5 +4,8 @@ include:
   - path: claude/compose-sub.yaml
     project_directory: .
 
-  - containers/compose-sub.yaml
-  - hello-world/compose-sub.yaml
+  - path: containers/compose-sub.yaml
+    project_directory: .
+
+  - path: hello-world/compose-sub.yaml
+    project_directory: .

@@ -16,7 +16,7 @@ build: compose_build ## Build all images
 run-producers: ## Run producers
 
 	printf "%s\n" $(producers) | \
-		xargs -I% sh -c 'podman-compose run --rm producer-% || true'
+		xargs -I% sh -c 'podman compose run --rm producer-% || true'
 
 .PHONY: container-check-producers
 container-check-producers:  ## Run all producer's tests

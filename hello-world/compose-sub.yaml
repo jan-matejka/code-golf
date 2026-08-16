@@ -1,8 +1,15 @@
 include:
- - c/compose-sub.yaml
- - cpp/compose-sub.yaml
- - haskell/compose-sub.yaml
- - nasm/compose-sub.yaml
- - python/compose-sub.yaml
- - rust/compose-sub.yaml
- - sh/compose-sub.yaml
+  - path: hello-world/c/compose-sub.yaml
+    project_directory: .
+  - path: hello-world/cpp/compose-sub.yaml
+    project_directory: .
+  - path: hello-world/haskell/compose-sub.yaml
+    project_directory: .
+  - path: hello-world/nasm/compose-sub.yaml
+    project_directory: .
+  - path: hello-world/python/compose-sub.yaml
+    project_directory: .
+  - path: hello-world/rust/compose-sub.yaml
+    project_directory: .
+  - path: hello-world/sh/compose-sub.yaml
+    project_directory: .

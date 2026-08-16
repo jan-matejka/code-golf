@@ -1,2 +1,3 @@
 include:
-  - debian/compose-sub.yaml
+  - path: containers/debian/compose-sub.yaml
+    project_directory: .

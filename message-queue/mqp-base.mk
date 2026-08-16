@@ -7,7 +7,7 @@ COMMON_NAME := mq-producer
 NAME := $(shell basename $(CURDIR))
 FULL_NAME := $(COMMON_NAME)-$(NAME)
 
-compose = podman-compose -f ../compose.yaml -p code-golf_message-queue $1
+compose = podman compose -f ../compose.yaml -p code-golf_message-queue $1
 
 .PHONY: image
 image: dev-image ## Build image
