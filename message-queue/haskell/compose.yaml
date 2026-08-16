@@ -1,5 +1,6 @@
 services:
   producer-haskell-dev:
+    image: localhost/code-golf_message-queue_producer-haskell-dev:latest
     build:
       context: ../
       dockerfile: message-queue/haskell/Containerfile-dev
@@ -10,6 +11,7 @@ services:
     entrypoint: /bin/zsh
 
   producer-haskell:
+    image: localhost/code-golf_message-queue_producer-haskell:latest
     build:
       context: ./
       dockerfile: haskell/Containerfile

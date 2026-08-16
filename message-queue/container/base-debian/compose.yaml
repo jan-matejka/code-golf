@@ -1,5 +1,6 @@
 services:
   base-debian:
+    image: localhost/code-golf_message-queue_base-debian:latest
     build:
       context: container/base-debian
       dockerfile: Containerfile

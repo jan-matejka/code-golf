@@ -1,5 +1,6 @@
 services:
   hello-world-rust:
+    image: localhost/code-golf_hello-world-rust:latest
     build:
       context: ./
       dockerfile: hello-world/rust/Containerfile

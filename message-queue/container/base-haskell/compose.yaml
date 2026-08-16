@@ -1,5 +1,6 @@
 services:
   base-haskell:
+    image: localhost/code-golf_message-queue_base-haskell:latest
     build:
       context: container/base-haskell
       dockerfile: Containerfile

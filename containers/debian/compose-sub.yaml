@@ -1,5 +1,6 @@
 services:
   debian:
+    image: localhost/code-golf_debian:latest
     build:
       context: containers/debian
       dockerfile: Containerfile

@@ -1,5 +1,6 @@
 services:
   postgres:
+    image: localhost/code-golf_message-queue_postgres:latest
     build:
       context: container/postgres
       dockerfile: Containerfile

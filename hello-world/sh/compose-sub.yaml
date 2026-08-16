@@ -1,5 +1,6 @@
 services:
   hello-world-sh:
+    image: localhost/code-golf_hello-world-sh:latest
     build:
       context: ./
       dockerfile: hello-world/sh/Containerfile

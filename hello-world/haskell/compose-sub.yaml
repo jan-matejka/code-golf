@@ -1,5 +1,6 @@
 services:
   hello-world-haskell:
+    image: localhost/code-golf_hello-world-haskell:latest
     build:
       context: ./
       dockerfile: hello-world/haskell/Containerfile

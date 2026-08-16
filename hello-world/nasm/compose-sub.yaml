@@ -1,5 +1,6 @@
 services:
   hello-world-nasm:
+    image: localhost/code-golf_hello-world-nasm:latest
     build:
       context: ./
       dockerfile: hello-world/nasm/Containerfile

@@ -1,5 +1,6 @@
 services:
   producer-cpp-dev:
+    image: localhost/code-golf_message-queue_producer-cpp-dev:latest
     build:
       context: ../
       dockerfile: message-queue/cpp/Containerfile-dev
@@ -10,6 +11,7 @@ services:
     entrypoint: /bin/zsh
 
   producer-cpp:
+    image: localhost/code-golf_message-queue_producer-cpp:latest
     build:
       context: ./
       dockerfile: cpp/Containerfile

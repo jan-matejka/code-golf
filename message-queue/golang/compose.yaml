@@ -1,5 +1,6 @@
 services:
   producer-golang-dev:
+    image: localhost/code-golf_message-queue_producer-golang-dev:latest
     build:
       context: ../
       dockerfile: message-queue/golang/Containerfile-dev
@@ -10,6 +11,7 @@ services:
     entrypoint: /bin/zsh
 
   producer-golang:
+    image: localhost/code-golf_message-queue_producer-golang:latest
     build:
       context: ./
       dockerfile: golang/Containerfile

@@ -1,5 +1,6 @@
 services:
   hello-world-python:
+    image: localhost/code-golf_hello-world-python:latest
     build:
       context: ./
       dockerfile: hello-world/python/Containerfile

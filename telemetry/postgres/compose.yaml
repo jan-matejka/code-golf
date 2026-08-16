@@ -1,5 +1,6 @@
 services:
   postgres:
+    image: localhost/code-golf_telemetry_postgres:latest
     build:
       context: ./postgres
       dockerfile: Containerfile

@@ -1,5 +1,6 @@
 services:
   hello-world-c:
+    image: localhost/code-golf_hello-world-c:latest
     build:
       context: ./
       dockerfile: hello-world/c/Containerfile

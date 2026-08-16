@@ -1,5 +1,6 @@
 services:
   producer-python-dev:
+    image: localhost/code-golf_message-queue_producer-python-dev:latest
     build:
       context: ../
       dockerfile: message-queue/python/Containerfile-dev
@@ -10,6 +11,7 @@ services:
     entrypoint: /bin/zsh
 
   producer-python:
+    image: localhost/code-golf_message-queue_producer-python:latest
     build:
       context: ./
       dockerfile: python/Containerfile

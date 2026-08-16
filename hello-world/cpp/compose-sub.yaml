@@ -1,5 +1,6 @@
 services:
   hello-world-cpp:
+    image: localhost/code-golf_hello-world-cpp:latest
     build:
       context: ./
       dockerfile: hello-world/cpp/Containerfile

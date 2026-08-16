@@ -1,5 +1,6 @@
 services:
   producer-rust-dev:
+    image: localhost/code-golf_message-queue_producer-rust-dev:latest
     build:
       context: ../
       dockerfile: message-queue/rust/Containerfile-dev
@@ -10,6 +11,7 @@ services:
     entrypoint: /bin/zsh
 
   producer-rust:
+    image: localhost/code-golf_message-queue_producer-rust:latest
     build:
       context: ./
       dockerfile: rust/Containerfile
