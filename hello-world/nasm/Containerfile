@@ -7,7 +7,7 @@ ENV COMMON_MK=/common.mk
 
 FROM ${REGISTRY}/${COMPOSE_PROJECT_NAME}_${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
-RUN apt-get install -y nasm
+RUN apt-get install -y nasm binutils
 
 COPY --chown=user hello-world/nasm/ /app
 COPY --chown=user hello-world/test/ /test
